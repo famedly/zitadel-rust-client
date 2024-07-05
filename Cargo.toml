@@ -1,5 +1,5 @@
 [package]
-name = "project-name"
+name = "zitadel-rust-client"
 version = "0.1.0"
 authors = []
 edition = "2021"
@@ -7,3 +7,25 @@ resolver = "2"
 publish = ["famedly"]
 
 [dependencies]
+time = { version = "0.3.36", features = ["serde"] }
+tonic = { version = "0.11.0", features = ["channel"] }
+zitadel = { version = "4.3.5", features = [
+  "credentials",
+  "api",
+  "interceptors",
+] }
+tokio = { version = "1.35.1", features = [
+    "macros",
+    "rt-multi-thread",
+    "time",
+] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
+thiserror = "1.0.61"
+proxyvars = "0.1.3"
+hyper = "0.14"
+hyper-proxy = { version = "0.9.1", default-features = false, features = [
+  "rustls",
+] }
+url = { version = "2.5.2", features = ["serde"] }
+headers = "0.3"
