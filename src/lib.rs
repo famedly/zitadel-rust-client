@@ -86,6 +86,21 @@ pub struct Config {
 	service_account_file: String,
 }
 
+impl Config {
+	/// Create a Zitadel client config
+	///
+	/// - `url` should point to the Zitadel instance the client is for
+	/// - `service_account_file` should be the Zitadel-generated
+	///	  private key file as documented here:
+	///	  https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
+	pub fn new(url: String, service_account_file: String) -> Self{
+		Self {
+			url,
+			service_account_file
+		}
+	}
+}
+
 /// Create a new tonic channel with specified endpoint. Uses http proxy if
 /// able.
 async fn get_channel(api_endpoint: &str) -> Result<Channel> {
