@@ -32,14 +32,13 @@ use zitadel::{
 			AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
 			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
-			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ImportHumanUserRequest,
-			ListOrgMetadataRequest, ListOrgMetadataResponse, ListProjectRolesRequest,
-			ListProjectRolesResponse, ListUserGrantRequest, ListUserGrantResponse,
-			RemoveOrgMetadataRequest, RemoveUserGrantRequest, RemoveUserRequest,
-			SetOrgMetadataRequest, SetUserMetadataRequest, UpdateHumanEmailRequest,
-			UpdateHumanEmailResponse, UpdateHumanProfileRequest, UpdateHumanProfileResponse,
-			UpdateProjectRequest, UpdateUserGrantRequest, UpdateUserNameRequest,
-			UpdateUserNameResponse,
+			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListOrgMetadataRequest,
+			ListOrgMetadataResponse, ListProjectRolesRequest, ListProjectRolesResponse,
+			ListUserGrantRequest, ListUserGrantResponse, RemoveOrgMetadataRequest,
+			RemoveUserGrantRequest, RemoveUserRequest, SetOrgMetadataRequest,
+			SetUserMetadataRequest, UpdateHumanEmailRequest, UpdateHumanEmailResponse,
+			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
+			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
 		},
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
@@ -48,6 +47,14 @@ use zitadel::{
 		v1::ListQuery,
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
+};
+
+pub use zitadel::api::zitadel::{
+	management::v1::{
+		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
+		ImportHumanUserRequest,
+	},
+	user::v1::Gender,
 };
 
 /// Metadata/Header for Zitadel organization ID, used to set/get metadata for
