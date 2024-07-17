@@ -4,7 +4,10 @@
 
 pub mod error;
 
-use std::sync::Arc;
+use std::{
+	path::{Path, PathBuf},
+	sync::Arc,
+};
 
 // use self::clonable_service_interceptor::ClonableServiceAccountInterceptor;
 // use super::Event;
@@ -83,7 +86,7 @@ struct Token {
 
 pub struct Config {
 	url: String,
-	service_account_file: String,
+	service_account_file: PathBuf,
 }
 
 impl Config {
@@ -91,13 +94,10 @@ impl Config {
 	///
 	/// - `url` should point to the Zitadel instance the client is for
 	/// - `service_account_file` should be the Zitadel-generated
-	///	  private key file as documented here:
-	///	  https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
-	pub fn new(url: String, service_account_file: String) -> Self{
-		Self {
-			url,
-			service_account_file
-		}
+	///   private key file as documented here:
+	///   https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
+	pub fn new(url: String, service_account_file: PathBuf) -> Self {
+		Self { url, service_account_file }
 	}
 }
 
@@ -228,7 +228,9 @@ impl Zitadel {
 		*/
 		let audience = config.url.clone();
 
-		let service_account = ServiceAccount::load_from_file(&config.service_account_file)?;
+		let service_account = ServiceAccount::load_from_json(
+			std::fs::read_to_string(&config.service_account_file)?.as_ref(),
+		)?;
 		let auth_options = AuthenticationOptions { api_access: true, ..Default::default() };
 
 		let token = Arc::new(RwLock::new(Token {
