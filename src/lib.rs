@@ -19,6 +19,7 @@ use tonic::{
 	transport::{Channel, Endpoint},
 	Request, Status,
 };
+use url::Url;
 use zitadel::{
 	api::zitadel::{
 		admin::v1::{
@@ -92,7 +93,7 @@ struct Token {
 }
 
 pub struct Config {
-	url: String,
+	url: Url,
 	service_account_file: PathBuf,
 }
 
@@ -103,7 +104,7 @@ impl Config {
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented here:
 	///   https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
-	pub fn new(url: String, service_account_file: PathBuf) -> Self {
+	pub fn new(url: Url, service_account_file: PathBuf) -> Self {
 		Self { url, service_account_file }
 	}
 }
@@ -226,6 +227,10 @@ impl Zitadel {
 	/// Builds a new Zitadel instance.
 	#[tracing::instrument(level = "debug", skip_all)]
 	pub async fn new(config: &Config) -> Result<Self> {
+		// Zitadel matches this against the OIDC issuer, which is set
+		// to not have a trailing slash
+		let audience = config.url.as_str().trim_end_matches('/');
+
 		// Wait for Zitadel instance to become ready.
 		/*
 			tracing::info!("Waiting for Zitadel instance to become ready.");
@@ -233,15 +238,13 @@ impl Zitadel {
 				.await
 				.change_context(Error::Zitadel)?;
 		*/
-		let audience = config.url.clone();
-
 		let service_account = ServiceAccount::load_from_json(
 			std::fs::read_to_string(&config.service_account_file)?.as_ref(),
 		)?;
 		let auth_options = AuthenticationOptions { api_access: true, ..Default::default() };
 
 		let token = Arc::new(RwLock::new(Token {
-			token: service_account.authenticate_with_options(&audience, &auth_options).await?,
+			token: service_account.authenticate_with_options(audience, &auth_options).await?,
 			expiry: time::OffsetDateTime::now_utc() + time::Duration::minutes(59),
 		}));
 
@@ -258,7 +261,7 @@ impl Zitadel {
 			auth_client,
 			admin_client,
 			management_client,
-			audience,
+			audience: audience.to_owned(),
 			service_account,
 			auth_options,
 			token,
