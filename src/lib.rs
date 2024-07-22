@@ -20,6 +20,13 @@ use tonic::{
 	Request, Status,
 };
 use url::Url;
+pub use zitadel::api::zitadel::{
+	management::v1::{
+		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
+		ImportHumanUserRequest,
+	},
+	user::v1::Gender,
+};
 use zitadel::{
 	api::zitadel::{
 		admin::v1::{
@@ -48,14 +55,6 @@ use zitadel::{
 		v1::ListQuery,
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
-};
-
-pub use zitadel::api::zitadel::{
-	management::v1::{
-		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
-		ImportHumanUserRequest,
-	},
-	user::v1::Gender,
 };
 
 /// Metadata/Header for Zitadel organization ID, used to set/get metadata for
@@ -921,216 +920,207 @@ impl Zitadel {
 	}
 
 	/*
-	  /// Update a User grant.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-grant)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn update_user_grant(
-		  &self,
-		  user_id: String,
-		  grant_id: String,
-		  role_keys: Vec<String>,
-	  ) -> Result<(), Report<Error>> {
-		  self.management_client
-			  .clone()
-			  .update_user_grant(
-				  self.request_with_auth(UpdateUserGrantRequest { user_id, grant_id, role_keys })
-					  .await?,
-			  )
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  Ok(())
-	  }
+		/// Update a User grant.
+		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-grant)
+		#[tracing::instrument(level = "debug", skip_all)]
+		pub async fn update_user_grant(
+			&self,
+			user_id: String,
+			grant_id: String,
+			role_keys: Vec<String>,
+		) -> Result<(), Report<Error>> {
+			self.management_client
+				.clone()
+				.update_user_grant(
+					self.request_with_auth(UpdateUserGrantRequest { user_id, grant_id, role_keys })
+						.await?,
+				)
+				.await
+				.change_context(Error::Zitadel)?;
+			Ok(())
+		}
 
-	  /// Remove a User grant.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn remove_user_grant(
-		  &self,
-		  user_id: String,
-		  grant_id: String,
-	  ) -> Result<(), Report<Error>> {
-		  self.management_client
-			  .clone()
-			  .remove_user_grant(
-				  self.request_with_auth(RemoveUserGrantRequest { user_id, grant_id }).await?,
-			  )
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  Ok(())
-	  }
+		/// Remove a User grant.
+		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
+		#[tracing::instrument(level = "debug", skip_all)]
+		pub async fn remove_user_grant(
+			&self,
+			user_id: String,
+			grant_id: String,
+		) -> Result<(), Report<Error>> {
+			self.management_client
+				.clone()
+				.remove_user_grant(
+					self.request_with_auth(RemoveUserGrantRequest { user_id, grant_id }).await?,
+				)
+				.await
+				.change_context(Error::Zitadel)?;
+			Ok(())
+		}
 
-	  /// Searches User grants. Returns a list of user grants that match the
-	  /// search queries. User grants are the roles users have for a specific
-	  /// project and organization. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn search_user_grants(
-		  &self,
-		  organization_id: &str,
-		  queries: Vec<UserGrantQuery>,
-	  ) -> Result<ListUserGrantResponse, Report<Error>> {
-		  let request = ListUserGrantRequest { queries, ..Default::default() };
-		  let mut request_with_org = tonic::Request::new(request);
-		  request_with_org.metadata_mut().insert(
-			  HEADER_ZITADEL_ORGANIZATION_ID,
-			  organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-		  );
-		  Ok(self
-			  .management_client
-			  .clone()
-			  .list_user_grants(self.request_with_auth(request_with_org).await?)
-			  .await
-			  .change_context(Error::Zitadel)?
-			  .into_inner())
-	  }
+		/// Searches User grants. Returns a list of user grants that match the
+		/// search queries. User grants are the roles users have for a specific
+		/// project and organization. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
+		#[tracing::instrument(level = "debug", skip_all)]
+		pub async fn search_user_grants(
+			&self,
+			organization_id: &str,
+			queries: Vec<UserGrantQuery>,
+		) -> Result<ListUserGrantResponse, Report<Error>> {
+			let request = ListUserGrantRequest { queries, ..Default::default() };
+			let mut request_with_org = tonic::Request::new(request);
+			request_with_org.metadata_mut().insert(
+				HEADER_ZITADEL_ORGANIZATION_ID,
+				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
+			);
+			Ok(self
+				.management_client
+				.clone()
+				.list_user_grants(self.request_with_auth(request_with_org).await?)
+				.await
+				.change_context(Error::Zitadel)?
+				.into_inner())
+		}
 
-	  /// Searches Project Roles. Returns all roles of a project matching the
-	  /// search query. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-roles)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn search_project_roles(
-		  &self,
-		  organization_id: String,
-		  request: ListProjectRolesRequest,
-	  ) -> Result<ListProjectRolesResponse, Report<Error>> {
-		  let mut request_with_org = tonic::Request::new(request);
-		  request_with_org.metadata_mut().insert(
-			  HEADER_ZITADEL_ORGANIZATION_ID,
-			  organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-		  );
-		  let response = self
-			  .management_client
-			  .clone()
-			  .list_project_roles(self.request_with_auth(request_with_org).await?)
-			  .await
-			  .change_context(Error::Zitadel)?
-			  .into_inner();
-		  Ok(response)
-	  }
-
-	  /// Create a project, returning the project ID.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn add_project(
-		  &self,
-		  name: String,
-		  project_role_assertion: bool,
-		  project_role_check: bool,
-		  has_project_check: bool,
-		  private_labeling_setting: PrivateLabelingSetting,
-	  ) -> Result<String, Report<Error>> {
-		  Ok(self
-			  .management_client
-			  .clone()
-			  .add_project(
-				  self.request_with_auth(AddProjectRequest {
-					  name,
-					  project_role_assertion,
-					  project_role_check,
-					  has_project_check,
-					  private_labeling_setting: private_labeling_setting as i32,
-				  })
-				  .await?,
-			  )
-			  .await
-			  .change_context(Error::Zitadel)?
-			  .into_inner()
-			  .id)
-	  }
-
-	  /// Update a project.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-project)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn update_project(
-		  &self,
-		  id: String,
-		  name: String,
-		  project_role_assertion: bool,
-		  project_role_check: bool,
-		  has_project_check: bool,
-		  private_labeling_setting: PrivateLabelingSetting,
-	  ) -> Result<(), Report<Error>> {
-		  self.management_client
-			  .clone()
-			  .update_project(
-				  self.request_with_auth(UpdateProjectRequest {
-					  id,
-					  name,
-					  project_role_assertion,
-					  project_role_check,
-					  has_project_check,
-					  private_labeling_setting: private_labeling_setting as i32,
-				  })
-				  .await?,
-			  )
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  Ok(())
-	  }
-
-	  /// Add a role to a project.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn add_project_role(
-		  &self,
-		  project_id: String,
-		  role_key: String,
-		  display_name: String,
-		  group: Option<String>,
-	  ) -> Result<(), Report<Error>> {
-		  self.management_client
-			  .clone()
-			  .add_project_role(
-				  self.request_with_auth(AddProjectRoleRequest {
-					  project_id,
-					  role_key,
-					  display_name,
-					  group: group.unwrap_or_default(),
-				  })
-				  .await?,
-			  )
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  Ok(())
-	  }
-
-	  /// Add roles to a project in bulk.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-add-project-roles)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn add_project_roles_bulk(
-		  &self,
-		  organization_id: String,
-		  request: BulkAddProjectRolesRequest,
-	  ) -> Result<BulkAddProjectRolesResponse, Report<Error>> {
-		  let mut request_with_org = tonic::Request::new(request);
-		  request_with_org.metadata_mut().insert(
-			  HEADER_ZITADEL_ORGANIZATION_ID,
-			  organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-		  );
-		  let response = self
-			  .management_client
-			  .clone()
-			  .bulk_add_project_roles(self.request_with_auth(request_with_org).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  Ok(response.into_inner())
-	  }
-
-	  /// Add a LDAP IDP
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-add-ldap-provider)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn add_ldap_idp(
-		  &self,
-		  request: AddLdapProviderRequest,
-	  ) -> Result<String, Report<Error>> {
-		  let response = self
-			  .admin_client
-			  .clone()
-			  .add_ldap_provider(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-
-		  Ok(response.into_inner().id)
-	  }
+		/// Searches Project Roles. Returns all roles of a project matching the
+		/// search query. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-roles)
+		#[tracing::instrument(level = "debug", skip_all)]
+		pub async fn search_project_roles(
+			&self,
+			organization_id: String,
+			request: ListProjectRolesRequest,
+		) -> Result<ListProjectRolesResponse, Report<Error>> {
+			let mut request_with_org = tonic::Request::new(request);
+			request_with_org.metadata_mut().insert(
+				HEADER_ZITADEL_ORGANIZATION_ID,
+				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
+			);
+			let response = self
+				.management_client
+				.clone()
+				.list_project_roles(self.request_with_auth(request_with_org).await?)
+				.await
+				.change_context(Error::Zitadel)?
+				.into_inner();
+			Ok(response)
+		}
 	*/
+
+	/// Create a project, returning the project ID.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_project(
+		&self,
+		name: String,
+		project_role_assertion: bool,
+		project_role_check: bool,
+		has_project_check: bool,
+		private_labeling_setting: PrivateLabelingSetting,
+	) -> Result<String> {
+		Ok(self
+			.management_client
+			.clone()
+			.add_project(
+				self.request_with_auth(AddProjectRequest {
+					name,
+					project_role_assertion,
+					project_role_check,
+					has_project_check,
+					private_labeling_setting: private_labeling_setting as i32,
+				})
+				.await?,
+			)
+			.await?
+			.into_inner()
+			.id)
+	}
+
+	/// Update a project.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-project)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn update_project(
+		&self,
+		id: String,
+		name: String,
+		project_role_assertion: bool,
+		project_role_check: bool,
+		has_project_check: bool,
+		private_labeling_setting: PrivateLabelingSetting,
+	) -> Result<()> {
+		self.management_client
+			.clone()
+			.update_project(
+				self.request_with_auth(UpdateProjectRequest {
+					id,
+					name,
+					project_role_assertion,
+					project_role_check,
+					has_project_check,
+					private_labeling_setting: private_labeling_setting as i32,
+				})
+				.await?,
+			)
+			.await?;
+		Ok(())
+	}
+
+	/// Add a role to a project.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_project_role(
+		&self,
+		project_id: String,
+		role_key: String,
+		display_name: String,
+		group: Option<String>,
+	) -> Result<()> {
+		self.management_client
+			.clone()
+			.add_project_role(
+				self.request_with_auth(AddProjectRoleRequest {
+					project_id,
+					role_key,
+					display_name,
+					group: group.unwrap_or_default(),
+				})
+				.await?,
+			)
+			.await?;
+		Ok(())
+	}
+
+	/// Add roles to a project in bulk.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-add-project-roles)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_project_roles_bulk(
+		&self,
+		organization_id: String,
+		request: BulkAddProjectRolesRequest,
+	) -> Result<BulkAddProjectRolesResponse> {
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		let response = self
+			.management_client
+			.clone()
+			.bulk_add_project_roles(self.request_with_auth(request_with_org).await?)
+			.await?;
+		Ok(response.into_inner())
+	}
+
+	/// Add a LDAP IDP
+	/// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-add-ldap-provider)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_ldap_idp(&self, request: AddLdapProviderRequest) -> Result<String> {
+		let response = self
+			.admin_client
+			.clone()
+			.add_ldap_provider(self.request_with_auth(request).await?)
+			.await?;
+
+		Ok(response.into_inner().id)
+	}
 }
 
 /// Check if the token is still valid and set the authorization header if it is.
