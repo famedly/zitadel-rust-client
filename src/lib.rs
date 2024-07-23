@@ -91,23 +91,6 @@ struct Token {
 	expiry: time::OffsetDateTime,
 }
 
-pub struct Config {
-	url: Url,
-	service_account_file: PathBuf,
-}
-
-impl Config {
-	/// Create a Zitadel client config
-	///
-	/// - `url` should point to the Zitadel instance the client is for
-	/// - `service_account_file` should be the Zitadel-generated
-	///   private key file as documented here:
-	///   https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
-	pub fn new(url: Url, service_account_file: PathBuf) -> Self {
-		Self { url, service_account_file }
-	}
-}
-
 /// Create a new tonic channel with specified endpoint. Uses http proxy if
 /// able.
 async fn get_channel(api_endpoint: &str) -> Result<Channel> {
@@ -224,11 +207,15 @@ fn wrap_intercept_with_no_proxy(
 
 impl Zitadel {
 	/// Builds a new Zitadel instance.
+	/// - `url` should point to the Zitadel instance the client is for
+	/// - `service_account_file` should be the Zitadel-generated
+	///   private key file as documented here:
+	///   https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file
 	#[tracing::instrument(level = "debug", skip_all)]
-	pub async fn new(config: &Config) -> Result<Self> {
+	pub async fn new(url: Url, service_account_file: PathBuf) -> Result<Self> {
 		// Zitadel matches this against the OIDC issuer, which is set
 		// to not have a trailing slash
-		let audience = config.url.as_str().trim_end_matches('/');
+		let audience = url.as_str().trim_end_matches('/');
 
 		// Wait for Zitadel instance to become ready.
 		/*
@@ -238,7 +225,7 @@ impl Zitadel {
 				.change_context(Error::Zitadel)?;
 		*/
 		let service_account = ServiceAccount::load_from_json(
-			std::fs::read_to_string(&config.service_account_file)?.as_ref(),
+			std::fs::read_to_string(&service_account_file)?.as_ref(),
 		)?;
 		let auth_options = AuthenticationOptions { api_access: true, ..Default::default() };
 
@@ -247,13 +234,13 @@ impl Zitadel {
 			expiry: time::OffsetDateTime::now_utc() + time::Duration::minutes(59),
 		}));
 
-		let channel = get_channel(config.url.as_str()).await?;
+		let channel = get_channel(url.as_str()).await?;
 		let admin_client = AdminServiceClient::new(channel);
 
-		let channel = get_channel(config.url.as_str()).await?;
+		let channel = get_channel(url.as_str()).await?;
 		let management_client = ManagementServiceClient::new(channel);
 
-		let channel = get_channel(config.url.as_str()).await?;
+		let channel = get_channel(url.as_str()).await?;
 		let auth_client = AuthServiceClient::new(channel);
 
 		Ok(Zitadel {
