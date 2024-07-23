@@ -1,6 +1,8 @@
 use thiserror::Error;
 use zitadel::credentials::ServiceAccountError;
 
+pub use tonic::Code as TonicErrorCode;
+
 #[derive(Debug, Error)]
 pub enum Error {
 	#[error("Tonic response error: {0}")]
