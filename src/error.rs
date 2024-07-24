@@ -21,6 +21,10 @@ pub enum Error {
 	TonicTransportError(#[from] tonic::transport::Error),
 	#[error("Invalid tonic metadata value: {0}")]
 	InvalidMetadataValue(#[from] tonic::metadata::errors::InvalidMetadataValue),
+	#[error("No Metadata found in MetadataResponse for key '{0}'")]
+	MissingMetadata(String),
+	#[error("Failed to parse UTF-8 data: {0}")]
+	FromUtf8Error(#[from] std::string::FromUtf8Error),
 }
 
 // The `ServiceAccountError` has one error which is exposed as a

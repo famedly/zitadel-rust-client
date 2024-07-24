@@ -561,66 +561,54 @@ impl Zitadel {
 		Ok(())
 	}
 
-	/*
-	  /// Get user metadata for a key. Also decodes the value to a string.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_user_metadata(
-		  &self,
-		  organization_id: Option<String>,
-		  user_id: &str,
-		  key: &str,
-	  ) -> Result<Option<String>> {
-		  let mut request = tonic::Request::new(GetUserMetadataRequest {
-			  id: user_id.to_owned(),
-			  key: key.to_owned(),
-		  });
-		  if let Some(ref org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>()?,
-			  );
-		  }
+	/// Get user metadata for a key. Also decodes the value to a string.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn get_user_metadata(
+		&self,
+		organization_id: Option<String>,
+		user_id: &str,
+		key: &str,
+	) -> Result<Option<String>> {
+		let mut request = tonic::Request::new(GetUserMetadataRequest {
+			id: user_id.to_owned(),
+			key: key.to_owned(),
+		});
+		if let Some(ref org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-		  let response = self
-			  .management_client
-			  .clone()
-			  .get_user_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel);
-		  let response = match response {
-			  Ok(resp) => resp,
-			  Err(e) => match e.downcast_ref::<Status>() {
-				  // `QUERY-Rgh32` is the grpc message returned by Zitadel when no metadata was
-				  // found for the given key
-				  Some(status)
-					  if status.code() == tonic::Code::NotFound
-						  && status.message().contains("QUERY-Rgh32") =>
-				  {
-					  tracing::debug!("No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}");
-					  return Ok(None);
-				  }
-				  _ => {
-					  return Err(e.into()); // .attach_printable(format!(
-						  // "Error fetching user '{user_id}' metadata for key '{key}'. Organization ID: {organization_id:?}"))
-				  }
-			  },
-		  };
+		let response = self
+			.management_client
+			.clone()
+			.get_user_metadata(self.request_with_auth(request).await?)
+			.await;
+		let response = match response {
+			Ok(resp) => resp,
+			Err(e) => match e.code() {
+				// `QUERY-Rgh32` is the grpc message returned by Zitadel when no metadata was
+				// found for the given key
+				tonic::Code::NotFound if e.message().contains("QUERY-Rgh32") => {
+					tracing::debug!("No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}");
+					return Ok(None);
+				}
+				_ => {
+					return Err(e.into());
+				}
+			},
+		};
 
-		  tracing::trace!("Got user metadata response: {response:#?}");
-		  let Some(metadata) = response.into_inner().metadata else {
-			  return Err(Error::Zitadel).attach_printable(format!(
-				  "No Metadata found in MetadataResponse for key '{key}'"
-			  ));
-		  };
-		  let value =
-			  String::from_utf8(metadata.value)?; change_context(Error::Zitadel).attach_printable(
-				  // format!("Unable to parse user '{user_id}' metadata for key '{key}'."),
-			  //)?;
-		  tracing::debug!("Got user metadata for user '{user_id}' key '{key}': {value:?}");
-		  Ok(Some(value))
-	  }
-	*/
+		tracing::trace!("Got user metadata response: {response:#?}");
+		let Some(metadata) = response.into_inner().metadata else {
+			return Err(error::Error::MissingMetadata(key.to_string()));
+		};
+
+		let value = String::from_utf8(metadata.value)?;
+
+		Ok(Some(value))
+	}
 
 	/*
 	  /// Set organization metadata in bulk.
