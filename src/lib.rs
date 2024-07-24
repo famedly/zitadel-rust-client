@@ -25,7 +25,7 @@ pub use zitadel::api::zitadel::{
 		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
 		ImportHumanUserRequest,
 	},
-	user::v1::{Gender, user::Type},
+	user::v1::{user::Type, Gender},
 };
 use zitadel::{
 	api::zitadel::{
@@ -48,10 +48,14 @@ use zitadel::{
 			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
 			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
 		},
+		member::v1::UserIdQuery,
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
-		user::v1::{User, UserGrantQuery},
+		user::v1::{
+			user_grant_query::Query as UserGrantQueryEnum, User, UserGrantQuery,
+			UserGrantUserIdQuery,
+		},
 		v1::ListQuery,
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
@@ -932,31 +936,37 @@ impl Zitadel {
 				.change_context(Error::Zitadel)?;
 			Ok(())
 		}
+	*/
 
-		/// Searches User grants. Returns a list of user grants that match the
-		/// search queries. User grants are the roles users have for a specific
-		/// project and organization. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn search_user_grants(
-			&self,
-			organization_id: &str,
-			queries: Vec<UserGrantQuery>,
-		) -> Result<ListUserGrantResponse, Report<Error>> {
-			let request = ListUserGrantRequest { queries, ..Default::default() };
-			let mut request_with_org = tonic::Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			Ok(self
-				.management_client
-				.clone()
-				.list_user_grants(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?
-				.into_inner())
-		}
+	/// Searches User grants. Returns a list of user grants that match the
+	/// search queries. User grants are the roles users have for a specific
+	/// project and organization. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn list_user_grants(
+		&self,
+		organization_id: &str,
+		user_id: &str,
+	) -> Result<ListUserGrantResponse> {
+		let queries = vec![UserGrantQuery {
+			query: Some(UserGrantQueryEnum::UserIdQuery(UserGrantUserIdQuery {
+				user_id: user_id.to_owned(),
+			})),
+		}];
 
+		let request = ListUserGrantRequest { queries, ..Default::default() };
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.list_user_grants(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
+
+	/*
 		/// Searches Project Roles. Returns all roles of a project matching the
 		/// search query. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-roles)
 		#[tracing::instrument(level = "debug", skip_all)]
