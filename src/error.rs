@@ -1,14 +1,14 @@
 use thiserror::Error;
+pub use tonic::Code as TonicErrorCode;
 use zitadel::credentials::ServiceAccountError;
 
-pub use tonic::Code as TonicErrorCode;
-
+#[allow(missing_docs)]
 #[derive(Debug, Error)]
 pub enum Error {
 	#[error("Tonic response error: {0}")]
 	TonicResponseError(#[from] tonic::Status),
 	#[error("Operation timed out: {0}")]
-	TimoutError(#[from] tokio::time::error::Elapsed),
+	TimeoutError(#[from] tokio::time::error::Elapsed),
 	#[error("Zitadel service account error: {0}")]
 	ZitadelServiceAccountError(String),
 	#[error("Url parsing error (url crate): {0}")]
@@ -38,4 +38,5 @@ impl From<ServiceAccountError> for Error {
 	}
 }
 
+/// [`Result`] Alias with error set to [`Error`]
 pub type Result<R> = std::result::Result<R, Error>;

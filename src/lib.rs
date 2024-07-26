@@ -2,6 +2,7 @@
 #![allow(unused_imports)] // TODO: remove
 #![allow(dead_code)] // TODO: remove
 
+/// A module with error type and related code
 pub mod error;
 
 use std::{
@@ -65,6 +66,7 @@ use zitadel::{
 /// Metadata/Header for Zitadel organization ID, used to set/get metadata for
 /// organizations.
 const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
+/// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Zitadel clients and functionality
@@ -117,14 +119,14 @@ async fn get_channel(api_endpoint: &str) -> Result<Channel> {
 /// and set up authorization if present in the `url`.
 fn make_proxy(
 	proxy_url: &str,
-	no_proxy: Option<&std::sync::Arc<proxyvars::NoProxy>>,
+	no_proxy: Option<&Arc<proxyvars::NoProxy>>,
 	intercept: hyper_proxy::Intercept,
 ) -> Result<hyper_proxy::Proxy> {
 	let uri = proxy_url.parse::<hyper::Uri>()?;
 	let intercept = no_proxy
 		.map_or(intercept.clone(), |np| wrap_intercept_with_no_proxy(intercept, np.clone()));
 	let mut proxy = hyper_proxy::Proxy::new(intercept, uri);
-	let url = proxy_url.parse::<url::Url>()?;
+	let url = proxy_url.parse::<Url>()?;
 	if let Some(authorization) = get_authorization(&url) {
 		proxy.set_authorization(authorization);
 	}
@@ -136,9 +138,7 @@ fn make_proxy(
 ///
 /// Note: Using [url::Url] because [hyper::Uri] does not support getting
 /// username and password
-fn get_authorization(
-	url: &url::Url,
-) -> Option<headers::Authorization<headers::authorization::Basic>> {
+fn get_authorization(url: &Url) -> Option<headers::Authorization<headers::authorization::Basic>> {
 	url.password().and_then(|password| {
 		(!url.username().is_empty())
 			.then_some(headers::Authorization::basic(url.username(), password))
@@ -154,7 +154,7 @@ fn system_proxy_connector(
 	if let (None, None) = (&http_proxy, &https_proxy) {
 		return Ok(None);
 	}
-	let no_proxy = proxyvars::no_proxy().map(std::sync::Arc::new);
+	let no_proxy = proxyvars::no_proxy().map(Arc::new);
 
 	let http = hyper::client::HttpConnector::new();
 	let mut connector = hyper_proxy::ProxyConnector::new(http)?;
@@ -178,7 +178,7 @@ fn system_proxy_connector(
 /// [`hyper_proxy::Intercept`] as usual.
 fn wrap_intercept_with_no_proxy(
 	intercept: hyper_proxy::Intercept,
-	no_proxy: std::sync::Arc<proxyvars::NoProxy>,
+	no_proxy: Arc<proxyvars::NoProxy>,
 ) -> hyper_proxy::Intercept {
 	(move |scheme: Option<&str>, host: Option<&str>, port: Option<u16>| {
 		let uri_string = format!(
@@ -355,7 +355,7 @@ impl Zitadel {
 		  tracing::debug!("Setting organisation metadata: ({key}, {value})");
 		  let value = value.as_bytes().to_vec();
 
-		  let mut request = tonic::Request::new(SetOrgMetadataRequest { key, value });
+		  let mut request = Request::new(SetOrgMetadataRequest { key, value });
 		  if let Some(org_id) = organization_id {
 			  request.metadata_mut().insert(
 				  HEADER_ZITADEL_ORGANIZATION_ID,
@@ -383,7 +383,7 @@ impl Zitadel {
 		  key: String,
 	  ) -> Result<(), Report<Error>> {
 		  tracing::debug!("Deleting organisation metadata: {key}");
-		  let mut request = tonic::Request::new(RemoveOrgMetadataRequest { key });
+		  let mut request = Request::new(RemoveOrgMetadataRequest { key });
 		  if let Some(org_id) = organization_id {
 			  request.metadata_mut().insert(
 				  HEADER_ZITADEL_ORGANIZATION_ID,
@@ -407,7 +407,7 @@ impl Zitadel {
 	  #[tracing::instrument(level = "debug", skip_all)]
 	  pub async fn get_org_by_id(&self, org_id: String) -> Result<Option<Org>, Report<Error>> {
 		  tracing::debug!("Getting organization by id '{org_id}'");
-		  let request = tonic::Request::new(GetOrgByIdRequest { id: org_id });
+		  let request = Request::new(GetOrgByIdRequest { id: org_id });
 
 		  let response = self
 			  .admin_client
@@ -429,7 +429,7 @@ impl Zitadel {
 		  queries: Vec<OrgQuery>,
 	  ) -> Result<ListOrgsResponse, Report<Error>> {
 		  tracing::debug!("Searching organisations '{queries:?}'");
-		  let request = tonic::Request::new(ListOrgsRequest {
+		  let request = Request::new(ListOrgsRequest {
 			  queries,
 			  query: query_parameters,
 			  sorting_column: OrgFieldName::Unspecified.into(),
@@ -461,7 +461,7 @@ impl Zitadel {
 			  .map(|q| MetadataQuery { query: Some(Query::KeyQuery(q)) })
 			  .collect();
 		  let mut request =
-			  tonic::Request::new(ListOrgMetadataRequest { queries, query: query_parameters });
+			  Request::new(ListOrgMetadataRequest { queries, query: query_parameters });
 		  if let Some(org_id) = organization_id {
 			  request.metadata_mut().insert(
 				  HEADER_ZITADEL_ORGANIZATION_ID,
@@ -488,7 +488,7 @@ impl Zitadel {
 		  organization_id: Option<&str>,
 		  key: String,
 	  ) -> Result<Option<String>, Report<Error>> {
-		  let mut request = tonic::Request::new(GetOrgMetadataRequest { key: key.clone() });
+		  let mut request = Request::new(GetOrgMetadataRequest { key: key.clone() });
 		  if let Some(org_id) = organization_id {
 			  request.metadata_mut().insert(
 				  HEADER_ZITADEL_ORGANIZATION_ID,
@@ -549,7 +549,7 @@ impl Zitadel {
 		tracing::debug!("Setting metadata: for user ID {user_id} ({key}, {value})");
 		let value = value.as_bytes().to_vec();
 
-		let mut request = tonic::Request::new(SetUserMetadataRequest { id: user_id, key, value });
+		let mut request = Request::new(SetUserMetadataRequest { id: user_id, key, value });
 		if let Some(org_id) = organization_id {
 			request
 				.metadata_mut()
@@ -575,10 +575,8 @@ impl Zitadel {
 		user_id: &str,
 		key: &str,
 	) -> Result<Option<String>> {
-		let mut request = tonic::Request::new(GetUserMetadataRequest {
-			id: user_id.to_owned(),
-			key: key.to_owned(),
-		});
+		let mut request =
+			Request::new(GetUserMetadataRequest { id: user_id.to_owned(), key: key.to_owned() });
 		if let Some(ref org_id) = organization_id {
 			request
 				.metadata_mut()
@@ -607,7 +605,7 @@ impl Zitadel {
 
 		tracing::trace!("Got user metadata response: {response:#?}");
 		let Some(metadata) = response.into_inner().metadata else {
-			return Err(error::Error::MissingMetadata(key.to_string()));
+			return Err(error::Error::MissingMetadata(key.to_owned()));
 		};
 
 		let value = String::from_utf8(metadata.value)?;
@@ -629,7 +627,7 @@ impl Zitadel {
 			  .map(|(key, value)| Metadata { key, value: value.into_bytes() })
 			  .collect();
 
-		  let mut request = tonic::Request::new(BulkSetOrgMetadataRequest { metadata });
+		  let mut request = Request::new(BulkSetOrgMetadataRequest { metadata });
 		  if let Some(org_id) = organization_id {
 			  request.metadata_mut().insert(
 				  HEADER_ZITADEL_ORGANIZATION_ID,
@@ -704,7 +702,7 @@ impl Zitadel {
 		organization_id: &str,
 		request: ImportHumanUserRequest,
 	) -> Result<String> {
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -743,7 +741,7 @@ impl Zitadel {
 			gender: gender.unwrap_or(Gender::Unspecified).into(),
 		};
 
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -767,7 +765,7 @@ impl Zitadel {
 	) -> Result<UpdateHumanEmailResponse> {
 		let request = UpdateHumanEmailRequest { user_id, email, is_email_verified };
 
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -791,7 +789,7 @@ impl Zitadel {
 	) -> Result<UpdateHumanPhoneResponse> {
 		let request = UpdateHumanPhoneRequest { user_id, phone, is_phone_verified };
 
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -814,7 +812,7 @@ impl Zitadel {
 	) -> Result<UpdateUserNameResponse> {
 		let request = UpdateUserNameRequest { user_id, user_name };
 
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -862,7 +860,7 @@ impl Zitadel {
 			organization_id: &str,
 			request: AddProjectMemberRequest,
 		) -> Result<(), Report<Error>> {
-			let mut request_with_org = tonic::Request::new(request);
+			let mut request_with_org = Request::new(request);
 			request_with_org.metadata_mut().insert(
 				HEADER_ZITADEL_ORGANIZATION_ID,
 				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
@@ -925,7 +923,7 @@ impl Zitadel {
 			project_grant_id: project_grant_id.unwrap_or_default(),
 			role_keys,
 		};
-		let mut request_with_org = tonic::Request::new(add_user_grant_request);
+		let mut request_with_org = Request::new(add_user_grant_request);
 		request_with_org.metadata_mut().insert(
 			HEADER_ZITADEL_ORGANIZATION_ID,
 			organization_id.unwrap_or_default().parse::<AsciiMetadataValue>()?,
@@ -995,7 +993,7 @@ impl Zitadel {
 		}];
 
 		let request = ListUserGrantRequest { queries, ..Default::default() };
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
@@ -1016,7 +1014,7 @@ impl Zitadel {
 			organization_id: String,
 			request: ListProjectRolesRequest,
 		) -> Result<ListProjectRolesResponse, Report<Error>> {
-			let mut request_with_org = tonic::Request::new(request);
+			let mut request_with_org = Request::new(request);
 			request_with_org.metadata_mut().insert(
 				HEADER_ZITADEL_ORGANIZATION_ID,
 				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
@@ -1123,7 +1121,7 @@ impl Zitadel {
 		organization_id: String,
 		request: BulkAddProjectRolesRequest,
 	) -> Result<BulkAddProjectRolesResponse> {
-		let mut request_with_org = tonic::Request::new(request);
+		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
 			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
