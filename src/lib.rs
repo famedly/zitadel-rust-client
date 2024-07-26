@@ -45,8 +45,9 @@ use zitadel::{
 			ListUserGrantRequest, ListUserGrantResponse, RemoveOrgMetadataRequest,
 			RemoveUserGrantRequest, RemoveUserRequest, SetOrgMetadataRequest,
 			SetUserMetadataRequest, UpdateHumanEmailRequest, UpdateHumanEmailResponse,
-			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
-			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
+			UpdateHumanPhoneRequest, UpdateHumanPhoneResponse, UpdateHumanProfileRequest,
+			UpdateHumanProfileResponse, UpdateProjectRequest, UpdateUserGrantRequest,
+			UpdateUserNameRequest, UpdateUserNameResponse,
 		},
 		member::v1::UserIdQuery,
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
@@ -717,73 +718,113 @@ impl Zitadel {
 			.user_id)
 	}
 
-	/*
-		/// Update a human user, returning the update details.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-profile?#update-user-profile-human)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn update_human_user_profile(
-			&self,
-			organization_id: &str,
-			request: UpdateHumanProfileRequest,
-		) -> Result<UpdateHumanProfileResponse, Report<Error>> {
-			let mut request_with_org = tonic::Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			Ok(self
-				.management_client
-				.clone()
-				.update_human_profile(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?
-				.into_inner())
-		}
+	/// Update a human user, returning the update details.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-profile?#update-user-profile-human)
+	#[tracing::instrument(level = "debug", skip_all)]
+	#[allow(clippy::too_many_arguments)]
+	pub async fn update_human_user_profile(
+		&self,
+		organization_id: &str,
+		user_id: String,
+		first_name: String,
+		last_name: String,
+		nick_name: Option<String>,
+		display_name: Option<String>,
+		preferred_language: Option<String>,
+		gender: Option<Gender>,
+	) -> Result<UpdateHumanProfileResponse> {
+		let request = UpdateHumanProfileRequest {
+			user_id,
+			first_name,
+			last_name,
+			nick_name: nick_name.unwrap_or_default(),
+			display_name: display_name.unwrap_or_default(),
+			preferred_language: preferred_language.unwrap_or_default(),
+			gender: gender.unwrap_or(Gender::Unspecified).into(),
+		};
 
-		/// Update a human user email, returning the update details.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-email)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn update_human_user_email(
-			&self,
-			organization_id: &str,
-			request: UpdateHumanEmailRequest,
-		) -> Result<UpdateHumanEmailResponse, Report<Error>> {
-			let mut request_with_org = tonic::Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			Ok(self
-				.management_client
-				.clone()
-				.update_human_email(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?
-				.into_inner())
-		}
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.update_human_profile(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
 
-		/// Update a human user username, returning the update details.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-name)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn update_human_user_name(
-			&self,
-			organization_id: &str,
-			request: UpdateUserNameRequest,
-		) -> Result<UpdateUserNameResponse, Report<Error>> {
-			let mut request_with_org = tonic::Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			Ok(self
-				.management_client
-				.clone()
-				.update_user_name(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?
-				.into_inner())
-		}
-	*/
+	/// Update a human user email, returning the update details.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-email)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn update_human_user_email(
+		&self,
+		organization_id: &str,
+		user_id: String,
+		email: String,
+		is_email_verified: bool,
+	) -> Result<UpdateHumanEmailResponse> {
+		let request = UpdateHumanEmailRequest { user_id, email, is_email_verified };
+
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.update_human_email(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
+
+	/// Update a human user phone number, returning the update details.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-phone)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn update_human_user_phone(
+		&self,
+		organization_id: &str,
+		user_id: String,
+		phone: String,
+		is_phone_verified: bool,
+	) -> Result<UpdateHumanPhoneResponse> {
+		let request = UpdateHumanPhoneRequest { user_id, phone, is_phone_verified };
+
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.update_human_phone(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
+
+	/// Update a human user username, returning the update details.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-name)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn update_human_user_name(
+		&self,
+		organization_id: &str,
+		user_id: String,
+		user_name: String,
+	) -> Result<UpdateUserNameResponse> {
+		let request = UpdateUserNameRequest { user_id, user_name };
+
+		let mut request_with_org = tonic::Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.update_user_name(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
 
 	/// Get user information for the given user ID.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-by-id)
