@@ -43,22 +43,24 @@ use zitadel::{
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
 			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListOrgMetadataRequest,
 			ListOrgMetadataResponse, ListProjectRolesRequest, ListProjectRolesResponse,
-			ListUserGrantRequest, ListUserGrantResponse, RemoveOrgMetadataRequest,
-			RemoveUserGrantRequest, RemoveUserRequest, SetOrgMetadataRequest,
-			SetUserMetadataRequest, UpdateHumanEmailRequest, UpdateHumanEmailResponse,
-			UpdateHumanPhoneRequest, UpdateHumanPhoneResponse, UpdateHumanProfileRequest,
-			UpdateHumanProfileResponse, UpdateProjectRequest, UpdateUserGrantRequest,
-			UpdateUserNameRequest, UpdateUserNameResponse,
+			ListUserGrantRequest, ListUserGrantResponse, ListUsersRequest,
+			RemoveOrgMetadataRequest, RemoveUserGrantRequest, RemoveUserRequest,
+			SetOrgMetadataRequest, SetUserMetadataRequest, UpdateHumanEmailRequest,
+			UpdateHumanEmailResponse, UpdateHumanPhoneRequest, UpdateHumanPhoneResponse,
+			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
+			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
 		},
-		member::v1::UserIdQuery,
+		member::v1::{SearchQuery, UserIdQuery},
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
 		user::v1::{
-			user_grant_query::Query as UserGrantQueryEnum, User, UserGrantQuery,
+			search_query::Query as UserSearchQueryEnum,
+			user_grant_query::Query as UserGrantQueryEnum, NickNameQuery,
+			SearchQuery as UserSearchQuery, User, UserFieldName, UserGrantQuery,
 			UserGrantUserIdQuery,
 		},
-		v1::ListQuery,
+		v1::{ListQuery, ListQueryMethod},
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
 };
@@ -887,6 +889,50 @@ impl Zitadel {
 			Ok(())
 		}
 	*/
+
+	/// Get exactly one user by login name searched over all organizations. The
+	/// request only returns data if the login name matches exactly. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-by-login-name-global)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn get_user_by_nick_name(
+		&self,
+		organization_id: Option<String>,
+		nick_name: String,
+	) -> Result<Option<User>> {
+		let mut request = Request::new(ListUsersRequest {
+			query: None,
+			sorting_column: UserFieldName::CreationDate.into(),
+			queries: vec![zitadel::api::zitadel::user::v1::SearchQuery {
+				query: Some(zitadel::api::zitadel::user::v1::search_query::Query::NickNameQuery(
+					zitadel::api::zitadel::user::v1::NickNameQuery {
+						nick_name,
+						method: ListQueryMethod::In.into(),
+					},
+				)),
+			}],
+		});
+
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
+
+		let mut users = self
+			.management_client
+			.clone()
+			.list_users(self.request_with_auth(request).await?)
+			.await?
+			.into_inner()
+			.result;
+
+		match users.len() {
+			0 => Ok(None),
+			1 => Ok(users.pop()),
+			2.. => Err(error::Error::TooManyResults(
+				users.into_iter().map(|user| "User ID ".to_owned() + &user.id + ", ").collect(),
+			)),
+		}
+	}
 
 	/// Get a user by login name searched over all organizations. The request
 	/// only returns data if the login name matches exactly. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-by-login-name-global)

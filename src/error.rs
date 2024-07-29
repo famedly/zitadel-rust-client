@@ -25,6 +25,8 @@ pub enum Error {
 	MissingMetadata(String),
 	#[error("Failed to parse UTF-8 data: {0}")]
 	FromUtf8Error(#[from] std::string::FromUtf8Error),
+	#[error("Too many results! Got: '{0}'")]
+	TooManyResults(String),
 }
 
 // The `ServiceAccountError` has one error which is exposed as a
