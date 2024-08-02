@@ -43,12 +43,13 @@ use zitadel::{
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
 			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListOrgMetadataRequest,
 			ListOrgMetadataResponse, ListProjectRolesRequest, ListProjectRolesResponse,
-			ListUserGrantRequest, ListUserGrantResponse, ListUsersRequest,
-			RemoveOrgMetadataRequest, RemoveUserGrantRequest, RemoveUserRequest,
-			SetOrgMetadataRequest, SetUserMetadataRequest, UpdateHumanEmailRequest,
-			UpdateHumanEmailResponse, UpdateHumanPhoneRequest, UpdateHumanPhoneResponse,
-			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
-			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
+			ListUserGrantRequest, ListUserGrantResponse, ListUsersRequest, RemoveHumanPhoneRequest,
+			RemoveHumanPhoneResponse, RemoveOrgMetadataRequest, RemoveUserGrantRequest,
+			RemoveUserRequest, SetOrgMetadataRequest, SetUserMetadataRequest,
+			UpdateHumanEmailRequest, UpdateHumanEmailResponse, UpdateHumanPhoneRequest,
+			UpdateHumanPhoneResponse, UpdateHumanProfileRequest, UpdateHumanProfileResponse,
+			UpdateProjectRequest, UpdateUserGrantRequest, UpdateUserNameRequest,
+			UpdateUserNameResponse,
 		},
 		member::v1::{SearchQuery, UserIdQuery},
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
@@ -799,6 +800,28 @@ impl Zitadel {
 			.management_client
 			.clone()
 			.update_human_phone(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner())
+	}
+
+	/// Remove a human user phone number, returning the update details.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-human-phone)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn remove_human_user_phone(
+		&self,
+		organization_id: &str,
+		user_id: String,
+	) -> Result<RemoveHumanPhoneResponse> {
+		let request = RemoveHumanPhoneRequest { user_id };
+
+		let mut request_with_org = Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		Ok(self
+			.management_client
+			.clone()
+			.remove_human_phone(self.request_with_auth(request_with_org).await?)
 			.await?
 			.into_inner())
 	}
