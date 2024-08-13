@@ -26,7 +26,7 @@ pub use zitadel::api::zitadel::{
 		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
 		ImportHumanUserRequest,
 	},
-	user::v1::{user::Type, Gender},
+	user::v1::{user::Type as UserType, Gender},
 };
 use zitadel::{
 	api::zitadel::{
