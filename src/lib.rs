@@ -35,13 +35,15 @@ use zitadel::{
 			GetOrgByIdRequest, ListEventsRequest, ListOrgsRequest, ListOrgsResponse,
 		},
 		auth::v1::{auth_service_client::AuthServiceClient, GetMyUserRequest},
+		idp::v1::IdpUserLink,
 		management::v1::{
 			bulk_set_org_metadata_request::Metadata,
 			management_service_client::ManagementServiceClient, AddProjectMemberRequest,
 			AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
 			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
-			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListOrgMetadataRequest,
+			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanAuthFactorsRequest,
+			ListHumanAuthFactorsResponse, ListHumanLinkedIdPsRequest, ListOrgMetadataRequest,
 			ListOrgMetadataResponse, ListProjectRolesRequest, ListProjectRolesResponse,
 			ListUserGrantRequest, ListUserGrantResponse, ListUsersRequest, RemoveHumanPhoneRequest,
 			RemoveHumanPhoneResponse, RemoveOrgMetadataRequest, RemoveUserGrantRequest,
@@ -1213,6 +1215,21 @@ impl Zitadel {
 			.await?;
 
 		Ok(response.into_inner().id)
+	}
+
+	/// List user IDPs [API
+	/// Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-human-linked-id-ps)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn list_user_idps(&self, user_id: String) -> Result<Vec<IdpUserLink>> {
+		let request = ListHumanLinkedIdPsRequest { user_id, query: None };
+
+		let response = self
+			.management_client
+			.clone()
+			.list_human_linked_id_ps(self.request_with_auth(request).await?)
+			.await?;
+
+		Ok(response.into_inner().result)
 	}
 }
 
