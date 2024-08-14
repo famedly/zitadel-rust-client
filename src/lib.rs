@@ -10,8 +10,6 @@ use std::{
 	sync::Arc,
 };
 
-// use self::clonable_service_interceptor::ClonableServiceAccountInterceptor;
-// use super::Event;
 use error::Result;
 use tokio::sync::RwLock;
 use tonic::{
@@ -1008,45 +1006,37 @@ impl Zitadel {
 			.user_grant_id)
 	}
 
-	/*
-		/// Update a User grant.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-grant)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn update_user_grant(
-			&self,
-			user_id: String,
-			grant_id: String,
-			role_keys: Vec<String>,
-		) -> Result<(), Report<Error>> {
-			self.management_client
-				.clone()
-				.update_user_grant(
-					self.request_with_auth(UpdateUserGrantRequest { user_id, grant_id, role_keys })
-						.await?,
-				)
-				.await
-				.change_context(Error::Zitadel)?;
-			Ok(())
-		}
+	/// Update a User grant.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-grant)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn update_user_grant(
+		&self,
+		user_id: String,
+		grant_id: String,
+		role_keys: Vec<String>,
+	) -> Result<()> {
+		self.management_client
+			.clone()
+			.update_user_grant(
+				self.request_with_auth(UpdateUserGrantRequest { user_id, grant_id, role_keys })
+					.await?,
+			)
+			.await?;
+		Ok(())
+	}
 
-		/// Remove a User grant.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn remove_user_grant(
-			&self,
-			user_id: String,
-			grant_id: String,
-		) -> Result<(), Report<Error>> {
-			self.management_client
-				.clone()
-				.remove_user_grant(
-					self.request_with_auth(RemoveUserGrantRequest { user_id, grant_id }).await?,
-				)
-				.await
-				.change_context(Error::Zitadel)?;
-			Ok(())
-		}
-	*/
+	/// Remove a User grant.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn remove_user_grant(&self, user_id: String, grant_id: String) -> Result<()> {
+		self.management_client
+			.clone()
+			.remove_user_grant(
+				self.request_with_auth(RemoveUserGrantRequest { user_id, grant_id }).await?,
+			)
+			.await?;
+		Ok(())
+	}
 
 	/// Searches User grants. Returns a list of user grants that match the
 	/// search queries. User grants are the roles users have for a specific
