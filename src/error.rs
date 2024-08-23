@@ -42,3 +42,25 @@ impl From<ServiceAccountError> for Error {
 
 /// [`Result`] Alias with error set to [`Error`]
 pub type Result<R> = std::result::Result<R, Error>;
+
+#[cfg(test)]
+mod tests {
+	use zitadel::credentials::ServiceAccountError;
+
+	use super::Error;
+
+	#[test]
+	fn test_recursive_error() {
+		let error = ServiceAccountError::DiscoveryError {
+			source: Box::new(ServiceAccountError::DiscoveryError {
+				source: Box::new(ServiceAccountError::DiscoveryError {
+					source: Box::new(Error::TooManyResults("2".to_owned())),
+				}),
+			}),
+		};
+
+		let message = format!("{}", Error::from(error));
+
+		assert_eq!(message, "Zitadel service account error: could not discover OIDC document: could not discover OIDC document: could not discover OIDC document: Too many results! Got: '2'");
+	}
+}
