@@ -10,7 +10,7 @@ pub enum Error {
 	#[error("Operation timed out: {0}")]
 	TimeoutError(#[from] tokio::time::error::Elapsed),
 	#[error("Zitadel service account error: {0}")]
-	ZitadelServiceAccountError(String),
+	ZitadelServiceAccountError(String, #[source] FakeError),
 	#[error("Url parsing error (url crate): {0}")]
 	UrlParseError(#[from] url::ParseError),
 	#[error("Url parsing error (hyper/http crate): {0}")]
@@ -29,14 +29,33 @@ pub enum Error {
 	TooManyResults(String),
 }
 
-// The `ServiceAccountError` has one error which is exposed as a
-// `Box<dyn Error>`, and therefore doesn't implement `Sync` - to allow
-// our error to be used in async-heavy crates, that therefore means we
-// need to not embed the underlying error, and implement our own
-// `From` impl without `thiserror`.
+/// A fake source error that allows unwrapping a real error with
+/// nested sources into nested errors with messages.
+///
+/// Exists to circumvent issues with errors that are not Send + Sync.
+#[derive(Debug, Error)]
+#[error("{message}")]
+pub struct FakeError {
+	/// The error message of this error
+	message: String,
+	/// The nested source of this error
+	source: Option<Box<FakeError>>,
+}
+
+impl FakeError {
+	/// Create a FakeError from an error and its sources
+	fn from_error_sources<'a>(head: &'a (dyn std::error::Error + 'static)) -> Self {
+		let source = anyhow::Chain::new(head).fold(None, |fake, error| {
+			Some(Box::new(FakeError { message: error.to_string(), source: fake }))
+		});
+
+		FakeError { message: head.to_string(), source }
+	}
+}
+
 impl From<ServiceAccountError> for Error {
 	fn from(error: ServiceAccountError) -> Self {
-		Self::ZitadelServiceAccountError(error.to_string())
+		Self::ZitadelServiceAccountError(error.to_string(), FakeError::from_error_sources(&error))
 	}
 }
 

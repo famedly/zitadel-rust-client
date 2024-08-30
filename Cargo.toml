@@ -28,6 +28,7 @@ hyper-proxy = { version = "0.9.1", default-features = false, features = [
 ] }
 url = { version = "2.5.2", features = ["serde"] }
 headers = "0.3"
+anyhow = "1.0.86"
 
 [lints.rust]
 dead_code = "warn"
