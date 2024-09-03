@@ -9,7 +9,7 @@ publish = ["famedly"]
 [dependencies]
 time = { version = "0.3.36", features = ["serde"] }
 tonic = { version = "0.11.0", features = ["channel"] }
-zitadel = { version = "4.3.5", features = [
+zitadel = { version = "=4.3.5", features = [
   "credentials",
   "api",
   "interceptors",
