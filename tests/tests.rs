@@ -6,5 +6,3 @@
 	clippy::print_stdout,
 	clippy::unwrap_used
 )]
-
-// TODO: write tests

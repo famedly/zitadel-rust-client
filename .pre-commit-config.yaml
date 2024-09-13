@@ -18,6 +18,6 @@ repos:
     -   id: fmt
     -   id: clippy
 -   repo: https://github.com/crate-ci/typos
-    rev: v1.23.5
+    rev: v1.24.5
     hooks:
     -   id: typos

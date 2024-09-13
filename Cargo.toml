@@ -8,12 +8,6 @@ publish = ["famedly"]
 
 [dependencies]
 time = { version = "0.3.36", features = ["serde"] }
-tonic = { version = "0.11.0", features = ["channel"] }
-zitadel = { version = "=4.3.5", features = [
-  "credentials",
-  "api",
-  "interceptors",
-] }
 tokio = { version = "1.35.1", features = [
     "macros",
     "rt-multi-thread",
@@ -21,14 +15,12 @@ tokio = { version = "1.35.1", features = [
 ] }
 tracing = "0.1.40"
 thiserror = "1.0.61"
-proxyvars = "0.1.3"
-hyper = "0.14"
-hyper-proxy = { version = "0.9.1", default-features = false, features = [
-  "rustls",
-] }
 url = { version = "2.5.2", features = ["serde"] }
-headers = "0.3"
-anyhow = "1.0.86"
+jsonwebtoken = "9.3.0"
+serde_json = "1.0.128"
+serde = "1.0.210"
+reqwest = { version = "0.12.7", features = ["json"] }
+anyhow = "1.0.87"
 
 [lints.rust]
 dead_code = "warn"
@@ -119,3 +111,6 @@ unwrap_used = "warn"
 used_underscore_binding = "warn"
 useless_let_if_seq = "warn"
 verbose_file_reads = "warn"
+
+[dev-dependencies]
+test-log = { version = "0.2.16", features = ["trace", "unstable"] }
