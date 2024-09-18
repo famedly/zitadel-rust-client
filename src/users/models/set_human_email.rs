@@ -9,8 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,7 +26,7 @@ pub struct SetHumanEmail {
 
 impl SetHumanEmail {
 	pub fn new(email: String) -> SetHumanEmail {
-		SetHumanEmail { email: email, send_code: None, return_code: None, is_verified: None }
+		SetHumanEmail { email, send_code: None, return_code: None, is_verified: None }
 	}
 
 	pub fn set_email(&mut self, email: String) {

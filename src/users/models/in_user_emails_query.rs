@@ -9,14 +9,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// InUserEmailsQuery : Query for users with email in list of emails.
 
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct InUserEmailsQuery {
 	/// the emails of the users to include
 	#[serde(rename = "userEmails")]

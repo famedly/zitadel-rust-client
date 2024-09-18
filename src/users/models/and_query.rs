@@ -9,14 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// AndQuery : Connect multiple sub-condition with and AND operator.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct AndQuery {
 	/// the sub queries to 'AND'
 	#[serde(rename = "queries")]

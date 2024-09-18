@@ -9,12 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UserServiceAddIdpLinkBody {
 	#[serde(rename = "idpLink")]
 	idp_link: Option<models::IdpLink>,

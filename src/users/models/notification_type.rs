@@ -9,24 +9,29 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum NotificationType {
+	#[serde(rename = "NOTIFICATION_TYPE_Unspecified")]
+	Unspecified,
+	#[serde(rename = "NOTIFICATION_TYPE_Email")]
+	Email,
+	#[serde(rename = "NOTIFICATION_TYPE_SMS")]
+	Sms,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NotificationType {}
-
-impl NotificationType {
-	pub fn new() -> NotificationType {
-		NotificationType {}
+impl std::fmt::Display for NotificationType {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "NOTIFICATION_TYPE_Unspecified"),
+			Self::Email => write!(f, "NOTIFICATION_TYPE_Email"),
+			Self::Sms => write!(f, "NOTIFICATION_TYPE_SMS"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2NotificationType
-//const (
-//
-//
-//
-//)
+impl Default for NotificationType {
+	fn default() -> NotificationType {
+		Self::Unspecified
+	}
+}

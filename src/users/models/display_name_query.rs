@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// DisplayNameQuery : Query for users with a specific display name.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,7 +24,7 @@ pub struct DisplayNameQuery {
 impl DisplayNameQuery {
 	/// Query for users with a specific display name.
 	pub fn new(display_name: String) -> DisplayNameQuery {
-		DisplayNameQuery { display_name: display_name, method: None }
+		DisplayNameQuery { display_name, method: None }
 	}
 
 	pub fn set_display_name(&mut self, display_name: String) {

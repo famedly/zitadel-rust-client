@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// StateQuery : Query for users with a specific state.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -26,7 +22,7 @@ pub struct StateQuery {
 impl StateQuery {
 	/// Query for users with a specific state.
 	pub fn new(state: models::UserState) -> StateQuery {
-		StateQuery { state: state }
+		StateQuery { state }
 	}
 
 	pub fn set_state(&mut self, state: models::UserState) {

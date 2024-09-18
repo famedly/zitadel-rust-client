@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SetMetadataEntry {
@@ -25,7 +21,7 @@ pub struct SetMetadataEntry {
 
 impl SetMetadataEntry {
 	pub fn new(key: String, value: String) -> SetMetadataEntry {
-		SetMetadataEntry { key: key, value: value }
+		SetMetadataEntry { key, value }
 	}
 
 	pub fn set_key(&mut self, key: String) {

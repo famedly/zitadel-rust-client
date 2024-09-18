@@ -9,24 +9,38 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum UserState {
+	#[serde(rename = "USER_STATE_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "USER_STATE_ACTIVE")]
+	Active,
+	#[serde(rename = "USER_STATE_INACTIVE")]
+	Inactive,
+	#[serde(rename = "USER_STATE_DELETED")]
+	Deleted,
+	#[serde(rename = "USER_STATE_LOCKED")]
+	Locked,
+	#[serde(rename = "USER_STATE_INITIAL")]
+	Initial,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserState {}
-
-impl UserState {
-	pub fn new() -> UserState {
-		UserState {}
+impl std::fmt::Display for UserState {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "USER_STATE_UNSPECIFIED"),
+			Self::Active => write!(f, "USER_STATE_ACTIVE"),
+			Self::Inactive => write!(f, "USER_STATE_INACTIVE"),
+			Self::Deleted => write!(f, "USER_STATE_DELETED"),
+			Self::Locked => write!(f, "USER_STATE_LOCKED"),
+			Self::Initial => write!(f, "USER_STATE_INITIAL"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2UserState
-//const (
-//
-//
-//
-//)
+impl Default for UserState {
+	fn default() -> UserState {
+		Self::Unspecified
+	}
+}

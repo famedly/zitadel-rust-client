@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserServiceVerifyTotpRegistrationBody {
@@ -23,7 +19,7 @@ pub struct UserServiceVerifyTotpRegistrationBody {
 
 impl UserServiceVerifyTotpRegistrationBody {
 	pub fn new(code: String) -> UserServiceVerifyTotpRegistrationBody {
-		UserServiceVerifyTotpRegistrationBody { code: code }
+		UserServiceVerifyTotpRegistrationBody { code }
 	}
 
 	pub fn set_code(&mut self, code: String) {

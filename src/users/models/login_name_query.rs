@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// LoginNameQuery : Query for users with a specific state.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,7 +24,7 @@ pub struct LoginNameQuery {
 impl LoginNameQuery {
 	/// Query for users with a specific state.
 	pub fn new(login_name: String) -> LoginNameQuery {
-		LoginNameQuery { login_name: login_name, method: None }
+		LoginNameQuery { login_name, method: None }
 	}
 
 	pub fn set_login_name(&mut self, login_name: String) {

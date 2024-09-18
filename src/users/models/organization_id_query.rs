@@ -9,13 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// OrganizationIdQuery : Query for users under a specific organization as
-/// resource owner.
-
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OrganizationIdQuery {
@@ -26,7 +19,7 @@ pub struct OrganizationIdQuery {
 impl OrganizationIdQuery {
 	/// Query for users under a specific organization as resource owner.
 	pub fn new(organization_id: String) -> OrganizationIdQuery {
-		OrganizationIdQuery { organization_id: organization_id }
+		OrganizationIdQuery { organization_id }
 	}
 
 	pub fn set_organization_id(&mut self, organization_id: String) {

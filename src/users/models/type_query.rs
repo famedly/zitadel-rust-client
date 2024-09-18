@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// TypeQuery : Query for users with a specific type.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -20,25 +16,25 @@ use crate::users::models;
 pub struct TypeQuery {
 	/// the type of the user
 	#[serde(rename = "type")]
-	_type: models::Userv2Type,
+	user_type: models::Userv2Type,
 }
 
 impl TypeQuery {
 	/// Query for users with a specific type.
-	pub fn new(_type: models::Userv2Type) -> TypeQuery {
-		TypeQuery { _type: _type }
+	pub fn new(user_type: models::Userv2Type) -> TypeQuery {
+		TypeQuery { user_type }
 	}
 
-	pub fn set_type(&mut self, _type: models::Userv2Type) {
-		self._type = _type;
+	pub fn set_user_type(&mut self, user_type: models::Userv2Type) {
+		self.user_type = user_type;
 	}
 
-	pub fn with_type(mut self, _type: models::Userv2Type) -> TypeQuery {
-		self._type = _type;
+	pub fn with_user_type(mut self, user_type: models::Userv2Type) -> TypeQuery {
+		self.user_type = user_type;
 		self
 	}
 
-	pub fn _type(&self) -> &models::Userv2Type {
-		&self._type
+	pub fn user_type(&self) -> &models::Userv2Type {
+		&self.user_type
 	}
 }

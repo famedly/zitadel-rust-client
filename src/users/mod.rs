@@ -1,6 +1,6 @@
 mod models;
 use anyhow::{Context, Result};
-use models::*;
+pub use models::*;
 
 use super::Zitadel;
 
@@ -12,7 +12,7 @@ impl Zitadel {
 	) -> Result<AddHumanUserResponse> {
 		let request = self
 			.client
-			.post(self.make_url("v2/users/human"))
+			.post(self.make_url("v2/users/human")?)
 			.json(&user)
 			.build()
 			.context("Error building create_human_user request")?;

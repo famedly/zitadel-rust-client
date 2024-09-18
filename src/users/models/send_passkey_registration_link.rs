@@ -9,12 +9,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SendPasskeyRegistrationLink {
 	/// \"Optionally set a url_template, which will be used in the mail sent by
 	/// ZITADEL to guide the user to your passkey registration page. If no

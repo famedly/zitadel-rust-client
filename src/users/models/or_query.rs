@@ -9,14 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// OrQuery : Connect multiple sub-condition with and OR operator.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct OrQuery {
 	/// the sub queries to 'OR'
 	#[serde(rename = "queries")]

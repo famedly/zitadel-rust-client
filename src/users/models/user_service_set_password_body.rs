@@ -9,8 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -27,11 +25,7 @@ pub struct UserServiceSetPasswordBody {
 
 impl UserServiceSetPasswordBody {
 	pub fn new(current_password: String, verification_code: String) -> UserServiceSetPasswordBody {
-		UserServiceSetPasswordBody {
-			new_password: None,
-			current_password: current_password,
-			verification_code: verification_code,
-		}
+		UserServiceSetPasswordBody { new_password: None, current_password, verification_code }
 	}
 
 	pub fn set_new_password(&mut self, new_password: models::Password) {

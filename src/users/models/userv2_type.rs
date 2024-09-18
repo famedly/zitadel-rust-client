@@ -9,24 +9,29 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum Userv2Type {
+	#[serde(rename = "TYPE_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "TYPE_HUMAN")]
+	Human,
+	#[serde(rename = "TYPE_MACHINE")]
+	Machine,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Userv2Type {}
-
-impl Userv2Type {
-	pub fn new() -> Userv2Type {
-		Userv2Type {}
+impl std::fmt::Display for Userv2Type {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "TYPE_UNSPECIFIED"),
+			Self::Human => write!(f, "TYPE_HUMAN"),
+			Self::Machine => write!(f, "TYPE_MACHINE"),
+		}
 	}
 }
 
-// TODO enum
-// List of userv2Type
-//const (
-//
-//
-//
-//)
+impl Default for Userv2Type {
+	fn default() -> Userv2Type {
+		Self::Unspecified
+	}
+}

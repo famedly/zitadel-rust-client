@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// EmailQuery : Query for users with a specific email.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -29,7 +25,7 @@ pub struct EmailQuery {
 impl EmailQuery {
 	/// Query for users with a specific email.
 	pub fn new(email_address: String) -> EmailQuery {
-		EmailQuery { email_address: email_address, method: None }
+		EmailQuery { email_address, method: None }
 	}
 
 	pub fn set_email_address(&mut self, email_address: String) {

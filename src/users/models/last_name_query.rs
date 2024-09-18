@@ -9,14 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// LastNameQuery : Query for users with a specific last name.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct LastNameQuery {
 	#[serde(rename = "lastName")]
 	last_name: String,
@@ -28,7 +24,7 @@ pub struct LastNameQuery {
 impl LastNameQuery {
 	/// Query for users with a specific last name.
 	pub fn new(last_name: String) -> LastNameQuery {
-		LastNameQuery { last_name: last_name, method: None }
+		LastNameQuery { last_name, method: None }
 	}
 
 	pub fn set_last_name(&mut self, last_name: String) {

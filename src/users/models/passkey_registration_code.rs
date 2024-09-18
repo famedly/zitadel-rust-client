@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PasskeyRegistrationCode {
@@ -26,7 +22,7 @@ pub struct PasskeyRegistrationCode {
 
 impl PasskeyRegistrationCode {
 	pub fn new(id: String, code: String) -> PasskeyRegistrationCode {
-		PasskeyRegistrationCode { id: id, code: code }
+		PasskeyRegistrationCode { id, code }
 	}
 
 	pub fn set_id(&mut self, id: String) {

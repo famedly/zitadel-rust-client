@@ -9,13 +9,11 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Userv2SetPassword {
+pub struct UpdateHumanUserPassword {
 	#[serde(rename = "password")]
 	password: Option<models::Password>,
 	#[serde(rename = "hashedPassword")]
@@ -27,13 +25,13 @@ pub struct Userv2SetPassword {
 	verification_code: String,
 }
 
-impl Userv2SetPassword {
-	pub fn new(current_password: String, verification_code: String) -> Userv2SetPassword {
-		Userv2SetPassword {
+impl UpdateHumanUserPassword {
+	pub fn new(current_password: String, verification_code: String) -> UpdateHumanUserPassword {
+		UpdateHumanUserPassword {
 			password: None,
 			hashed_password: None,
-			current_password: current_password,
-			verification_code: verification_code,
+			current_password,
+			verification_code,
 		}
 	}
 
@@ -41,7 +39,7 @@ impl Userv2SetPassword {
 		self.password = Some(password);
 	}
 
-	pub fn with_password(mut self, password: models::Password) -> Userv2SetPassword {
+	pub fn with_password(mut self, password: models::Password) -> UpdateHumanUserPassword {
 		self.password = Some(password);
 		self
 	}
@@ -61,7 +59,7 @@ impl Userv2SetPassword {
 	pub fn with_hashed_password(
 		mut self,
 		hashed_password: models::HashedPassword,
-	) -> Userv2SetPassword {
+	) -> UpdateHumanUserPassword {
 		self.hashed_password = Some(hashed_password);
 		self
 	}
@@ -78,7 +76,7 @@ impl Userv2SetPassword {
 		self.current_password = current_password;
 	}
 
-	pub fn with_current_password(mut self, current_password: String) -> Userv2SetPassword {
+	pub fn with_current_password(mut self, current_password: String) -> UpdateHumanUserPassword {
 		self.current_password = current_password;
 		self
 	}
@@ -91,7 +89,7 @@ impl Userv2SetPassword {
 		self.verification_code = verification_code;
 	}
 
-	pub fn with_verification_code(mut self, verification_code: String) -> Userv2SetPassword {
+	pub fn with_verification_code(mut self, verification_code: String) -> UpdateHumanUserPassword {
 		self.verification_code = verification_code;
 		self
 	}

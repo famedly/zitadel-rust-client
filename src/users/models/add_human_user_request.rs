@@ -9,8 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -55,8 +53,8 @@ impl AddHumanUserRequest {
 			user_id: None,
 			username: None,
 			organization: None,
-			profile: profile,
-			email: email,
+			profile,
+			email,
 			phone: None,
 			metadata: None,
 			password: None,

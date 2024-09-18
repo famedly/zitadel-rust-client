@@ -9,12 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SearchQuery {
 	#[serde(rename = "userNameQuery")]
 	user_name_query: Option<models::UserNameQuery>,

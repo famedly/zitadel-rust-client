@@ -9,24 +9,32 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum AuthFactorState {
+	#[serde(rename = "AUTH_FACTOR_STATE_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "AUTH_FACTOR_STATE_NOT_READY")]
+	NotReady,
+	#[serde(rename = "AUTH_FACTOR_STATE_READY")]
+	Ready,
+	#[serde(rename = "AUTH_FACTOR_STATE_REMOVED")]
+	Removed,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthFactorState {}
-
-impl AuthFactorState {
-	pub fn new() -> AuthFactorState {
-		AuthFactorState {}
+impl std::fmt::Display for AuthFactorState {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "AUTH_FACTOR_STATE_UNSPECIFIED"),
+			Self::NotReady => write!(f, "AUTH_FACTOR_STATE_NOT_READY"),
+			Self::Ready => write!(f, "AUTH_FACTOR_STATE_READY"),
+			Self::Removed => write!(f, "AUTH_FACTOR_STATE_REMOVED"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2AuthFactorState
-//const (
-//
-//
-//
-//)
+impl Default for AuthFactorState {
+	fn default() -> AuthFactorState {
+		Self::Unspecified
+	}
+}

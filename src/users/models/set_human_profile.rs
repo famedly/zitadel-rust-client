@@ -9,8 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -33,8 +31,8 @@ pub struct SetHumanProfile {
 impl SetHumanProfile {
 	pub fn new(given_name: String, family_name: String) -> SetHumanProfile {
 		SetHumanProfile {
-			given_name: given_name,
-			family_name: family_name,
+			given_name,
+			family_name,
 			nick_name: None,
 			display_name: None,
 			preferred_language: None,

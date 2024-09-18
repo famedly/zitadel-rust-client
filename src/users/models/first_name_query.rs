@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// FirstNameQuery : Query for users with a specific first name.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,7 +24,7 @@ pub struct FirstNameQuery {
 impl FirstNameQuery {
 	/// Query for users with a specific first name.
 	pub fn new(first_name: String) -> FirstNameQuery {
-		FirstNameQuery { first_name: first_name, method: None }
+		FirstNameQuery { first_name, method: None }
 	}
 
 	pub fn set_first_name(&mut self, first_name: String) {

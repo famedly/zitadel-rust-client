@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserServiceVerifyEmailBody {
@@ -23,7 +19,7 @@ pub struct UserServiceVerifyEmailBody {
 
 impl UserServiceVerifyEmailBody {
 	pub fn new(verification_code: String) -> UserServiceVerifyEmailBody {
-		UserServiceVerifyEmailBody { verification_code: verification_code }
+		UserServiceVerifyEmailBody { verification_code }
 	}
 
 	pub fn set_verification_code(&mut self, verification_code: String) {

@@ -9,24 +9,26 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum AccessTokenType {
+	#[serde(rename = "ACCESS_TOKEN_TYPE_BEARER")]
+	Bearer,
+	#[serde(rename = "ACCESS_TOKEN_TYPE_JWT")]
+	Jwt,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AccessTokenType {}
-
-impl AccessTokenType {
-	pub fn new() -> AccessTokenType {
-		AccessTokenType {}
+impl std::fmt::Display for AccessTokenType {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Bearer => write!(f, "ACCESS_TOKEN_TYPE_BEARER"),
+			Self::Jwt => write!(f, "ACCESS_TOKEN_TYPE_JWT"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2AccessTokenType
-//const (
-//
-//
-//
-//)
+impl Default for AccessTokenType {
+	fn default() -> AccessTokenType {
+		Self::Bearer
+	}
+}

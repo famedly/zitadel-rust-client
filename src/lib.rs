@@ -20,7 +20,7 @@ pub struct Zitadel {
 	/// Token for performing the requests as a service account
 	token: Token,
 	/// Zitadel domain
-	domain: String,
+	domain: Url,
 	/// Client for performing the requests
 	client: Client,
 }
@@ -34,7 +34,7 @@ impl Zitadel {
 		let client = Client::new();
 		let token = Token::new(&url, &service_account_file, client.clone()).await?;
 
-		Ok(Self { token, domain: url.as_str().to_owned(), client })
+		Ok(Self { token, domain: url, client })
 	}
 
 	/// Send the request to zitadel server and returns the body of the request
@@ -68,7 +68,7 @@ impl Zitadel {
 	}
 
 	/// Crates the full url using the provided endpoint path
-	fn make_url(&self, endpoint: &str) -> String {
-		format!("{}{endpoint}", self.domain)
+	fn make_url(&self, endpoint: &str) -> Result<Url> {
+		self.domain.join(endpoint).context("Invalid relative path for the url")
 	}
 }

@@ -9,24 +9,44 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum AuthenticationMethodType {
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_PASSWORD")]
+	Password,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_PASSKEY")]
+	Passkey,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_IDP")]
+	Idp,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_TOTP")]
+	Totp,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_U2F")]
+	U2F,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_OTP_SMS")]
+	OtpSms,
+	#[serde(rename = "AUTHENTICATION_METHOD_TYPE_OTP_EMAIL")]
+	OtpEmail,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AuthenticationMethodType {}
-
-impl AuthenticationMethodType {
-	pub fn new() -> AuthenticationMethodType {
-		AuthenticationMethodType {}
+impl std::fmt::Display for AuthenticationMethodType {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "AUTHENTICATION_METHOD_TYPE_UNSPECIFIED"),
+			Self::Password => write!(f, "AUTHENTICATION_METHOD_TYPE_PASSWORD"),
+			Self::Passkey => write!(f, "AUTHENTICATION_METHOD_TYPE_PASSKEY"),
+			Self::Idp => write!(f, "AUTHENTICATION_METHOD_TYPE_IDP"),
+			Self::Totp => write!(f, "AUTHENTICATION_METHOD_TYPE_TOTP"),
+			Self::U2F => write!(f, "AUTHENTICATION_METHOD_TYPE_U2F"),
+			Self::OtpSms => write!(f, "AUTHENTICATION_METHOD_TYPE_OTP_SMS"),
+			Self::OtpEmail => write!(f, "AUTHENTICATION_METHOD_TYPE_OTP_EMAIL"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2AuthenticationMethodType
-//const (
-//
-//
-//
-//)
+impl Default for AuthenticationMethodType {
+	fn default() -> AuthenticationMethodType {
+		Self::Unspecified
+	}
+}

@@ -9,24 +9,32 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum Gender {
+	#[serde(rename = "GENDER_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "GENDER_FEMALE")]
+	Female,
+	#[serde(rename = "GENDER_MALE")]
+	Male,
+	#[serde(rename = "GENDER_DIVERSE")]
+	Diverse,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Gender {}
-
-impl Gender {
-	pub fn new() -> Gender {
-		Gender {}
+impl std::fmt::Display for Gender {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "GENDER_UNSPECIFIED"),
+			Self::Female => write!(f, "GENDER_FEMALE"),
+			Self::Male => write!(f, "GENDER_MALE"),
+			Self::Diverse => write!(f, "GENDER_DIVERSE"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2Gender
-//const (
-//
-//
-//
-//)
+impl Default for Gender {
+	fn default() -> Gender {
+		Self::Unspecified
+	}
+}

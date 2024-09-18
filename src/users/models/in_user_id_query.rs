@@ -9,14 +9,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// InUserIdQuery : Query for users with ID in list of IDs.
 
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct InUserIdQuery {
 	/// the ids of the users to include
 	#[serde(rename = "userIds")]

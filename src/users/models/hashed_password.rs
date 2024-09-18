@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HashedPassword {
@@ -25,7 +21,7 @@ pub struct HashedPassword {
 
 impl HashedPassword {
 	pub fn new(hash: String) -> HashedPassword {
-		HashedPassword { hash: hash, change_required: None }
+		HashedPassword { hash, change_required: None }
 	}
 
 	pub fn set_hash(&mut self, hash: String) {

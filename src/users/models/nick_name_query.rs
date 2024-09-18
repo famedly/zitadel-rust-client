@@ -9,10 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// NickNameQuery : Query for users with a specific nickname.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,7 +24,7 @@ pub struct NickNameQuery {
 impl NickNameQuery {
 	/// Query for users with a specific nickname.
 	pub fn new(nick_name: String) -> NickNameQuery {
-		NickNameQuery { nick_name: nick_name, method: None }
+		NickNameQuery { nick_name, method: None }
 	}
 
 	pub fn set_nick_name(&mut self, nick_name: String) {

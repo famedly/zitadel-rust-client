@@ -9,12 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UserServicePasswordResetBody {
 	#[serde(rename = "sendLink")]
 	send_link: Option<models::SendPasswordResetLink>,

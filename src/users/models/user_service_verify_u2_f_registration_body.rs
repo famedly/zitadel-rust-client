@@ -9,10 +9,7 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
 use serde_json::Value;
-
-use crate::users::models;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserServiceVerifyU2FRegistrationBody {
@@ -28,10 +25,7 @@ impl UserServiceVerifyU2FRegistrationBody {
 		public_key_credential: Value,
 		token_name: String,
 	) -> UserServiceVerifyU2FRegistrationBody {
-		UserServiceVerifyU2FRegistrationBody {
-			public_key_credential: public_key_credential,
-			token_name: token_name,
-		}
+		UserServiceVerifyU2FRegistrationBody { public_key_credential, token_name }
 	}
 
 	pub fn set_public_key_credential(&mut self, public_key_credential: Value) {

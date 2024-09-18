@@ -1,45 +1,20 @@
 #![allow(dead_code)]
-#![allow(clippy::new_without_default)]
-#![allow(clippy::used_underscore_binding)]
 #![allow(unused_imports)]
-#![allow(clippy::redundant_field_names)]
 
-mod protobuf_any;
-pub use self::protobuf_any::ProtobufAny;
-mod protobuf_null_value;
-pub use self::protobuf_null_value::ProtobufNullValue;
-mod rpc_status;
-pub use self::rpc_status::RpcStatus;
 mod user_service_add_idp_link_body;
 pub use self::user_service_add_idp_link_body::UserServiceAddIdpLinkBody;
-mod user_service_add_otp_email_body;
-pub use self::user_service_add_otp_email_body::UserServiceAddOtpEmailBody;
-mod user_service_add_otpsms_body;
-pub use self::user_service_add_otpsms_body::UserServiceAddOtpsmsBody;
 mod user_service_create_passkey_registration_link_body;
 pub use self::user_service_create_passkey_registration_link_body::UserServiceCreatePasskeyRegistrationLinkBody;
-mod user_service_deactivate_user_body;
-pub use self::user_service_deactivate_user_body::UserServiceDeactivateUserBody;
 mod user_service_list_idp_links_body;
 pub use self::user_service_list_idp_links_body::UserServiceListIdpLinksBody;
 mod user_service_list_passkeys_body;
 pub use self::user_service_list_passkeys_body::UserServiceListPasskeysBody;
-mod user_service_lock_user_body;
-pub use self::user_service_lock_user_body::UserServiceLockUserBody;
 mod user_service_password_reset_body;
 pub use self::user_service_password_reset_body::UserServicePasswordResetBody;
-mod user_service_reactivate_user_body;
-pub use self::user_service_reactivate_user_body::UserServiceReactivateUserBody;
 mod user_service_register_passkey_body;
 pub use self::user_service_register_passkey_body::UserServiceRegisterPasskeyBody;
-mod user_service_register_totp_body;
-pub use self::user_service_register_totp_body::UserServiceRegisterTotpBody;
 mod user_service_register_u2_f_body;
 pub use self::user_service_register_u2_f_body::UserServiceRegisterU2FBody;
-mod user_service_remove_idp_link_body;
-pub use self::user_service_remove_idp_link_body::UserServiceRemoveIdpLinkBody;
-mod user_service_remove_phone_body;
-pub use self::user_service_remove_phone_body::UserServiceRemovePhoneBody;
 mod user_service_resend_email_code_body;
 pub use self::user_service_resend_email_code_body::UserServiceResendEmailCodeBody;
 mod user_service_resend_phone_code_body;
@@ -50,8 +25,6 @@ mod user_service_set_email_body;
 pub use self::user_service_set_email_body::UserServiceSetEmailBody;
 mod user_service_set_phone_body;
 pub use self::user_service_set_phone_body::UserServiceSetPhoneBody;
-mod user_service_unlock_user_body;
-pub use self::user_service_unlock_user_body::UserServiceUnlockUserBody;
 mod user_service_verify_email_body;
 pub use self::user_service_verify_email_body::UserServiceVerifyEmailBody;
 mod user_service_verify_passkey_registration_body;
@@ -62,14 +35,16 @@ mod user_service_verify_totp_registration_body;
 pub use self::user_service_verify_totp_registration_body::UserServiceVerifyTotpRegistrationBody;
 mod user_service_verify_u2_f_registration_body;
 pub use self::user_service_verify_u2_f_registration_body::UserServiceVerifyU2FRegistrationBody;
-mod userv2_set_password;
-pub use self::userv2_set_password::Userv2SetPassword;
 mod userv2_type;
 pub use self::userv2_type::Userv2Type;
 mod access_token_type;
 pub use self::access_token_type::AccessTokenType;
 mod add_human_user_request;
 pub use self::add_human_user_request::AddHumanUserRequest;
+mod update_human_user_password;
+pub use self::update_human_user_password::UpdateHumanUserPassword;
+mod update_human_user_request;
+pub use self::update_human_user_request::UpdateHumanUserRequest;
 mod add_human_user_response;
 pub use self::add_human_user_response::AddHumanUserResponse;
 mod add_idp_link_response;
@@ -204,12 +179,16 @@ mod resend_phone_code_response;
 pub use self::resend_phone_code_response::ResendPhoneCodeResponse;
 mod retrieve_identity_provider_intent_response;
 pub use self::retrieve_identity_provider_intent_response::RetrieveIdentityProviderIntentResponse;
+// TODO: This types are declared empty on the proto definition. Should we keep
+// it?
 mod return_email_verification_code;
 pub use self::return_email_verification_code::ReturnEmailVerificationCode;
 mod return_passkey_registration_code;
 pub use self::return_passkey_registration_code::ReturnPasskeyRegistrationCode;
 mod return_password_reset_code;
 pub use self::return_password_reset_code::ReturnPasswordResetCode;
+// TODO: This types are declared empty on the proto definition. Should we keep
+// it?
 mod return_phone_verification_code;
 pub use self::return_phone_verification_code::ReturnPhoneVerificationCode;
 mod search_query;
@@ -220,6 +199,8 @@ mod send_passkey_registration_link;
 pub use self::send_passkey_registration_link::SendPasskeyRegistrationLink;
 mod send_password_reset_link;
 pub use self::send_password_reset_link::SendPasswordResetLink;
+// TODO: This types are declared empty on the proto definition. Should we keep
+// it?
 mod send_phone_verification_code;
 pub use self::send_phone_verification_code::SendPhoneVerificationCode;
 mod set_email_response;
@@ -270,6 +251,3 @@ mod verify_totp_registration_response;
 pub use self::verify_totp_registration_response::VerifyTotpRegistrationResponse;
 mod verify_u2_f_registration_response;
 pub use self::verify_u2_f_registration_response::VerifyU2FRegistrationResponse;
-
-// TODO(farcaller): sort out files
-pub struct File;

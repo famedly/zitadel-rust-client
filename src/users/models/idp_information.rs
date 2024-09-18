@@ -9,12 +9,11 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
 use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct IdpInformation {
 	/// OAuth/OIDC access (and id_token) returned by the identity provider
 	#[serde(rename = "oauth")]

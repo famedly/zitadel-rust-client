@@ -9,15 +9,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// ListQuery : Object unspecific list filters like offset, limit and
-/// asc/desc.
 
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::users::models;
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ListQuery {
 	#[serde(rename = "offset")]
 	offset: Option<String>,

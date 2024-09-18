@@ -9,24 +9,44 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum TextQueryMethod {
+	#[serde(rename = "TEXT_QUERY_METHOD_EQUALS")]
+	Equals,
+	#[serde(rename = "TEXT_QUERY_METHOD_EQUALS_IGNORE_CASE")]
+	EqualsIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_STARTS_WITH")]
+	StartsWith,
+	#[serde(rename = "TEXT_QUERY_METHOD_STARTS_WITH_IGNORE_CASE")]
+	StartsWithIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_CONTAINS")]
+	Contains,
+	#[serde(rename = "TEXT_QUERY_METHOD_CONTAINS_IGNORE_CASE")]
+	ContainsIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_ENDS_WITH")]
+	EndsWith,
+	#[serde(rename = "TEXT_QUERY_METHOD_ENDS_WITH_IGNORE_CASE")]
+	EndsWithIgnoreCase,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TextQueryMethod {}
-
-impl TextQueryMethod {
-	pub fn new() -> TextQueryMethod {
-		TextQueryMethod {}
+impl std::fmt::Display for TextQueryMethod {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Equals => write!(f, "TEXT_QUERY_METHOD_EQUALS"),
+			Self::EqualsIgnoreCase => write!(f, "TEXT_QUERY_METHOD_EQUALS_IGNORE_CASE"),
+			Self::StartsWith => write!(f, "TEXT_QUERY_METHOD_STARTS_WITH"),
+			Self::StartsWithIgnoreCase => write!(f, "TEXT_QUERY_METHOD_STARTS_WITH_IGNORE_CASE"),
+			Self::Contains => write!(f, "TEXT_QUERY_METHOD_CONTAINS"),
+			Self::ContainsIgnoreCase => write!(f, "TEXT_QUERY_METHOD_CONTAINS_IGNORE_CASE"),
+			Self::EndsWith => write!(f, "TEXT_QUERY_METHOD_ENDS_WITH"),
+			Self::EndsWithIgnoreCase => write!(f, "TEXT_QUERY_METHOD_ENDS_WITH_IGNORE_CASE"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2TextQueryMethod
-//const (
-//
-//
-//
-//)
+impl Default for TextQueryMethod {
+	fn default() -> TextQueryMethod {
+		Self::Equals
+	}
+}

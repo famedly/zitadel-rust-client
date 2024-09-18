@@ -9,8 +9,6 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
@@ -28,12 +26,7 @@ pub struct UserServiceSetPhoneBody {
 
 impl UserServiceSetPhoneBody {
 	pub fn new(phone: String) -> UserServiceSetPhoneBody {
-		UserServiceSetPhoneBody {
-			phone: phone,
-			send_code: None,
-			return_code: None,
-			is_verified: None,
-		}
+		UserServiceSetPhoneBody { phone, send_code: None, return_code: None, is_verified: None }
 	}
 
 	pub fn set_phone(&mut self, phone: String) {

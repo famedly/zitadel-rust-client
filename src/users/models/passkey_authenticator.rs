@@ -9,24 +9,29 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub enum PasskeyAuthenticator {
+	#[serde(rename = "PASSKEY_AUTHENTICATOR_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "PASSKEY_AUTHENTICATOR_PLATFORM")]
+	Platform,
+	#[serde(rename = "PASSKEY_AUTHENTICATOR_CROSS_PLATFORM")]
+	CrossPlatform,
+}
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PasskeyAuthenticator {}
-
-impl PasskeyAuthenticator {
-	pub fn new() -> PasskeyAuthenticator {
-		PasskeyAuthenticator {}
+impl std::fmt::Display for PasskeyAuthenticator {
+	fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+		match self {
+			Self::Unspecified => write!(f, "PASSKEY_AUTHENTICATOR_UNSPECIFIED"),
+			Self::Platform => write!(f, "PASSKEY_AUTHENTICATOR_PLATFORM"),
+			Self::CrossPlatform => write!(f, "PASSKEY_AUTHENTICATOR_CROSS_PLATFORM"),
+		}
 	}
 }
 
-// TODO enum
-// List of v2PasskeyAuthenticator
-//const (
-//
-//
-//
-//)
+impl Default for PasskeyAuthenticator {
+	fn default() -> PasskeyAuthenticator {
+		Self::Unspecified
+	}
+}

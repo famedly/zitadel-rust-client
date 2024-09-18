@@ -9,14 +9,10 @@
  */
 
 use serde::{Deserialize, Serialize};
-/// UserNameQuery : Query for users with a specific user name.
-
-#[allow(unused_imports)]
-use serde_json::Value;
 
 use crate::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct UserNameQuery {
 	#[serde(rename = "userName")]
 	user_name: String,
@@ -28,7 +24,7 @@ pub struct UserNameQuery {
 impl UserNameQuery {
 	/// Query for users with a specific user name.
 	pub fn new(user_name: String) -> UserNameQuery {
-		UserNameQuery { user_name: user_name, method: None }
+		UserNameQuery { user_name, method: None }
 	}
 
 	pub fn set_user_name(&mut self, user_name: String) {

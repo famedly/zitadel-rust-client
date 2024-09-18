@@ -9,12 +9,8 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::users::models;
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct SendEmailVerificationCode {
 	/// \"Optionally set a url_template, which will be used in the verification
 	/// mail sent by ZITADEL to guide the user to your verification page. If no
