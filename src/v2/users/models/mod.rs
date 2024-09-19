@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-// #![allow(unused_imports)]
 #![allow(missing_docs)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
