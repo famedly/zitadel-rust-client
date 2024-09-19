@@ -1,5 +1,8 @@
 #![allow(dead_code)]
-#![allow(unused_imports)]
+// #![allow(unused_imports)]
+#![allow(missing_docs)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::return_self_not_must_use)]
 
 mod user_service_add_idp_link_body;
 pub use self::user_service_add_idp_link_body::UserServiceAddIdpLinkBody;

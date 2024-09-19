@@ -2,7 +2,7 @@
 //! Communication with Zitadel using http [v2 API](https://zitadel.com/docs/apis/v2)
 
 mod authentication;
-mod users;
+pub mod users;
 use std::path::PathBuf;
 
 use anyhow::{bail, Context, Result};

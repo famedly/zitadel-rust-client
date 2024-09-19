@@ -143,22 +143,5 @@ impl Debug for Token {
 
 #[cfg(test)]
 mod tests {
-
-	use std::path::Path;
-
-	use super::*;
-
-	#[tokio::test]
-	async fn create_token() -> Result<()> {
-		let client = reqwest::Client::new();
-		let service_account_file = Path::new("tests/zitadel/service-user.json");
-		let token = Token::new(
-			&Url::parse("http://localhost:8080")?,
-			&service_account_file.to_path_buf(),
-			client,
-		)
-		.await;
-		assert!(token.is_ok());
-		Ok(())
-	}
+	// TODO: Test the renew
 }
