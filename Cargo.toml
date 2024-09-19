@@ -22,6 +22,20 @@ serde = "1.0.210"
 reqwest = { version = "0.12.7", features = ["json"] }
 anyhow = "1.0.87"
 
+tonic = { version = "0.11.0", features = ["channel"] }
+zitadel = { version = "=4.3.5", features = [
+  "credentials",
+  "api",
+  "interceptors",
+] }
+proxyvars = "0.1.3"
+hyper = "0.14"
+hyper-proxy = { version = "0.9.1", default-features = false, features = [
+  "rustls",
+] }
+headers = "0.3"
+
+
 [lints.rust]
 dead_code = "warn"
 missing_debug_implementations = "warn"
