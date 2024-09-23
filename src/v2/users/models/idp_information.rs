@@ -13,7 +13,7 @@ use serde_json::Value;
 
 use crate::v2::users::models;
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct IdpInformation {
 	/// OAuth/OIDC access (and id_token) returned by the identity provider
 	#[serde(rename = "oauth")]

@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct IdpoAuthAccessInformation {
 	#[serde(rename = "accessToken")]
 	access_token: Option<String>,

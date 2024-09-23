@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct UserServiceRetrieveIdentityProviderIntentBody {
 	/// token of the idp intent, previously returned on the success response of
 	/// the IDP callback

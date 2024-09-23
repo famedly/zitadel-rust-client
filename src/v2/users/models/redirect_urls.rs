@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct RedirectUrls {
 	/// URL on which the user will be redirected after a successful login
 	#[serde(rename = "successUrl")]

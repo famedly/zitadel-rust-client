@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct UserServiceRegisterU2FBody {
 	/// \"Domain on which the user is authenticated.\"
 	#[serde(rename = "domain")]

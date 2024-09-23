@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct InUserEmailsQuery {
 	/// the emails of the users to include
 	#[serde(rename = "userEmails")]

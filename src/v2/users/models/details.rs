@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Details {
 	/// on read: the sequence of the last event reduced by the projection  on
 	/// manipulation: the timestamp of the event(s) added by the manipulation

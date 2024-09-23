@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct SendEmailVerificationCode {
 	/// \"Optionally set a url_template, which will be used in the verification
 	/// mail sent by ZITADEL to guide the user to your verification page. If no

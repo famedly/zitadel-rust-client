@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::v2::users::models;
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct UserServiceResendPhoneCodeBody {
 	#[serde(rename = "sendCode")]
 	send_code: Option<models::SendPhoneVerificationCode>,

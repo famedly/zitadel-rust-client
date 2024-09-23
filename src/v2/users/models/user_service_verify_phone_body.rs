@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserServiceVerifyPhoneBody {
 	/// \"the verification code generated during the set phone request\"
 	#[serde(rename = "verificationCode")]

@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::v2::users::models;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AddHumanUserRequest {
 	/// optionally set your own id unique for the user.
 	#[serde(rename = "userId")]
