@@ -51,7 +51,7 @@ impl Zitadel {
 
 		let _ = request.timeout_mut().insert(DEFAULT_TIMEOUT);
 
-		tracing::debug!("Request: {request:?}");
+		tracing::trace!("Request: {}", format_request_for_log(&request));
 
 		let response = self.client.execute(request).await?;
 		let status_code = response.status();
@@ -71,4 +71,19 @@ impl Zitadel {
 	fn make_url(&self, endpoint: &str) -> Result<Url> {
 		self.domain.join(endpoint).context("Invalid relative path for the url")
 	}
+}
+
+/// Format a request for logging purposes; this *must* omit any
+/// secrets or otherwise sensitive information
+fn format_request_for_log(request: &Request) -> String {
+	format!(
+		"{} {}, headers: {:?}",
+		request.method(),
+		request.url(),
+		request
+			.headers()
+			.into_iter()
+			.filter(|(name, _)| name.as_str().to_lowercase() != "authorization")
+			.collect::<Vec<_>>()
+	)
 }
