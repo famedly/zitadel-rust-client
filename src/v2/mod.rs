@@ -3,22 +3,23 @@
 
 mod authentication;
 pub mod users;
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::{bail, Context, Result};
 use authentication::Token;
 use reqwest::{Client, Request};
 use serde::de::DeserializeOwned;
+use tokio::sync::RwLock;
 use url::Url;
 
 /// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
 /// Zitadel client for using the HTTP v2 api
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Zitadel {
 	/// Token for performing the requests as a service account
-	token: Token,
+	token: Arc<RwLock<Token>>,
 	/// Zitadel domain
 	domain: Url,
 	/// Client for performing the requests
@@ -34,18 +35,19 @@ impl Zitadel {
 		let client = Client::new();
 		let token = Token::new(&url, &service_account_file, client.clone()).await?;
 
-		Ok(Self { token, domain: url, client })
+		Ok(Self { token: Arc::new(RwLock::new(token)), domain: url, client })
 	}
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
 	async fn send_request<T: DeserializeOwned>(&mut self, mut request: Request) -> Result<T> {
-		if self.token.is_expired() {
-			self.token.renew().await?;
+		if self.token.read().await.is_expired() {
+			self.token.write().await.renew().await?;
 		}
 
 		let headers = request.headers_mut();
-		headers.append("Authorization", format!("Bearer {}", self.token.token).parse()?);
+		headers
+			.append("Authorization", format!("Bearer {}", self.token.read().await.token).parse()?);
 		headers.append("Content-Type", "application/json".parse()?);
 		headers.append("Accept", "application/json".parse()?);
 

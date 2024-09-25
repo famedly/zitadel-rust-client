@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::v2::users::models;
+use crate::v2::users::{models, pagination::PaginationResponse};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct ListUsersResponse {
@@ -79,5 +79,12 @@ impl ListUsersResponse {
 
 	pub fn reset_result(&mut self) {
 		self.result = None;
+	}
+}
+
+impl PaginationResponse for ListUsersResponse {
+	type Item = models::User;
+	fn take_result(&mut self) -> Option<Vec<Self::Item>> {
+		self.result.take()
 	}
 }

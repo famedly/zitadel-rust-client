@@ -16,7 +16,7 @@ pub struct ListQuery {
 	offset: Option<String>,
 	/// Maximum amount of events returned. The default is set to 1000 in https://github.com/zitadel/zitadel/blob/new-eventstore/cmd/zitadel/startup.yaml. If the limit exceeds the maximum configured ZITADEL will throw an error. If no limit is present the default is taken.
 	#[serde(rename = "limit")]
-	limit: Option<i64>,
+	limit: Option<usize>,
 	/// default is descending
 	#[serde(rename = "asc")]
 	asc: Option<bool>,
@@ -45,16 +45,16 @@ impl ListQuery {
 		self.offset = None;
 	}
 
-	pub fn set_limit(&mut self, limit: i64) {
+	pub fn set_limit(&mut self, limit: usize) {
 		self.limit = Some(limit);
 	}
 
-	pub fn with_limit(mut self, limit: i64) -> ListQuery {
+	pub fn with_limit(mut self, limit: usize) -> ListQuery {
 		self.limit = Some(limit);
 		self
 	}
 
-	pub fn limit(&self) -> Option<&i64> {
+	pub fn limit(&self) -> Option<&usize> {
 		self.limit.as_ref()
 	}
 

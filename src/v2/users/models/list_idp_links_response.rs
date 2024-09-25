@@ -10,7 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::v2::users::models;
+use crate::v2::users::{models, pagination::PaginationResponse};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct ListIdpLinksResponse {
@@ -57,5 +57,12 @@ impl ListIdpLinksResponse {
 
 	pub fn reset_result(&mut self) {
 		self.result = None;
+	}
+}
+
+impl PaginationResponse for ListIdpLinksResponse {
+	type Item = models::IdpLink;
+	fn take_result(&mut self) -> Option<Vec<Self::Item>> {
+		self.result.take()
 	}
 }

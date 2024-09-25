@@ -1,7 +1,9 @@
 //! Implementation of the client for the zitadel user's v2 api
 mod models;
+mod pagination;
 
 use anyhow::{Context, Result};
+use futures::Stream;
 pub use models::*;
 use serde_json::json;
 
@@ -140,24 +142,20 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// List links to an identity provider of an user
-	pub async fn list_idp_links(
-		// TODO: Change to stream
+	pub fn list_idp_links(
 		&mut self,
 		user_id: &str,
 		body: UserServiceListIdpLinksBody,
-	) -> Result<ListIdpLinksResponse> {
-		let request = self
-			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/links/_search"))?)
-			.json(&body)
-			.build()
-			.context("Error building list_idp_links request")?;
-
-		self.send_request(request).await
+	) -> Result<impl Stream<Item = IdpLink>> {
+		Ok(pagination::PaginationHandler::<_, ListIdpLinksResponse>::new(
+			self.clone(),
+			body.page_size(),
+			body,
+			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
+		))
 	}
 	/// List passkeys of an user
 	pub async fn list_passkeys(
-		// TODO: Change to stream
 		&mut self,
 		user_id: &str,
 		body: UserServiceListPasskeysBody,
@@ -172,19 +170,16 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 
-	// TODO: Change to stream
 	/// Search Users
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
-	pub async fn list_users(&mut self, body: ListUsersRequest) -> Result<ListUsersResponse> {
-		let request = self
-			.client
-			.post(self.make_url("/v2/users")?)
-			.json(&body)
-			.build()
-			.context("Error building list_users request")?;
-
-		self.send_request(request).await
+	pub fn list_users(&mut self, body: ListUsersRequest) -> Result<impl Stream<Item = User>> {
+		Ok(pagination::PaginationHandler::<_, ListUsersResponse>::new(
+			self.clone(),
+			body.page_size(),
+			body,
+			self.make_url("/v2/users")?,
+		))
 	}
 	/// Lock user
 	/// The state of the user will be changed to 'locked'. The user will not be
