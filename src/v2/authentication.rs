@@ -28,13 +28,13 @@ struct Claims {
 	exp: i64,
 }
 
-#[derive(Deserialize)]
-struct AuthResponse {
-	access_token: String,
+#[derive(Deserialize, Serialize)]
+pub(super) struct AuthResponse {
+	pub access_token: String,
 	#[allow(dead_code)]
-	token_type: String,
+	pub token_type: String,
 	#[allow(dead_code)]
-	expires_in: i64,
+	pub expires_in: i64,
 }
 
 /// Token and information to renew it
@@ -139,9 +139,4 @@ impl Debug for Token {
 			self.expiry, self.header, self.claims
 		)
 	}
-}
-
-#[cfg(test)]
-mod tests {
-	// TODO: Test the renew
 }

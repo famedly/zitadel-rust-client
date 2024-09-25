@@ -89,3 +89,57 @@ fn format_request_for_log(request: &Request) -> String {
 			.collect::<Vec<_>>()
 	)
 }
+
+#[cfg(test)]
+mod tests {
+
+	use std::path::Path;
+
+	use anyhow::Result;
+	use time::OffsetDateTime;
+	use wiremock::{
+		matchers::{self, method, path},
+		Mock, MockServer, ResponseTemplate,
+	};
+
+	use super::*;
+
+	const SERVICE_USER_KEY_PATH: &str = "tests/environment/zitadel/service-user.json";
+
+	#[tokio::test]
+	async fn test_renew_token() -> Result<()> {
+		let mock_server = MockServer::start().await;
+
+		let auth_resp = authentication::AuthResponse {
+			access_token: "my_token".to_owned(),
+			token_type: "token_type".to_owned(),
+			expires_in: -1,
+		};
+
+		Mock::given(method("POST"))
+			.and(path("/oauth/v2/token"))
+			.respond_with(ResponseTemplate::new(200).set_body_json(auth_resp))
+			.expect(2)
+			.mount(&mock_server)
+			.await;
+
+		Mock::given(method("POST"))
+			.and(matchers::path_regex(r"/v2/users/.*"))
+			.respond_with(ResponseTemplate::new(200))
+			.mount(&mock_server)
+			.await;
+
+		let service_account_file = Path::new(SERVICE_USER_KEY_PATH);
+		let url = Url::parse(&mock_server.uri())?;
+		let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+		zitadel.token.write().await.expiry =
+			OffsetDateTime::now_utc() - time::Duration::minutes(10);
+
+		let _ = zitadel.get_user_by_id("user_id").await;
+
+		assert!(zitadel.token.read().await.expiry > OffsetDateTime::now_utc());
+
+		Ok(())
+	}
+}
