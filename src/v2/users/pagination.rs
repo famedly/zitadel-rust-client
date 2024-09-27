@@ -2,15 +2,24 @@ use std::{future::Future, pin::Pin, task::Poll};
 
 use anyhow::{Context, Result};
 use futures::{FutureExt, Stream};
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
 use crate::v2::Zitadel;
 
-pub(crate) trait PaginationResponse {
-	type Item;
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub struct PaginatedResponse<T> {
+	#[serde(rename = "result")]
+	result: Option<Vec<T>>,
+}
 
-	fn take_result(&mut self) -> Option<Vec<Self::Item>>;
+impl<T> PaginatedResponse<T>
+where
+	T: DeserializeOwned + 'static,
+{
+	fn take_result(&mut self) -> Option<Vec<T>> {
+		self.result.take()
+	}
 }
 
 pub(crate) trait PaginationRequest {
@@ -23,22 +32,22 @@ type DataFuture<T> = dyn Future<Output = Result<Vec<T>>>;
 pub(crate) struct PaginationHandler<Q, T>
 where
 	Q: Serialize + Send,
-	T: PaginationResponse + DeserializeOwned + 'static,
+	T: DeserializeOwned + 'static,
 {
 	zitadel: Zitadel,
 	query: Box<dyn PaginationRequest<Item = Q>>,
 	endpoint: Url,
 	page: usize,
 	page_size: usize,
-	buffer: Vec<T::Item>,
+	buffer: Vec<T>,
 	done: bool,
-	data_fut: Pin<Box<DataFuture<T::Item>>>,
+	data_fut: Pin<Box<DataFuture<T>>>,
 }
 
 impl<Q, T> PaginationHandler<Q, T>
 where
 	Q: Serialize + Send + 'static,
-	T: PaginationResponse + DeserializeOwned,
+	T: DeserializeOwned + 'static,
 {
 	pub(crate) fn new(
 		zitadel: Zitadel,
@@ -61,18 +70,18 @@ where
 	}
 }
 
-async fn get_more_data<T: PaginationResponse + DeserializeOwned>(
+async fn get_more_data<T: DeserializeOwned + 'static>(
 	mut zitadel: Zitadel,
 	query: impl Serialize + Send,
 	endpoint: Url,
-) -> Result<Vec<T::Item>> {
+) -> Result<Vec<T>> {
 	let request = zitadel
 		.client
 		.post(endpoint)
 		.json(&query)
 		.build()
 		.context("Error building request for pagination")?;
-	let mut resp = zitadel.send_request::<T>(request).await?;
+	let mut resp = zitadel.send_request::<PaginatedResponse<T>>(request).await?;
 
 	Ok(resp.take_result().unwrap_or(Vec::new()))
 }
@@ -80,16 +89,16 @@ async fn get_more_data<T: PaginationResponse + DeserializeOwned>(
 impl<Q, T> Unpin for PaginationHandler<Q, T>
 where
 	Q: Serialize + Send + 'static,
-	T: PaginationResponse + DeserializeOwned,
+	T: DeserializeOwned + 'static,
 {
 }
 
 impl<Q, T> Stream for PaginationHandler<Q, T>
 where
 	Q: Serialize + Send + 'static,
-	T: PaginationResponse + DeserializeOwned,
+	T: DeserializeOwned + 'static,
 {
-	type Item = T::Item;
+	type Item = T;
 	fn poll_next(
 		mut self: Pin<&mut Self>,
 		cx: &mut std::task::Context<'_>,
