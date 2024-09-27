@@ -1,22 +1,17 @@
 //! Communication with Zitadel
-#![allow(unused_imports)] // TODO: remove
-#![allow(dead_code)] // TODO: remove
 
 /// A module with error type and related code
 pub mod error;
+pub mod types;
 
-use std::{
-	path::{Path, PathBuf},
-	sync::Arc,
-};
+use std::{path::PathBuf, sync::Arc};
 
 use error::Result;
 use tokio::sync::RwLock;
 use tonic::{
-	codegen::InterceptedService,
 	metadata::AsciiMetadataValue,
 	transport::{Channel, Endpoint},
-	Request, Status,
+	Request,
 };
 use url::Url;
 pub use zitadel::api::zitadel::{
@@ -40,25 +35,21 @@ use zitadel::{
 			AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
 			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
-			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanAuthFactorsRequest,
-			ListHumanAuthFactorsResponse, ListHumanLinkedIdPsRequest, ListOrgMetadataRequest,
-			ListOrgMetadataResponse, ListProjectRolesRequest, ListProjectRolesResponse,
-			ListUserGrantRequest, ListUserGrantResponse, ListUsersRequest, RemoveHumanPhoneRequest,
-			RemoveHumanPhoneResponse, RemoveOrgMetadataRequest, RemoveUserGrantRequest,
-			RemoveUserRequest, SetOrgMetadataRequest, SetUserMetadataRequest,
-			UpdateHumanEmailRequest, UpdateHumanEmailResponse, UpdateHumanPhoneRequest,
-			UpdateHumanPhoneResponse, UpdateHumanProfileRequest, UpdateHumanProfileResponse,
-			UpdateProjectRequest, UpdateUserGrantRequest, UpdateUserNameRequest,
-			UpdateUserNameResponse,
+			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanLinkedIdPsRequest,
+			ListOrgMetadataRequest, ListOrgMetadataResponse, ListProjectRolesRequest,
+			ListProjectRolesResponse, ListUserGrantRequest, ListUserGrantResponse,
+			ListUsersRequest, RemoveHumanPhoneRequest, RemoveHumanPhoneResponse,
+			RemoveOrgMetadataRequest, RemoveUserGrantRequest, RemoveUserRequest,
+			SetOrgMetadataRequest, SetUserMetadataRequest, UpdateHumanEmailRequest,
+			UpdateHumanEmailResponse, UpdateHumanPhoneRequest, UpdateHumanPhoneResponse,
+			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
+			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
 		},
-		member::v1::{SearchQuery, UserIdQuery},
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
 		user::v1::{
-			search_query::Query as UserSearchQueryEnum,
-			user_grant_query::Query as UserGrantQueryEnum, NickNameQuery,
-			SearchQuery as UserSearchQuery, User, UserFieldName, UserGrantQuery,
+			user_grant_query::Query as UserGrantQueryEnum, User, UserFieldName, UserGrantQuery,
 			UserGrantUserIdQuery,
 		},
 		v1::{ListQuery, ListQueryMethod},
@@ -228,9 +219,7 @@ impl Zitadel {
 		// Wait for Zitadel instance to become ready.
 		/*
 			tracing::info!("Waiting for Zitadel instance to become ready.");
-			wait_for_successful_response(format!("{}/debug/ready", config.zitadel.url).as_ref())
-				.await
-				.change_context(Error::Zitadel)?;
+			wait_for_successful_response(format!("{}/debug/ready", config.zitadel.url).as_ref()).await?;
 		*/
 		let service_account = ServiceAccount::load_from_json(
 			std::fs::read_to_string(&service_account_file)?.as_ref(),
@@ -305,239 +294,189 @@ impl Zitadel {
 			.into_inner()
 			.org)
 	}
-	/*
 
-	  /// Get the User info of the user making the request, generally a service
-	  /// account.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/auth/auth-service-get-my-user)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_my_user(&self) -> Result<User, Report<Error>> {
-		  self.auth_client
-			  .clone()
-			  .get_my_user(self.request_with_auth(GetMyUserRequest {}).await?)
-			  .await
-			  .change_context(Error::Zitadel)?
-			  .into_inner()
-			  .user
-			  .ok_or(report!(Error::Zitadel))
-	  }
+	/// Get the User info of the user making the request, generally a service
+	/// account.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/auth/auth-service-get-my-user)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn get_my_user(&self) -> Result<User> {
+		self.auth_client
+			.clone()
+			.get_my_user(self.request_with_auth(GetMyUserRequest {}).await?)
+			.await?
+			.into_inner()
+			.user
+			.ok_or(error::Error::Unknown("get_my_user returned empty user".into()))
+	}
 
-	  /// Get the User ID of the user making the request, generally a service
-	  /// account.
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_my_user_id(&self) -> Result<String, Report<Error>> {
-		  self.get_my_user().await.map(|user| user.id)
-	  }
+	/// List events.
+	///[API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-list-events)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn list_events(&self, request: ListEventsRequest) -> Result<Vec<types::Event>> {
+		let response =
+			self.admin_client.clone().list_events(self.request_with_auth(request).await?).await?;
+		tracing::trace!("{response:?}");
+		response.into_inner().events.into_iter().map(TryInto::try_into).collect()
+	}
 
-	  /// List events.
-	  ///[API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-list-events)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn list_events(
-		  &self,
-		  request: ListEventsRequest,
-	  ) -> Result<Vec<Event>, Report<Error>> {
-		  let response = self
-			  .admin_client
-			  .clone()
-			  .list_events(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("{response:?}");
-		  response.into_inner().events.into_iter().map(TryInto::try_into).collect()
-	  }
+	/// Set org metadata.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-set-org-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn set_org_metadata(
+		&self,
+		organization_id: Option<&str>,
+		key: String,
+		value: &str,
+	) -> Result<()> {
+		tracing::debug!("Setting organisation metadata: ({key}, {value})");
+		let value = value.as_bytes().to_vec();
 
-	  /// Set org metadata.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-set-org-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn set_org_metadata(
-		  &self,
-		  organization_id: Option<&str>,
-		  key: String,
-		  value: &str,
-	  ) -> Result<(), Report<Error>> {
-		  tracing::debug!("Setting organisation metadata: ({key}, {value})");
-		  let value = value.as_bytes().to_vec();
+		let mut request = Request::new(SetOrgMetadataRequest { key, value });
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-		  let mut request = Request::new(SetOrgMetadataRequest { key, value });
-		  if let Some(org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			  );
-		  }
+		let response = self
+			.management_client
+			.clone()
+			.set_org_metadata(self.request_with_auth(request).await?)
+			.await?;
+		tracing::trace!("Response: {:#?}", response.into_inner());
 
-		  let response = self
-			  .management_client
-			  .clone()
-			  .set_org_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("Response: {:#?}", response.into_inner());
+		Ok(())
+	}
 
-		  Ok(())
-	  }
+	/// Remove org metadata.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-org-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn remove_org_metadata(
+		&self,
+		organization_id: Option<&str>,
+		key: String,
+	) -> Result<()> {
+		tracing::debug!("Deleting organisation metadata: {key}");
+		let mut request = Request::new(RemoveOrgMetadataRequest { key });
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-	  /// Remove org metadata.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-org-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn remove_org_metadata(
-		  &self,
-		  organization_id: Option<&str>,
-		  key: String,
-	  ) -> Result<(), Report<Error>> {
-		  tracing::debug!("Deleting organisation metadata: {key}");
-		  let mut request = Request::new(RemoveOrgMetadataRequest { key });
-		  if let Some(org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			  );
-		  }
+		let response = self
+			.management_client
+			.clone()
+			.remove_org_metadata(self.request_with_auth(request).await?)
+			.await?;
+		tracing::trace!("Response: {:#?}", response.into_inner());
 
-		  let response = self
-			  .management_client
-			  .clone()
-			  .remove_org_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("Response: {:#?}", response.into_inner());
+		Ok(())
+	}
 
-		  Ok(())
-	  }
+	/// Get organization by id.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-get-org-by-id)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn get_org_by_id(&self, org_id: String) -> Result<Option<Org>> {
+		tracing::debug!("Getting organization by id '{org_id}'");
+		let request = Request::new(GetOrgByIdRequest { id: org_id });
 
-	  /// Get organization by id.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-get-org-by-id)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_org_by_id(&self, org_id: String) -> Result<Option<Org>, Report<Error>> {
-		  tracing::debug!("Getting organization by id '{org_id}'");
-		  let request = Request::new(GetOrgByIdRequest { id: org_id });
+		let response =
+			self.admin_client.clone().get_org_by_id(self.request_with_auth(request).await?).await?;
+		tracing::trace!("Response: {:#?}", &response);
 
-		  let response = self
-			  .admin_client
-			  .clone()
-			  .get_org_by_id(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("Response: {:#?}", &response);
+		Ok(response.into_inner().org)
+	}
 
-		  Ok(response.into_inner().org)
-	  }
+	/// Search organization.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-list-orgs#search-organization)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn search_organization(
+		&self,
+		query_parameters: Option<ListQuery>,
+		queries: Vec<OrgQuery>,
+	) -> Result<ListOrgsResponse> {
+		tracing::debug!("Searching organisations '{queries:?}'");
+		let request = Request::new(ListOrgsRequest {
+			queries,
+			query: query_parameters,
+			sorting_column: OrgFieldName::Unspecified.into(),
+		});
 
-	  /// Search organization.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/admin/admin-service-list-orgs#search-organization)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn search_organization(
-		  &self,
-		  query_parameters: Option<ListQuery>,
-		  queries: Vec<OrgQuery>,
-	  ) -> Result<ListOrgsResponse, Report<Error>> {
-		  tracing::debug!("Searching organisations '{queries:?}'");
-		  let request = Request::new(ListOrgsRequest {
-			  queries,
-			  query: query_parameters,
-			  sorting_column: OrgFieldName::Unspecified.into(),
-		  });
+		let response =
+			self.admin_client.clone().list_orgs(self.request_with_auth(request).await?).await?;
+		tracing::trace!("Response: {:#?}", &response);
 
-		  let response = self
-			  .admin_client
-			  .clone()
-			  .list_orgs(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("Response: {:#?}", &response);
+		Ok(response.into_inner())
+	}
 
-		  Ok(response.into_inner())
-	  }
+	/// Search org metadata.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-org-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn search_org_metadata(
+		&self,
+		organization_id: Option<&str>,
+		query_parameters: Option<ListQuery>,
+		queries: Vec<MetadataKeyQuery>,
+	) -> Result<ListOrgMetadataResponse> {
+		tracing::debug!("Searching organisation metadata '{queries:?}'");
+		let queries = queries
+			.into_iter()
+			.map(|q| MetadataQuery { query: Some(Query::KeyQuery(q)) })
+			.collect();
+		let mut request = Request::new(ListOrgMetadataRequest { queries, query: query_parameters });
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-	  /// Search org metadata.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-org-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn search_org_metadata(
-		  &self,
-		  organization_id: Option<&str>,
-		  query_parameters: Option<ListQuery>,
-		  queries: Vec<MetadataKeyQuery>,
-	  ) -> Result<ListOrgMetadataResponse, Report<Error>> {
-		  tracing::debug!("Searching organisation metadata '{queries:?}'");
-		  let queries = queries
-			  .into_iter()
-			  .map(|q| MetadataQuery { query: Some(Query::KeyQuery(q)) })
-			  .collect();
-		  let mut request =
-			  Request::new(ListOrgMetadataRequest { queries, query: query_parameters });
-		  if let Some(org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			  );
-		  }
+		let response = self
+			.management_client
+			.clone()
+			.list_org_metadata(self.request_with_auth(request).await?)
+			.await?;
+		tracing::trace!("Response: {:#?}", &response);
 
-		  let response = self
-			  .management_client
-			  .clone()
-			  .list_org_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
-		  tracing::trace!("Response: {:#?}", &response);
+		Ok(response.into_inner())
+	}
 
-		  Ok(response.into_inner())
-	  }
+	/// Get org metadata for a key. Also decodes the value to a string.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-org-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn get_org_metadata(
+		&self,
+		organization_id: Option<&str>,
+		key: String,
+	) -> Result<Option<String>> {
+		let mut request = Request::new(GetOrgMetadataRequest { key: key.clone() });
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-	  /// Get org metadata for a key. Also decodes the value to a string.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-org-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_org_metadata(
-		  &self,
-		  organization_id: Option<&str>,
-		  key: String,
-	  ) -> Result<Option<String>, Report<Error>> {
-		  let mut request = Request::new(GetOrgMetadataRequest { key: key.clone() });
-		  if let Some(org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			  );
-		  }
+		let response = self
+			.management_client
+			.clone()
+			.get_org_metadata(self.request_with_auth(request).await?)
+			.await;
+		tracing::trace!("Got organization metadata response: {response:#?}");
 
-		  let response = self
-			  .management_client
-			  .clone()
-			  .get_org_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel);
-		  tracing::trace!("Got organization metadata response: {response:#?}");
+		// `QUERY-Rph32` is the grpc message returned by Zitadel when no metadata was
+		// found for the given key
+		if let Err(status) = &response {
+			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rph32") {
+				tracing::debug!("No organization metadata found for key '{key}'. Organization ID: {organization_id:?}");
+				return Ok(None);
+			}
+		}
 
-		  let response = match response {
-			  Ok(resp) => resp,
-			  Err(e) => match e.downcast_ref::<Status>() {
-				  // `QUERY-Rph32` is the grpc message returned by Zitadel when no metadata was found
-				  // for the given key
-				  Some(status)
-					  if status.code() == tonic::Code::NotFound
-						  && status.message().contains("QUERY-Rph32") =>
-				  {
-					  tracing::debug!("No org metadata found for key '{key}'. Organization ID: {organization_id:?}");
-					  return Ok(None);
-				  }
-				  _ => {
-					  return Err(e).attach_printable(format!(
-					  "Error fetching metadata for key '{key}'. Organization ID: {organization_id:?}"
-				  ))
-				  }
-			  },
-		  };
-		  let Some(metadata) = response.into_inner().metadata else {
-			  return Err(Error::Zitadel).attach_printable(format!(
-				  "No Metadata found in MetadataResponse for key '{key}'"
-			  ));
-		  };
-		  let value = String::from_utf8(metadata.value)
-			  .change_context(Error::Zitadel)
-			  .attach_printable(format!("Unable to parse metadata for key '{key}'"))?;
-		  tracing::debug!("Got organisation metadata for key '{key}': {value:?}");
-		  Ok(Some(value))
-	  }
-	*/
+		let metadata = response?.into_inner().metadata.ok_or(error::Error::Unknown(format!(
+			"No Metadata found in MetadataResponse for key '{key}'"
+		)))?;
+		Ok(Some(String::from_utf8(metadata.value)?))
+	}
 
 	/// Set user metadata.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-set-user-metadata)
@@ -591,111 +530,52 @@ impl Zitadel {
 			.clone()
 			.get_user_metadata(self.request_with_auth(request).await?)
 			.await;
-		let response = match response {
-			Ok(resp) => resp,
-			Err(e) => match e.code() {
-				// `QUERY-Rgh32` is the grpc message returned by Zitadel when no metadata was
-				// found for the given key
-				tonic::Code::NotFound if e.message().contains("QUERY-Rgh32") => {
-					tracing::debug!("No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}");
-					return Ok(None);
-				}
-				_ => {
-					return Err(e.into());
-				}
-			},
-		};
+
+		// `QUERY-Rgh32` is the grpc message returned by Zitadel when no metadata was
+		// found for the given key
+		if let Err(status) = &response {
+			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rgh32") {
+				tracing::debug!("No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}");
+				return Ok(None);
+			}
+		}
 
 		tracing::trace!("Got user metadata response: {response:#?}");
-		let Some(metadata) = response.into_inner().metadata else {
+		let Some(metadata) = response?.into_inner().metadata else {
 			return Err(error::Error::MissingMetadata(key.to_owned()));
 		};
 
-		let value = String::from_utf8(metadata.value)?;
-
-		Ok(Some(value))
+		Ok(Some(String::from_utf8(metadata.value)?))
 	}
 
-	/*
-	  /// Set organization metadata in bulk.
-	  /// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-set-org-metadata)
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn set_org_metadata_bulk(
-		  &self,
-		  organization_id: Option<&str>,
-		  metadata: Vec<(String, String)>,
-	  ) -> Result<(), Report<Error>> {
-		  let metadata: Vec<Metadata> = metadata
-			  .into_iter()
-			  .map(|(key, value)| Metadata { key, value: value.into_bytes() })
-			  .collect();
+	/// Set organization metadata in bulk.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-set-org-metadata)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn set_org_metadata_bulk(
+		&self,
+		organization_id: Option<&str>,
+		metadata: impl IntoIterator<Item = (String, String)> + Send,
+	) -> Result<()> {
+		let metadata: Vec<Metadata> = metadata
+			.into_iter()
+			.map(|(key, value)| Metadata { key, value: value.into_bytes() })
+			.collect();
 
-		  let mut request = Request::new(BulkSetOrgMetadataRequest { metadata });
-		  if let Some(org_id) = organization_id {
-			  request.metadata_mut().insert(
-				  HEADER_ZITADEL_ORGANIZATION_ID,
-				  org_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			  );
-		  }
+		let mut request = Request::new(BulkSetOrgMetadataRequest { metadata });
+		if let Some(org_id) = organization_id {
+			request
+				.metadata_mut()
+				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
+		}
 
-		  let _response = self
-			  .management_client
-			  .clone()
-			  .bulk_set_org_metadata(self.request_with_auth(request).await?)
-			  .await
-			  .change_context(Error::Zitadel)?;
+		let _response = self
+			.management_client
+			.clone()
+			.bulk_set_org_metadata(self.request_with_auth(request).await?)
+			.await?;
 
-		  Ok(())
-	  }
-
-	  /// Get `dns_domain` for a given project ID
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_project_dns_domain(
-		  &self,
-		  organization_id: Option<&str>,
-		  project: &str,
-	  ) -> Result<Option<String>, Report<Error>> {
-		  self.get_org_metadata(organization_id, format!("{project}.dns_domain")).await
-	  }
-
-	  /// Set `dns_domain` for a given project ID
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn set_project_dns_domain(
-		  &self,
-		  organization_id: Option<&str>,
-		  project: &str,
-		  dns_domain: &str,
-	  ) -> Result<(), Report<Error>> {
-		  self.set_org_metadata(organization_id, format!("{project}.dns_domain"), dns_domain).await
-	  }
-
-	  /// Get `name` for a given project ID
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_project_name(
-		  &self,
-		  organization_id: Option<&str>,
-		  project: &str,
-	  ) -> Result<Option<String>, Report<Error>> {
-		  self.get_org_metadata(organization_id, format!("{project}.name")).await
-	  }
-
-	  /// Set `name` for a given project ID
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn set_project_name(
-		  &self,
-		  organization_id: Option<&str>,
-		  project: &str,
-		  name: &str,
-	  ) -> Result<(), Report<Error>> {
-		  self.set_org_metadata(organization_id, format!("{project}.name"), name).await
-	  }
-
-	  /// Get my organization ID.
-	  #[tracing::instrument(level = "debug", skip_all)]
-	  pub async fn get_my_organization_id(&self) -> Result<String, Report<Error>> {
-		  self.get_my_organization().await.map(|org| org.id)
-	  }
-	*/
+		Ok(())
+	}
 
 	/// Create a human user, returning the User ID.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-import-human-user)
@@ -876,42 +756,34 @@ impl Zitadel {
 		Ok(())
 	}
 
-	/*
-		/// Add a user to a project with one or more roles.
-		/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-member)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn add_project_member(
-			&self,
-			organization_id: &str,
-			request: AddProjectMemberRequest,
-		) -> Result<(), Report<Error>> {
-			let mut request_with_org = Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			self.management_client
-				.clone()
-				.add_project_member(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?;
+	/// Add a user to a project with one or more roles.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-member)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_project_member(
+		&self,
+		organization_id: &str,
+		request: AddProjectMemberRequest,
+	) -> Result<()> {
+		let mut request_with_org = Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		self.management_client
+			.clone()
+			.add_project_member(self.request_with_auth(request_with_org).await?)
+			.await?;
 
-			Ok(())
-		}
+		Ok(())
+	}
 
-		/// This request adds a new user to the IAM members list with one or
-		/// multiple roles. level with one or multiple roles. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-org-member)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn add_iam_member(&self, request: AddIamMemberRequest) -> Result<(), Report<Error>> {
-			self.admin_client
-				.clone()
-				.add_iam_member(self.request_with_auth(request).await?)
-				.await
-				.change_context(Error::Zitadel)?;
+	/// This request adds a new user to the IAM members list with one or
+	/// multiple roles. level with one or multiple roles. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-org-member)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_iam_member(&self, request: AddIamMemberRequest) -> Result<()> {
+		self.admin_client.clone().add_iam_member(self.request_with_auth(request).await?).await?;
 
-			Ok(())
-		}
-	*/
+		Ok(())
+	}
 
 	/// Get exactly one user by login name searched over all organizations. The
 	/// request only returns data if the login name matches exactly. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-by-login-name-global)
@@ -1066,30 +938,26 @@ impl Zitadel {
 			.into_inner())
 	}
 
-	/*
-		/// Searches Project Roles. Returns all roles of a project matching the
-		/// search query. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-roles)
-		#[tracing::instrument(level = "debug", skip_all)]
-		pub async fn search_project_roles(
-			&self,
-			organization_id: String,
-			request: ListProjectRolesRequest,
-		) -> Result<ListProjectRolesResponse, Report<Error>> {
-			let mut request_with_org = Request::new(request);
-			request_with_org.metadata_mut().insert(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				organization_id.parse::<AsciiMetadataValue>().change_context(Error::Zitadel)?,
-			);
-			let response = self
-				.management_client
-				.clone()
-				.list_project_roles(self.request_with_auth(request_with_org).await?)
-				.await
-				.change_context(Error::Zitadel)?
-				.into_inner();
-			Ok(response)
-		}
-	*/
+	/// Searches Project Roles. Returns all roles of a project matching the
+	/// search query. [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-roles)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn search_project_roles(
+		&self,
+		organization_id: String,
+		request: ListProjectRolesRequest,
+	) -> Result<ListProjectRolesResponse> {
+		let mut request_with_org = Request::new(request);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
+		let response = self
+			.management_client
+			.clone()
+			.list_project_roles(self.request_with_auth(request_with_org).await?)
+			.await?
+			.into_inner();
+		Ok(response)
+	}
 
 	/// Create a project, returning the project ID.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)

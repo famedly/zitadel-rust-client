@@ -27,6 +27,10 @@ pub enum Error {
 	FromUtf8Error(#[from] std::string::FromUtf8Error),
 	#[error("Too many results! Got: '{0}'")]
 	TooManyResults(String),
+	#[error("Failed to convert event '{0}'")]
+	EventConversion(String),
+	#[error("Unknown error: '{0}'")]
+	Unknown(String),
 }
 
 /// A fake source error that allows unwrapping a real error with
