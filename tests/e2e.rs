@@ -4,8 +4,7 @@
 	clippy::missing_docs_in_private_items,
 	clippy::print_stderr,
 	clippy::print_stdout,
-	clippy::unwrap_used,
-	clippy::future_not_send
+	clippy::unwrap_used
 )]
 
 use std::path::Path;

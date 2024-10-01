@@ -27,7 +27,7 @@ pub(crate) trait PaginationRequest {
 	fn to_paginated_request(&self, page: usize, page_size: usize) -> Self::Item;
 }
 
-type DataFuture<T> = dyn Future<Output = Result<Vec<T>>>;
+type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send;
 
 pub(crate) struct PaginationHandler<Q, T>
 where
@@ -35,7 +35,7 @@ where
 	T: DeserializeOwned + 'static,
 {
 	zitadel: Zitadel,
-	query: Box<dyn PaginationRequest<Item = Q>>,
+	query: Box<dyn PaginationRequest<Item = Q> + Send>,
 	endpoint: Url,
 	page: usize,
 	page_size: usize,
@@ -52,7 +52,7 @@ where
 	pub(crate) fn new(
 		zitadel: Zitadel,
 		page_size: usize,
-		query: impl PaginationRequest<Item = Q> + 'static,
+		query: impl PaginationRequest<Item = Q> + Send + 'static,
 		endpoint: Url,
 	) -> Self {
 		let page = 0;

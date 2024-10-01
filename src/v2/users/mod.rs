@@ -146,7 +146,7 @@ impl Zitadel {
 		&mut self,
 		user_id: &str,
 		body: UserServiceListIdpLinksBody,
-	) -> Result<impl Stream<Item = IdpLink>> {
+	) -> Result<impl Stream<Item = IdpLink> + Send> {
 		Ok(pagination::PaginationHandler::<_, IdpLink>::new(
 			self.clone(),
 			body.page_size(),
@@ -173,7 +173,10 @@ impl Zitadel {
 	/// Search Users
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
-	pub fn list_users(&mut self, body: ListUsersRequest) -> Result<impl Stream<Item = User>> {
+	pub fn list_users(
+		&mut self,
+		body: ListUsersRequest,
+	) -> Result<impl Stream<Item = User> + Send> {
 		Ok(pagination::PaginationHandler::<_, User>::new(
 			self.clone(),
 			body.page_size(),
