@@ -31,8 +31,8 @@ use zitadel::{
 		idp::v1::IdpUserLink,
 		management::v1::{
 			bulk_set_org_metadata_request::Metadata,
-			management_service_client::ManagementServiceClient, AddProjectMemberRequest,
-			AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
+			management_service_client::ManagementServiceClient, AddOrgRequest,
+			AddProjectMemberRequest, AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
 			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
 			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
 			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanLinkedIdPsRequest,
@@ -307,6 +307,19 @@ impl Zitadel {
 			.into_inner()
 			.user
 			.ok_or(error::Error::Unknown("get_my_user returned empty user".into()))
+	}
+
+	/// Create an organization.
+	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-org)
+	#[tracing::instrument(level = "debug", skip_all)]
+	pub async fn add_organization(&self, name: String) -> Result<String> {
+		Ok(self
+			.management_client
+			.clone()
+			.add_org(self.request_with_auth(AddOrgRequest { name }).await?)
+			.await?
+			.into_inner()
+			.id)
 	}
 
 	/// List events.
