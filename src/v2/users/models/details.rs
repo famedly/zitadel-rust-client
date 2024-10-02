@@ -16,6 +16,11 @@ pub struct Details {
 	/// manipulation: the timestamp of the event(s) added by the manipulation
 	#[serde(rename = "sequence")]
 	sequence: Option<String>,
+	/// on read: the timestamp of the first event of the object
+	/// on create: the timestamp of the event(s) added by the manipulation
+	/// Only available on v1 api responses!
+	#[serde(rename = "creationDate")]
+	creation_date: Option<String>,
 	/// on read: the timestamp of the last event reduced by the projection  on
 	/// manipulation: the timestamp of the event(s) added by the manipulation
 	#[serde(rename = "changeDate")]
@@ -26,7 +31,7 @@ pub struct Details {
 
 impl Details {
 	pub fn new() -> Details {
-		Details { sequence: None, change_date: None, resource_owner: None }
+		Details { sequence: None, creation_date: None, change_date: None, resource_owner: None }
 	}
 
 	pub fn set_sequence(&mut self, sequence: String) {
@@ -44,6 +49,23 @@ impl Details {
 
 	pub fn reset_sequence(&mut self) {
 		self.sequence = None;
+	}
+
+	pub fn set_creation_date(&mut self, creation_date: String) {
+		self.creation_date = Some(creation_date);
+	}
+
+	pub fn with_creation_date(mut self, creation_date: String) -> Details {
+		self.creation_date = Some(creation_date);
+		self
+	}
+
+	pub fn creation_date(&self) -> Option<&String> {
+		self.creation_date.as_ref()
+	}
+
+	pub fn reset_creation_date(&mut self) {
+		self.creation_date = None;
 	}
 
 	pub fn set_change_date(&mut self, change_date: String) {

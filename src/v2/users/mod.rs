@@ -3,6 +3,7 @@ mod models;
 mod pagination;
 
 use anyhow::{Context, Result};
+use base64::prelude::{Engine, BASE64_STANDARD};
 use futures::Stream;
 pub use models::*;
 use serde_json::json;
@@ -599,5 +600,90 @@ impl Zitadel {
 			.context("Error building verify_u2_f_registration request")?;
 
 		self.send_request(request).await
+	}
+	/// Get a metadata object from a user by a specific key
+	pub async fn get_user_metadata(
+		&mut self,
+		user_id: &str,
+		key: &str,
+	) -> Result<GetUserMetadataResponse> {
+		let request = self
+			.client
+			.get(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.build()
+			.context("Error building get_user_metadata request")?;
+
+		self.send_request(request).await
+	}
+	/// Remove a metadata object from a user with a specific key
+	pub async fn delete_user_metadata(&mut self, user_id: &str, key: &str) -> Result<Details> {
+		let request = self
+			.client
+			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.build()
+			.context("Error building delete_user_metadata request")?;
+
+		self.send_request(request).await
+	}
+	/// Set a metadata object for a user
+	/// This method either adds or updates a metadata value for the requested
+	pub async fn set_user_metadata(
+		&mut self,
+		user_id: &str,
+		key: &str,
+		value: &str,
+	) -> Result<SetUserMetadataResponse> {
+		let request = self
+			.client
+			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.json(&serde_json::json!({"value": BASE64_STANDARD.encode(value)}))
+			.build()
+			.context("Error building set_user_metadata request")?;
+
+		self.send_request(request).await
+	}
+	/// Set a metadata object for a user in a bulk
+	/// Add or update multiple metadata values for a user
+	pub async fn set_user_metadata_bulk(
+		&mut self,
+		user_id: &str,
+		body: Vec<SetMetadataEntry>,
+	) -> Result<Details> {
+		let request = self
+			.client
+			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
+			.json(&serde_json::json!({"metadata": body}))
+			.build()
+			.context("Error building set_user_metadata_bulk request")?;
+
+		self.send_request(request).await
+	}
+	/// Remove a list of metadata objects from a user with a list of keys
+	pub async fn delete_user_metadata_bulk(
+		&mut self,
+		user_id: &str,
+		body: Vec<String>,
+	) -> Result<Details> {
+		let request = self
+			.client
+			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
+			.json(&serde_json::json!({"keys": body}))
+			.build()
+			.context("Error building delete_user_metadata_bulk request")?;
+
+		self.send_request(request).await
+	}
+	/// Get the metadata of a user filtered by your query
+	pub fn list_user_metadata(
+		&mut self,
+		user_id: &str,
+		body: ListUserMetadataRequest,
+	) -> Result<impl Stream<Item = UserMetadataResponse> + Send> {
+		Ok(pagination::PaginationHandler::<_, UserMetadataResponse>::new(
+			self.clone(),
+			body.page_size(),
+			body,
+			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
+		))
 	}
 }

@@ -257,3 +257,133 @@ async fn test_e2e_delete_user() -> Result<()> {
 
 	Ok(())
 }
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_user_metadata() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let metadata = vec![("key1", "value1"), ("key2", "value2")];
+
+	let user = AddHumanUserRequest::new(
+		SetHumanProfile::new("John".to_owned(), "Doe".to_owned()),
+		SetHumanEmail::new("j.doe@domain.example".to_owned()),
+	)
+	.with_metadata(vec![SetMetadataEntry::new(metadata[0].0.to_owned(), metadata[0].1.to_owned())]);
+
+	let id = zitadel
+		.create_human_user(user)
+		.await?
+		.user_id()
+		.cloned()
+		.expect("Couldn't get the user id from response");
+
+	zitadel.set_user_metadata(&id, metadata[1].0, metadata[1].1).await?;
+
+	for (query_key, expected_value) in &metadata {
+		let ret = zitadel.get_user_metadata(&id, query_key).await?;
+		let key =
+			ret.metadata().key().expect("Unable to get key from response of get_user_metadata");
+		let value =
+			ret.metadata().value().expect("Unable to get value from response of get_user_metadata");
+		assert_eq!(query_key, key);
+		assert_eq!(*expected_value, value);
+	}
+
+	zitadel.delete_user_metadata(&id, metadata[1].0).await?;
+	assert!(zitadel.get_user_metadata(&id, metadata[1].0).await.is_err());
+
+	let updated_value = "new_value";
+	zitadel.set_user_metadata(&id, metadata[0].0, updated_value).await?;
+
+	let ret = zitadel.get_user_metadata(&id, metadata[0].0).await?;
+	let value = ret
+		.metadata()
+		.value()
+		.expect("Unable to get updated value from response of get_user_metadata");
+	assert_eq!(value, updated_value);
+
+	tear_down(&mut zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_user_metadata_bulk() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let metadata = vec![
+		SetMetadataEntry::new("key1".to_owned(), "value1".to_owned()),
+		SetMetadataEntry::new("key2".to_owned(), "value2".to_owned()),
+	];
+
+	let user = AddHumanUserRequest::new(
+		SetHumanProfile::new("John".to_owned(), "Doe".to_owned()),
+		SetHumanEmail::new("j.doe@domain.example".to_owned()),
+	)
+	.with_metadata(vec![SetMetadataEntry::new("key1".to_owned(), "old_value".to_owned())]);
+
+	let id = zitadel
+		.create_human_user(user)
+		.await?
+		.user_id()
+		.cloned()
+		.expect("Couldn't get the user id from response");
+
+	zitadel.set_user_metadata_bulk(&id, metadata.clone()).await?;
+
+	let stream = zitadel.list_user_metadata(
+		&id,
+		ListUserMetadataRequest::new(vec![
+			KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)
+		]),
+	)?;
+
+	let res_metadata: Vec<_> = stream
+		.map(|metadata| {
+			(
+				metadata.key().cloned().expect("Unable to get key from list_user_metadata"),
+				metadata.value().expect("Unable to get value from list_user_metadata"),
+			)
+		})
+		.collect()
+		.await;
+	let expected_metadata: Vec<_> = metadata
+		.iter()
+		.map(|metadata| {
+			(
+				metadata.key().clone(),
+				metadata.value().expect("Unable to get value from expected metadata"),
+			)
+		})
+		.collect();
+	assert_eq!(expected_metadata, res_metadata);
+
+	zitadel
+		.delete_user_metadata_bulk(
+			&id,
+			metadata.iter().map(|metadata| metadata.key().clone()).collect(),
+		)
+		.await?;
+
+	assert!(
+		zitadel
+			.list_user_metadata(
+				&id,
+				ListUserMetadataRequest::new(vec![
+					KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)
+				]),
+			)?
+			.count()
+			.await == 0
+	);
+
+	tear_down(&mut zitadel).await;
+
+	Ok(())
+}
