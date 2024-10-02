@@ -1,4 +1,4 @@
-# Project Name
+# Zitadel Rust Client
 
 [![rust workflow status][badge-rust-workflow-img]][badge-rust-workflow-url]
 [![docker workflow status][badge-docker-workflow-img]][badge-docker-workflow-url]
@@ -11,7 +11,11 @@
 [badge-docs-main-img]: https://img.shields.io/badge/docs-main-blue
 [badge-docs-main-url]: https://famedly.github.io/rust-library-template/project_name/index.html
 
-Short description of the project.
+A zitadel client written in rust
+
+## Zitadel Version
+
+The required and tested version of Zitadel is **v2.61.2**
 
 ## Lints
 

@@ -1,6 +1,6 @@
 services:
   zitadel:
-    image: ghcr.io/zitadel/zitadel:v2.61.0
+    image: ghcr.io/zitadel/zitadel:v2.61.2
     command: start-from-init --masterkey "MasterkeyNeedsToHave32Characters" --tlsMode disabled --config /zitadel-config/zitadel-config.yaml --steps /zitadel-config/zitadel-init.yaml
     ports:
       - 8080:8080
