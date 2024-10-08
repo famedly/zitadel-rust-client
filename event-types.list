@@ -1,0 +1,509 @@
+action.added                   action_action::AddedEvent
+action.changed                 action_action::ChangedEvent
+action.deactivated             action_action::DeactivatedEvent
+action.reactivated             action_action::ReactivatedEvent
+action.removed                 action_action::RemovedEvent
+auth_request.added             authrequest_auth_request::AddedEvent
+auth_request.code.added        authrequest_auth_request::CodeAddedEvent
+auth_request.code.exchanged    authrequest_auth_request::CodeExchangedEvent
+auth_request.failed            authrequest_auth_request::FailedEvent
+auth_request.session.linked    authrequest_auth_request::SessionLinkedEvent
+auth_request.succeeded         authrequest_auth_request::SucceededEvent
+device.authorization.added     deviceauth_device_auth::AddedEvent
+device.authorization.approved  deviceauth_device_auth::ApprovedEvent
+device.authorization.canceled  deviceauth_device_auth::CanceledEvent
+device.authorization.done      deviceauth_device_auth::DoneEvent
+execution.removed              execution_execution::RemovedEvent
+execution.set                  execution_execution::SetEvent
+execution.v2.set
+feature.featurelogindefaultorg.set
+
+feature.instance.actions.set
+feature.instance.debug_oidc_parent_error.set
+feature.instance.disable_user_token_event.set
+feature.instance.improved_performance.set
+feature.instance.legacy_introspection.set
+feature.instance.login_default_org.set
+feature.instance.oidc_single_v1_session_termination.set
+feature.instance.reset feature_feature_v2_feature::ResetEvent
+feature.instance.token_exchange.set
+feature.instance.trigger_introspection_projections.set
+feature.instance.user_schema.set
+feature.instance.web_key.set
+
+feature.system.actions.set
+feature.system.disable_user_token_event.set
+feature.system.improved_performance.set
+feature.system.legacy_introspection.set
+feature.system.login_default_org.set
+feature.system.oidc_single_v1_session_termination.set
+feature.system.reset NoPayload
+feature.system.token_exchange.set
+feature.system.trigger_introspection_projections.set
+feature.system.user_schema.set
+
+iam.idp.config.added         instance_idp_config::IDPConfigAddedEvent
+iam.idp.config.changed       instance_idp_config::IDPConfigChangedEvent
+iam.idp.config.deactivated   instance_idp_config::IDPConfigDeactivatedEvent
+iam.idp.config.reactivated   instance_idp_config::IDPConfigReactivatedEvent
+iam.idp.config.removed       instance_idp_config::IDPConfigRemovedEvent
+iam.idp.jwt.config.added     instance_idp_jwt_config::IDPJWTConfigAddedEvent
+iam.idp.jwt.config.changed   instance_idp_jwt_config::IDPJWTConfigChangedEvent
+iam.idp.oidc.config.added    instance_idp_oidc_config::IDPOIDCConfigAddedEvent
+iam.idp.oidc.config.changed  instance_idp_oidc_config::IDPOIDCConfigChangedEvent
+idpintent.failed             idpintent_intent::FailedEvent
+idpintent.ldap.succeeded     idpintent_intent::LDAPSucceededEvent
+idpintent.saml.requested     idpintent_intent::SAMLRequestEvent
+idpintent.saml.succeeded     idpintent_intent::SAMLSucceededEvent
+idpintent.started            idpintent_intent::StartedEvent
+idpintent.succeeded          idpintent_intent::SucceededEvent
+
+instance.added
+instance.changed
+instance.customtext.removed
+instance.customtext.set
+instance.customtext.template.removed
+instance.default.language.set
+instance.default.org.set
+instance.domain.added
+instance.domain.primary.set
+instance.domain.removed
+instance.iam.console.set
+instance.iam.project.set
+instance.idp.apple.added                 instance_idp::AppleIDPAddedEvent
+instance.idp.apple.changed               instance_idp::AppleIDPChangedEvent
+instance.idp.azure.added                 instance_idp::AzureADIDPAddedEvent
+instance.idp.azure.changed               instance_idp::AzureADIDPChangedEvent
+instance.idp.github.added                instance_idp::GitHubIDPAddedEvent
+instance.idp.github.changed              instance_idp::GitHubIDPChangedEvent
+instance.idp.github_enterprise.added     instance_idp::GitHubEnterpriseIDPAddedEvent
+instance.idp.github_enterprise.changed   instance_idp::GitHubEnterpriseIDPChangedEvent
+instance.idp.gitlab.added                instance_idp::GitLabIDPAddedEvent
+instance.idp.gitlab.changed              instance_idp::GitLabIDPChangedEvent
+instance.idp.gitlab_self_hosted.added    instance_idp::GitLabSelfHostedIDPAddedEvent
+instance.idp.gitlab_self_hosted.changed  instance_idp::GitLabSelfHostedIDPChangedEvent
+instance.idp.google.added                instance_idp::GoogleIDPAddedEvent
+instance.idp.google.changed              instance_idp::GoogleIDPChangedEvent
+instance.idp.jwt.added                   instance_idp::JWTIDPAddedEvent
+instance.idp.jwt.changed                 instance_idp::JWTIDPChangedEvent
+instance.idp.ldap.v2.added               instance_idp::LDAPIDPAddedEvent
+instance.idp.ldap.v2.changed             instance_idp::LDAPIDPChangedEvent
+instance.idp.oauth.added                 instance_idp::OAuthIDPAddedEvent
+instance.idp.oauth.changed               instance_idp::OAuthIDPChangedEvent
+instance.idp.oidc.added                  instance_idp::OIDCIDPAddedEvent
+instance.idp.oidc.changed                instance_idp::OIDCIDPChangedEvent
+instance.idp.oidc.migrated.azure         instance_idp::OIDCIDPMigratedAzureADEvent
+instance.idp.oidc.migrated.google        instance_idp::OIDCIDPMigratedGoogleEvent
+instance.idp.removed                     instance_idp::IDPRemovedEvent
+instance.idp.saml.added                  instance_idp::SAMLIDPAddedEvent
+instance.idp.saml.changed                instance_idp::SAMLIDPChangedEvent
+instance.mail.template.added
+instance.mail.template.changed
+instance.mail.text.added
+instance.mail.text.changed
+instance.member.added
+instance.member.cascade.removed
+instance.member.changed
+instance.member.removed
+instance.notification.provider.debug.fileadded
+instance.notification.provider.debug.filechanged
+instance.notification.provider.debug.fileremoved
+instance.notification.provider.debug.logadded
+instance.notification.provider.debug.logchanged
+instance.notification.provider.debug.logremoved
+instance.oidc.settings.added
+instance.oidc.settings.changed
+instance.policy.domain.added
+instance.policy.domain.changed
+instance.policy.label.activated
+instance.policy.label.added
+instance.policy.label.assets.removed
+instance.policy.label.changed
+instance.policy.label.font.added
+instance.policy.label.font.removed
+instance.policy.label.icon.added
+instance.policy.label.icon.dark.added
+instance.policy.label.icon.dark.removed
+instance.policy.label.icon.removed
+instance.policy.label.logo.added
+instance.policy.label.logo.dark.added
+instance.policy.label.logo.dark.removed
+instance.policy.label.logo.removed
+instance.policy.lockout.added
+instance.policy.lockout.changed
+instance.policy.login.added
+instance.policy.login.changed
+instance.policy.login.idpprovider.added
+instance.policy.login.idpprovider.cascade.removed
+instance.policy.login.idpprovider.removed
+instance.policy.login.multifactor.added
+instance.policy.login.multifactor.removed
+instance.policy.login.secondfactor.added
+instance.policy.login.secondfactor.removed
+instance.policy.notification.added
+instance.policy.notification.changed
+instance.policy.password.age.added
+instance.policy.password.age.changed
+instance.policy.password.complexity.added
+instance.policy.password.complexity.changed
+instance.policy.privacy.added
+instance.policy.privacy.changed
+instance.policy.security.set
+instance.removed
+instance.secret.generator.added
+instance.secret.generator.changed
+instance.secret.generator.removed
+instance.sms.configtwilio.activated
+instance.sms.configtwilio.added
+instance.sms.configtwilio.changed
+instance.sms.configtwilio.deactivated
+instance.sms.configtwilio.removed
+instance.sms.configtwilio.token.changed
+instance.smtp.config.activated
+instance.smtp.config.added
+instance.smtp.config.changed
+instance.smtp.config.deactivated
+instance.smtp.config.password.changed
+instance.smtp.config.removed
+instance.trusted_domains.added
+instance.trusted_domains.removed
+key_pair.added
+key_pair.certificate.added
+limits.reset
+limits.set
+milestone.pushed
+oidc_session.access_token.added
+oidc_session.access_token.revoked
+oidc_session.added
+oidc_session.refresh_token.added
+oidc_session.refresh_token.renewed
+oidc_session.refresh_token.revoked
+org.added
+org.changed
+org.customtext.removed
+org.customtext.set
+org.customtext.template.removed
+org.deactivated
+org.domain.added
+org.domain.primary.set
+org.domain.removed
+org.domain.verification.added
+org.domain.verification.failed
+org.domain.verified
+org.flow.cleared
+org.flow.trigger_actions.cascade.removed
+org.flow.trigger_actions.set
+org.idp.apple.added
+org.idp.apple.changed
+org.idp.azure.added
+org.idp.azure.changed
+org.idp.config.added            idpconfig_idp_config::IDPConfigAddedEvent // FIXME
+org.idp.config.changed          idpconfig_idp_config::IDPConfigChangedEvent
+org.idp.config.deactivated      idpconfig_idp_config::IDPConfigDeactivatedEvent
+org.idp.config.reactivated      idpconfig_idp_config::IDPConfigReactivatedEvent
+org.idp.config.removed          idpconfig_idp_config::IDPConfigRemovedEvent
+org.idp.github.added
+org.idp.github.changed
+org.idp.github_enterprise.added
+org.idp.github_enterprise.changed
+org.idp.gitlab.added
+org.idp.gitlab.changed
+org.idp.gitlab_self_hosted.added
+org.idp.gitlab_self_hosted.changed
+org.idp.google.added
+org.idp.google.changed
+org.idp.jwt.added
+org.idp.jwt.changed
+org.idp.jwt.config.added
+org.idp.jwt.config.changed
+org.idp.ldap.added
+org.idp.ldap.changed
+org.idp.oauth.added
+org.idp.oauth.changed
+org.idp.oidc.added
+org.idp.oidc.changed
+org.idp.oidc.config.added
+org.idp.oidc.config.changed
+org.idp.oidc.migrated.azure
+org.idp.oidc.migrated.google
+org.idp.removed
+org.idp.saml.added
+org.idp.saml.changed
+org.mail.template.added
+org.mail.template.changed
+org.mail.template.removed
+org.mail.text.added
+org.mail.text.changed
+org.mail.text.removed
+org.member.added
+org.member.cascade.removed
+org.member.changed
+org.member.removed
+org.metadata.removed
+org.metadata.removed.all
+org.metadata.set
+org.policy.domain.added
+org.policy.domain.changed
+org.policy.domain.removed
+org.policy.label.activated
+org.policy.label.added
+org.policy.label.assets.removed
+org.policy.label.changed
+org.policy.label.font.added
+org.policy.label.font.removed
+org.policy.label.icon.added
+org.policy.label.icon.dark.added
+org.policy.label.icon.dark.removed
+org.policy.label.icon.removed
+org.policy.label.logo.added
+org.policy.label.logo.dark.added
+org.policy.label.logo.dark.removed
+org.policy.label.logo.removed
+org.policy.label.removed
+org.policy.lockout.added
+org.policy.lockout.changed
+org.policy.lockout.removed
+org.policy.login.added
+org.policy.login.changed
+org.policy.login.idpprovider.added
+org.policy.login.idpprovider.cascade.removed
+org.policy.login.idpprovider.removed
+org.policy.login.multifactor.added
+org.policy.login.multifactor.removed
+org.policy.login.removed
+org.policy.login.secondfactor.added
+org.policy.login.secondfactor.removed
+org.policy.notification.added
+org.policy.notification.changed
+org.policy.notification.removed
+org.policy.password.age.added
+org.policy.password.age.changed
+org.policy.password.age.removed
+org.policy.password.complexity.added
+org.policy.password.complexity.changed
+org.policy.password.complexity.removed
+org.policy.privacy.added
+org.policy.privacy.changed
+org.policy.privacy.removed
+org.reactivated
+org.removed
+project.added
+project.application.added
+project.application.changed
+project.application.config.api.added
+project.application.config.api.changed
+project.application.config.api.secret.changed
+project.application.config.api.secret.updated
+project.application.config.oidc.added
+project.application.config.oidc.changed
+project.application.config.oidc.secret.changed
+project.application.config.oidc.secret.updated
+project.application.config.saml.added
+project.application.config.saml.changed
+project.application.deactivated
+project.application.oidc.key.added
+project.application.oidc.key.removed
+project.application.reactivated
+project.application.removed
+project.changed
+project.deactivated
+project.grant.added
+project.grant.cascade.changed
+project.grant.changed
+project.grant.deactivated
+project.grant.member.added
+project.grant.member.cascade.removed
+project.grant.member.changed
+project.grant.member.removed
+project.grant.reactivated
+project.grant.removed
+project.member.added
+project.member.cascade.removed
+project.member.changed
+project.member.removed
+project.reactivated
+project.removed
+project.role.added
+project.role.changed
+project.role.removed
+quota.added
+quota.notificationdue
+quota.notified
+quota.removed
+quota.set
+restrictions.set
+session.added
+session.intent.checked
+session.lifetime.set
+session.metadata.set
+session.otp.email.challenged
+session.otp.email.checked
+session.otp.email.sent
+session.otp.sms.challenged
+session.otp.sms.checked
+session.otp.sms.sent
+session.password.checked
+session.terminated
+session.token.set
+session.totp.checked
+session.user.checked
+session.webAuthN.challenged
+session.webAuthN.checked
+system.migration.done
+system.migration.failed
+system.migration.repeatable.done
+system.migration.started
+target.added
+target.changed
+target.removed
+user.added
+user.address.changed
+user.created
+user.deactivated                                             user_user::UserDeactivatedEvent
+user.deleted
+user.domain.claimed                                          user_user::DomainClaimedEvent
+user.domain.claimed.sent                                     user_user::DomainClaimedEvent
+user.email.changed
+user.email.code.added
+user.email.code.sent
+user.email.verification.failed
+user.email.verified
+user.grant.added                                             usergrant_user_grant::UserGrantAddedEvent
+user.grant.cascade.changed                                   usergrant_user_grant::UserGrantCascadeChangedEvent
+user.grant.cascade.removed                                   usergrant_user_grant::UserGrantCascadeRemovedEvent
+user.grant.changed                                           usergrant_user_grant::UserGrantChangedEvent
+user.grant.deactivated                                       usergrant_user_grant::UserGrantDeactivatedEvent
+user.grant.reactivated                                       usergrant_user_grant::UserGrantReactivatedEvent
+user.grant.removed                                           usergrant_user_grant::UserGrantRemovedEvent
+user.human.added                                             user_human::HumanAddedEvent
+user.human.address.changed
+user.human.avatar.added
+user.human.avatar.removed
+user.human.email.changed
+user.human.email.code.added
+user.human.email.code.sent
+user.human.email.verification.failed
+user.human.email.verified
+user.human.externalidp.added
+user.human.externalidp.cascade.removed
+user.human.externalidp.id.migrated
+user.human.externalidp.removed
+user.human.externalidp.username.changed
+user.human.externallogin.check.succeeded
+user.human.initialization.check.failed                       user_human::HumanInitializedCheckFailedEvent
+user.human.initialization.check.succeeded                    user_human::HumanInitializedCheckSucceededEvent
+user.human.initialization.code.added                         user_human::HumanInitialCodeAddedEvent
+user.human.initialization.code.sent                          user_human::HumanInitialCodeSentEvent
+user.human.mfa.init.skipped
+user.human.mfa.otp.added
+user.human.mfa.otp.check.failed
+user.human.mfa.otp.check.succeeded
+user.human.mfa.otp.email.added
+user.human.mfa.otp.email.check.failed
+user.human.mfa.otp.email.check.succeeded
+user.human.mfa.otp.email.code.added
+user.human.mfa.otp.email.code.sent
+user.human.mfa.otp.email.removed
+user.human.mfa.otp.removed
+user.human.mfa.otp.sms.added
+user.human.mfa.otp.sms.check.failed
+user.human.mfa.otp.sms.check.succeeded
+user.human.mfa.otp.sms.code.added
+user.human.mfa.otp.sms.code.sent
+user.human.mfa.otp.sms.removed
+user.human.mfa.otp.verified
+user.human.mfa.u2f.token.added
+user.human.mfa.u2f.token.begin.login
+user.human.mfa.u2f.token.check.failed
+user.human.mfa.u2f.token.check.succeeded
+user.human.mfa.u2f.token.removed
+user.human.mfa.u2f.token.signcount.changed
+user.human.mfa.u2f.token.verified
+user.human.password.change.sent
+user.human.password.changed
+user.human.password.check.failed
+user.human.password.check.succeeded
+user.human.password.code.added
+user.human.password.code.sent
+user.human.password.hash.updated
+user.human.passwordless.initialization.code.added
+user.human.passwordless.initialization.code.check.failed
+user.human.passwordless.initialization.code.check.succeeded
+user.human.passwordless.initialization.code.requested
+user.human.passwordless.initialization.code.sent
+user.human.passwordless.token.added
+user.human.passwordless.token.begin.login
+user.human.passwordless.token.check.failed
+user.human.passwordless.token.check.succeeded
+user.human.passwordless.token.removed
+user.human.passwordless.token.signcount.changed
+user.human.passwordless.token.verified
+user.human.phone.changed
+user.human.phone.code.added
+user.human.phone.code.sent
+user.human.phone.removed
+user.human.phone.verification.failed
+user.human.phone.verified
+user.human.profile.changed
+user.human.refresh.token.added
+user.human.refresh.token.removed
+user.human.refresh.token.renewed
+user.human.selfregistered                                    user_human::HumanRegisteredEvent
+user.human.signed.out                                        user_human::HumanSignedOutEvent
+user.impersonated                                            user_user::UserImpersonatedEvent
+user.initialization.check.failed
+user.initialization.check.succeeded
+user.initialization.code.added
+user.initialization.code.sent
+user.locked                                                  user_user::UserLockedEvent
+user.machine.added
+user.machine.changed
+user.machine.key.added
+user.machine.key.removed
+user.machine.secret.check.failed
+user.machine.secret.check.succeeded
+user.machine.secret.removed
+user.machine.secret.set
+user.machine.secret.updated
+user.metadata.removed
+user.metadata.removed.all
+user.metadata.set
+user.mfa.otp.added
+user.mfa.otp.check.failed
+user.mfa.otp.check.succeeded
+user.mfa.otp.init.skipped
+user.mfa.otp.removed
+user.mfa.otp.verified
+user.password.changed
+user.password.check.failed
+user.password.check.succeeded
+user.password.code.added
+user.password.code.sent
+user.pat.added
+user.pat.removed
+user.phone.changed
+user.phone.code.added
+user.phone.code.sent
+user.phone.removed
+user.phone.verification.failed
+user.phone.verified
+user.profile.changed
+user.reactivated                                             user_user::UserReactivatedEvent
+user.removed                                                 user_user::UserRemovedEvent
+user.selfregistered
+user.signed.out
+user.token.added                                             user_user::UserTokenAddedEvent
+user.token.removed                                           user_user::UserTokenRemovedEvent
+user.token.v2.added                                          user_user::UserTokenV2AddedEvent
+user.unlocked                                                user_user::UserUnlockedEvent
+user.updated
+user.username.changed                                        user_user::UsernameChangedEvent
+user_schema.created
+user_schema.deactivated
+user_schema.deleted
+user_schema.reactivated
+user_schema.updated
+web_key.activated
+web_key.added
+web_key.deactivated
+web_key.removed

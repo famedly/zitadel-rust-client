@@ -2,6 +2,9 @@
 
 /// A module with error type and related code
 pub mod error;
+pub mod event_types;
+pub mod event_types_imports;
+pub mod event_types_manual;
 pub mod types;
 
 use std::{path::PathBuf, sync::Arc};
