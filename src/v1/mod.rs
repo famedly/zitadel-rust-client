@@ -14,6 +14,7 @@ use tonic::{
 	Request,
 };
 use url::Url;
+pub use zitadel::api as zitadel_api;
 pub use zitadel::api::zitadel::{
 	management::v1::{
 		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
@@ -48,10 +49,7 @@ use zitadel::{
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
-		user::v1::{
-			user_grant_query::Query as UserGrantQueryEnum, User, UserFieldName, UserGrantQuery,
-			UserGrantUserIdQuery,
-		},
+		user::v1::{User, UserFieldName},
 		v1::{ListQuery, ListQueryMethod},
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
@@ -501,7 +499,6 @@ impl Zitadel {
 		key: String,
 		value: &str,
 	) -> Result<()> {
-		tracing::debug!("Setting metadata: for user ID {user_id} ({key}, {value})");
 		let value = value.as_bytes().to_vec();
 
 		let mut request = Request::new(SetUserMetadataRequest { id: user_id, key, value });
@@ -511,12 +508,10 @@ impl Zitadel {
 				.insert(HEADER_ZITADEL_ORGANIZATION_ID, org_id.parse::<AsciiMetadataValue>()?);
 		}
 
-		let response = self
-			.management_client
+		self.management_client
 			.clone()
 			.set_user_metadata(self.request_with_auth(request).await?)
 			.await?;
-		tracing::trace!("Set user metadata response: {:#?}", response.into_inner());
 
 		Ok(())
 	}
@@ -760,10 +755,14 @@ impl Zitadel {
 	/// Remove the user with the given user ID.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user)
 	#[tracing::instrument(level = "debug", skip_all)]
-	pub async fn remove_user(&self, user_id: String) -> Result<()> {
+	pub async fn remove_user(&self, organization_id: &str, user_id: &str) -> Result<()> {
+		let mut request_with_org = Request::new(RemoveUserRequest { id: user_id.to_owned() });
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
 		self.management_client
 			.clone()
-			.remove_user(self.request_with_auth(RemoveUserRequest { id: user_id }).await?)
+			.remove_user(self.request_with_auth(request_with_org).await?)
 			.await?;
 
 		Ok(())
@@ -865,7 +864,7 @@ impl Zitadel {
 	#[tracing::instrument(level = "debug", skip_all)]
 	pub async fn add_user_grant(
 		&self,
-		organization_id: Option<String>,
+		organization_id: &str,
 		user_id: String,
 		project_id: String,
 		project_grant_id: Option<String>,
@@ -878,10 +877,9 @@ impl Zitadel {
 			role_keys,
 		};
 		let mut request_with_org = Request::new(add_user_grant_request);
-		request_with_org.metadata_mut().insert(
-			HEADER_ZITADEL_ORGANIZATION_ID,
-			organization_id.unwrap_or_default().parse::<AsciiMetadataValue>()?,
-		);
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
 		Ok(self
 			.management_client
 			.clone()
@@ -896,16 +894,22 @@ impl Zitadel {
 	#[tracing::instrument(level = "debug", skip_all)]
 	pub async fn update_user_grant(
 		&self,
-		user_id: String,
-		grant_id: String,
+		organization_id: &str,
+		user_id: &str,
+		grant_id: &str,
 		role_keys: Vec<String>,
 	) -> Result<()> {
+		let mut request_with_org = Request::new(UpdateUserGrantRequest {
+			user_id: user_id.to_owned(),
+			grant_id: grant_id.to_owned(),
+			role_keys,
+		});
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
 		self.management_client
 			.clone()
-			.update_user_grant(
-				self.request_with_auth(UpdateUserGrantRequest { user_id, grant_id, role_keys })
-					.await?,
-			)
+			.update_user_grant(self.request_with_auth(request_with_org).await?)
 			.await?;
 		Ok(())
 	}
@@ -913,12 +917,19 @@ impl Zitadel {
 	/// Remove a User grant.
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
 	#[tracing::instrument(level = "debug", skip_all)]
-	pub async fn remove_user_grant(&self, user_id: String, grant_id: String) -> Result<()> {
+	pub async fn remove_user_grant(
+		&self,
+		organization_id: &str,
+		user_id: String,
+		grant_id: String,
+	) -> Result<()> {
+		let mut request_with_org = Request::new(RemoveUserGrantRequest { user_id, grant_id });
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
 		self.management_client
 			.clone()
-			.remove_user_grant(
-				self.request_with_auth(RemoveUserGrantRequest { user_id, grant_id }).await?,
-			)
+			.remove_user_grant(self.request_with_auth(request_with_org).await?)
 			.await?;
 		Ok(())
 	}
@@ -930,15 +941,8 @@ impl Zitadel {
 	pub async fn list_user_grants(
 		&self,
 		organization_id: &str,
-		user_id: &str,
+		request: ListUserGrantRequest,
 	) -> Result<ListUserGrantResponse> {
-		let queries = vec![UserGrantQuery {
-			query: Some(UserGrantQueryEnum::UserIdQuery(UserGrantUserIdQuery {
-				user_id: user_id.to_owned(),
-			})),
-		}];
-
-		let request = ListUserGrantRequest { queries, ..Default::default() };
 		let mut request_with_org = Request::new(request);
 		request_with_org
 			.metadata_mut()
@@ -977,25 +981,27 @@ impl Zitadel {
 	#[tracing::instrument(level = "debug", skip_all)]
 	pub async fn add_project(
 		&self,
+		organization_id: &str,
 		name: String,
 		project_role_assertion: bool,
 		project_role_check: bool,
 		has_project_check: bool,
 		private_labeling_setting: PrivateLabelingSetting,
 	) -> Result<String> {
+		let mut request_with_org = Request::new(AddProjectRequest {
+			name,
+			project_role_assertion,
+			project_role_check,
+			has_project_check,
+			private_labeling_setting: private_labeling_setting as i32,
+		});
+		request_with_org
+			.metadata_mut()
+			.insert(HEADER_ZITADEL_ORGANIZATION_ID, organization_id.parse::<AsciiMetadataValue>()?);
 		Ok(self
 			.management_client
 			.clone()
-			.add_project(
-				self.request_with_auth(AddProjectRequest {
-					name,
-					project_role_assertion,
-					project_role_check,
-					has_project_check,
-					private_labeling_setting: private_labeling_setting as i32,
-				})
-				.await?,
-			)
+			.add_project(self.request_with_auth(request_with_org).await?)
 			.await?
 			.into_inner()
 			.id)
