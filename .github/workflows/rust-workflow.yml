@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: head
 
@@ -34,7 +34,7 @@ jobs:
         gitlab_pass: ${{ secrets.GITLAB_PASS }}
 
     - name: Caching
-      uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
+      uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
       with:
         cache-on-failure: true
         cache-all-crates: true
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         path: head
 
@@ -82,7 +82,7 @@ jobs:
       run: rustup component add llvm-tools-preview --toolchain stable-x86_64-unknown-linux-gnu
 
     - name: Caching
-      uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
+      uses: Swatinem/rust-cache@68b3cb7503c78e67dae8373749990a220eb65352
       with:
         cache-on-failure: true
         cache-all-crates: true
@@ -97,8 +97,7 @@ jobs:
       working-directory: head
       run: |
         docker compose --project-directory ./tests/environment down -v
-        cargo llvm-cov nextest --no-fail-fast --workspace --lcov --output-path '${{github.workspace}}/lcov.info'
-        sed "s|$PWD/||g" -i '${{github.workspace}}/lcov.info'
+        cargo llvm-cov nextest --profile ci --workspace --lcov --output-path lcov.info
 
     - name: Get docker logs on failure
       shell: bash
@@ -107,14 +106,13 @@ jobs:
       run: |
         docker compose --project-directory ./tests/environment logs
 
-    - name: Setup LCOV
-      uses: hrishikesh-kadam/setup-lcov@6c1aa0cc9e1c02f9f58f01ac599f1064ccc83470
-
-    - name: Report code coverage
-      uses: zgosalvez/github-actions-report-lcov@fea161ae6d85807479ea109d42259c9165558a64
+    - name: Codecov - Upload coverage
+      uses: codecov/codecov-action@v4
       with:
-        working-directory: ./head/
-        coverage-files: ${{github.workspace}}/lcov.info
-        artifact-name: code-coverage-report
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        update-comment: true
+        token: ${{secrets.CODECOV_TOKEN}}
+        files: "lcov.info"
+
+    - name: Codecov - Upload test results
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
