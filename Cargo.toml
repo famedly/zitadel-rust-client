@@ -37,6 +37,7 @@ hyper-proxy = { version = "0.9.1", default-features = false, features = [
 headers = "0.3"
 futures = "0.3.30"
 pbjson-types = "0.6.0"
+serde_repr = "0.1.19"
 
 [lints.rust]
 dead_code = "warn"
