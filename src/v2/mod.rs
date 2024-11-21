@@ -1,7 +1,8 @@
 #![allow(clippy::missing_docs_in_private_items)]
 //! Communication with Zitadel using http [v2 API](https://zitadel.com/docs/apis/v2)
 
-mod authentication;
+/// Service user authentication
+pub mod authentication;
 /// Helper client to authenticate tokens
 pub mod token;
 pub mod users;

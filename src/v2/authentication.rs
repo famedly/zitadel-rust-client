@@ -126,7 +126,8 @@ impl Token {
 		Ok(())
 	}
 
-	pub fn is_expired(&self) -> bool {
+	/// Check if the token is expired
+	pub(crate) fn is_expired(&self) -> bool {
 		OffsetDateTime::now_utc() > self.expiry
 	}
 }
