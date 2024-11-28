@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use url::Url;
 
+const MIN_SCOPE: [&str; 2] = ["openid", "urn:zitadel:iam:org:project:id:zitadel:aud"];
+
 #[derive(Deserialize)]
 struct ServiceAccount {
 	#[allow(dead_code)]
@@ -48,14 +50,28 @@ pub struct Token {
 	claims: Claims,
 	key: EncodingKey,
 	client: reqwest::Client,
+	scope: Option<Vec<String>>,
 }
 
 impl Token {
 	/// Create a new token
+	///
+	/// Creates a new token for the provided service account.
+	/// The minimal scope of this token is 'openid' and
+	/// 'urn:zitadel:iam:org:project:id:zitadel:aud'.
+	/// For more scoped check the [zitadel doc](https://zitadel.com/docs/apis/openidoauth/scopes)
+	///
+	/// # Arguments
+	///
+	/// * `url` - Url for Zitadel server
+	/// * `service_account_file` - Path to the service account json file
+	/// * `client` - Reqwest client to be used
+	/// * `scope` - Additional scopes for the requested token
 	pub async fn new(
 		url: &Url,
 		service_account_file: &PathBuf,
 		client: reqwest::Client,
+		scope: Option<Vec<String>>,
 	) -> Result<Self> {
 		let service_account: ServiceAccount =
 			serde_json::from_str(std::fs::read_to_string(service_account_file)?.as_ref())?;
@@ -81,6 +97,7 @@ impl Token {
 			claims,
 			key,
 			client,
+			scope,
 		};
 
 		token.renew().await.context("Error getting the token for the first time")?;
@@ -95,6 +112,8 @@ impl Token {
 		self.claims.exp = self.expiry.unix_timestamp();
 
 		let jwt = encode(&self.header, &self.claims, &self.key)?;
+		let mut scope = self.scope.clone().unwrap_or_default();
+		scope.append(&mut MIN_SCOPE.iter().copied().map(String::from).collect());
 
 		let resp = self
 			.client
@@ -102,8 +121,7 @@ impl Token {
 			.header("Content-Type", "application/x-www-form-urlencoded")
 			.form(&[
 				("grant_type".to_owned(), "urn:ietf:params:oauth:grant-type:jwt-bearer".to_owned()),
-				("scope".to_owned(), "openid".to_owned()),
-				("scope".to_owned(), "urn:zitadel:iam:org:project:id:zitadel:aud".to_owned()),
+				("scope".to_owned(), scope.join(" ")),
 				("assertion".to_owned(), jwt),
 			])
 			.send()

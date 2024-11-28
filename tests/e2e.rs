@@ -4,7 +4,8 @@
 	clippy::missing_docs_in_private_items,
 	clippy::print_stderr,
 	clippy::print_stdout,
-	clippy::unwrap_used
+	clippy::unwrap_used,
+	missing_docs
 )]
 
 use std::{collections::HashMap, path::Path};
@@ -409,7 +410,7 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 		"management/v1/users/{}/machine",
 		service_account.get("userId").and_then(|v| v.as_str()).unwrap()
 	));
-	let token = Token::new(&url, &service_account_file, client.clone()).await?.token;
+	let token = Token::new(&url, &service_account_file, client.clone(), None).await?.token;
 	let r = client
 		.put(put_url)
 		.bearer_auth(token)
@@ -418,7 +419,7 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 		.await?;
 	println!("body:\n{}", r.text().await?);
 
-	let token = Token::new(&url, &service_account_file, client).await?.token;
+	let token = Token::new(&url, &service_account_file, client, None).await?.token;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
 
 	assert!(token_verifier.verify(token).await.is_ok());
