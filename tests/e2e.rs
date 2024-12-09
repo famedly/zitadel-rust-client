@@ -431,10 +431,12 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 async fn test_e2e_token_verification_negative() -> Result<()> {
 	let mock = MockServer::start().await;
 	let mut jwks = josekit::jwk::JwkSet::from_bytes(r#"{"keys":[]}"#)?;
-	let mut private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
+	let private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
 	let key_id = "123456";
-	private_key.set_key_id(key_id);
-	jwks.push_key(private_key.to_public_key()?);
+	let mut public_key = private_key.to_public_key()?;
+	public_key.set_key_id(key_id);
+	jwks.push_key(public_key);
+
 	let signer = josekit::jws::RS256.signer_from_jwk(&private_key)?;
 
 	let mut header = JwsHeader::new();
@@ -490,6 +492,51 @@ async fn test_e2e_token_verification_negative() -> Result<()> {
 	let wrong_signer = josekit::jws::RS256.signer_from_jwk(&wrong_private_key)?;
 	let jwt = josekit::jwt::encode_with_signer(&base_payload, &header, &wrong_signer)?;
 	assert!(token_verifier.verify(jwt).await.is_err());
+
+	Ok(())
+}
+
+#[tokio::test]
+async fn test_e2e_token_verification_positive() -> Result<()> {
+	let mock = MockServer::start().await;
+	let mut jwks = josekit::jwk::JwkSet::from_bytes(r#"{"keys":[]}"#)?;
+	let private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
+	let key_id = "123456";
+	let mut public_key = private_key.to_public_key()?;
+	public_key.set_key_id(key_id);
+	jwks.push_key(public_key);
+
+	Mock::given(method("GET"))
+		.and(path("/oauth/v2/keys"))
+		.respond_with(
+			ResponseTemplate::new(200)
+				.set_body_string(jwks.to_string())
+				.insert_header("Cache-control", "max-age=60"),
+		)
+		.mount(&mock)
+		.await;
+
+	let now = OffsetDateTime::now_utc();
+
+	let mut base_payload = JwtPayload::new();
+	base_payload.set_issuer(mock.uri());
+	base_payload.set_expires_at(&(now + Duration::minutes(10)).into());
+	base_payload.set_not_before(&(now - Duration::minutes(10)).into());
+	base_payload.set_claim("test_claim", Some("test_value".into()))?;
+
+	let mut header = JwsHeader::new();
+	header.set_key_id(key_id);
+	header.set_token_type("JWT");
+	header.set_algorithm("RS256");
+
+	let signer = josekit::jws::RS256.signer_from_jwk(&private_key)?;
+	let jwt = josekit::jwt::encode_with_signer(&base_payload, &header, &signer)?;
+
+	let url = Url::parse(&mock.uri())?;
+	let token_verifier = token::ZitadelJWTVerifier::new(url);
+	let verification_result = token_verifier.verify(jwt).await;
+	println!("verification_result: {:?}", verification_result);
+	assert!(verification_result.is_ok());
 
 	Ok(())
 }
