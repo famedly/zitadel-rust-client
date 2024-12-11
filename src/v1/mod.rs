@@ -14,14 +14,7 @@ use tonic::{
 	Request,
 };
 use url::Url;
-pub use zitadel::api::zitadel::{
-	management::v1::{
-		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
-		ImportHumanUserRequest,
-	},
-	user::v1::{user::Type as UserType, Gender},
-};
-use zitadel::{
+pub use zitadel::{
 	api::zitadel::{
 		admin::v1::{
 			admin_service_client::AdminServiceClient, AddIamMemberRequest, AddLdapProviderRequest,
@@ -31,28 +24,30 @@ use zitadel::{
 		idp::v1::IdpUserLink,
 		management::v1::{
 			bulk_set_org_metadata_request::Metadata,
-			management_service_client::ManagementServiceClient, AddOrgRequest,
-			AddProjectMemberRequest, AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
-			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
-			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
-			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanLinkedIdPsRequest,
-			ListOrgMetadataRequest, ListOrgMetadataResponse, ListProjectRolesRequest,
-			ListProjectRolesResponse, ListUserGrantRequest, ListUserGrantResponse,
-			ListUsersRequest, RemoveHumanPhoneRequest, RemoveHumanPhoneResponse,
-			RemoveOrgMetadataRequest, RemoveUserGrantRequest, RemoveUserRequest,
-			SetOrgMetadataRequest, SetUserMetadataRequest, UpdateHumanEmailRequest,
-			UpdateHumanEmailResponse, UpdateHumanPhoneRequest, UpdateHumanPhoneResponse,
-			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
-			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
+			import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
+			management_service_client::ManagementServiceClient,
+			AddOrgRequest, AddProjectMemberRequest, AddProjectRequest, AddProjectRoleRequest,
+			AddUserGrantRequest, BulkAddProjectRolesRequest, BulkAddProjectRolesResponse,
+			BulkSetOrgMetadataRequest, GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
+			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ImportHumanUserRequest,
+			ListHumanLinkedIdPsRequest, ListOrgMetadataRequest, ListOrgMetadataResponse,
+			ListProjectRolesRequest, ListProjectRolesResponse, ListUserGrantRequest,
+			ListUserGrantResponse, ListUsersRequest, RemoveHumanPhoneRequest,
+			RemoveHumanPhoneResponse, RemoveOrgMetadataRequest, RemoveUserGrantRequest,
+			RemoveUserRequest, SetOrgMetadataRequest, SetUserMetadataRequest,
+			UpdateHumanEmailRequest, UpdateHumanEmailResponse, UpdateHumanPhoneRequest,
+			UpdateHumanPhoneResponse, UpdateHumanProfileRequest, UpdateHumanProfileResponse,
+			UpdateProjectRequest, UpdateUserGrantRequest, UpdateUserNameRequest,
+			UpdateUserNameResponse,
 		},
 		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
 		user::v1::{
-			user_grant_query::Query as UserGrantQueryEnum, User, UserFieldName, UserGrantQuery,
-			UserGrantUserIdQuery,
+			user::Type as UserType, user_grant_query::Query as UserGrantQueryEnum, Gender, User,
+			UserFieldName, UserGrantQuery, UserGrantUserIdQuery,
 		},
-		v1::{ListQuery, ListQueryMethod},
+		v1::{ListQuery, ListQueryMethod, TextQueryMethod},
 	},
 	credentials::{AuthenticationOptions, ServiceAccount},
 };
