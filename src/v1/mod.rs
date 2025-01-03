@@ -746,15 +746,23 @@ impl Zitadel {
 	/// [API Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-by-id)
 	#[tracing::instrument(level = "debug", skip_all)]
 	pub async fn get_user_by_id(&self, user_id: &str) -> Result<Option<User>> {
-		Ok(self
+		let res = self
 			.management_client
 			.clone()
 			.get_user_by_id(
 				self.request_with_auth(GetUserByIdRequest { id: user_id.to_owned() }).await?,
 			)
-			.await?
-			.into_inner()
-			.user)
+			.await;
+		if res.as_ref().is_err_and(|e| {
+			e.code() == tonic::Code::NotFound && e.message().contains("QUERY-Dfbg2")
+		}) {
+			return Ok(None);
+		}
+		Ok(Some(
+			res?.into_inner()
+				.user
+				.ok_or(error::Error::Unknown("get_user_by_id returned no user".into()))?,
+		))
 	}
 
 	/// Remove the user with the given user ID.
