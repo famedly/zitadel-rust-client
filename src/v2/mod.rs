@@ -3,6 +3,7 @@
 
 /// Service user authentication
 pub mod authentication;
+pub mod organization;
 /// Helper client to authenticate tokens
 pub mod token;
 pub mod users;

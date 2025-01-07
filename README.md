@@ -17,6 +17,32 @@ A zitadel client written in rust
 
 The required and tested version of Zitadel is **v2.61.2**
 
+## Adding new endpoints
+
+The models behind each method are generated using
+[swagger-codegen](https://github.com/swagger-api/swagger-codegen),
+then the top-level `Zitadel` methods are all hand-written on top of
+this to tape over the ergonomics issues codegen causes (e.g. by
+providing `Stream`s instead of manual pagination).
+
+To add a new model:
+
+1. Download the correct tag of
+[Zitadel](https://github.com/zitadel/zitadel/)
+2. Install build dependencies
+  - Primarily `go`, `buf` and `make`
+  - `nix develop github:NixOS/nixpkgs-unstable#zitadel` gives good results
+3. Ensure `PATH=$PATH:$HOME/go/bin`, or some alternate
+   `$GOPATH`/`$GOBIN` is set
+3. Run `make core_api` in the Zitadel repository
+4. Create a new subdirectory for the new endpoints
+5. Run `swagger-codegen generate -i <path-to-repo>/openapi/<path-to-API>.json -l rust`
+  - Individual `.json` files *can* be used
+6. Take the `models` directory out of the resulting Rust repo, and
+   discard any other generated code.
+7. Use `sed` and similar to clean up any fallout; adding `#![allow]s`
+   to the generated `mod.rs` is also helpful.
+
 ## Lints
 
 ```sh
