@@ -20,7 +20,7 @@ use wiremock::{
 	matchers::{method, path},
 	Mock, MockServer, ResponseTemplate,
 };
-use zitadel_rust_client::v2::{authentication::Token, token, users::*, Zitadel};
+use zitadel_rust_client::v2::{authentication::Token, organization::*, token, users::*, Zitadel};
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
 
@@ -55,6 +55,43 @@ async fn test_e2e_create_token() -> Result<()> {
 	let url = Url::parse("http://localhost:8080")?;
 
 	assert!(Zitadel::new(url, service_account_file.to_path_buf()).await.is_ok());
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_create_organization() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let admins = vec![
+		(AddOrganizationRequestAdmin::new().with_human(AddHumanUserRequest::new(
+			SetHumanProfile::new("Max".to_owned(), "Adminmann".to_owned()),
+			SetHumanEmail::new("m.adminmann@domain.example".to_owned()),
+		))),
+	];
+
+	let query = V2AddOrganizationRequest::new("test_org".to_owned()).with_admins(admins);
+	let res = zitadel.create_organization_with_admin(query).await;
+
+	// TODO: Once we have a list org method, we should check that the
+	// org was actually created
+	assert!(res.is_ok());
+
+	// Ensure the admin user was actually created
+	assert_eq!(
+		zitadel
+			.list_users(ListUsersRequest::new(vec![
+				SearchQuery::new().with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))
+			]))?
+			.count()
+			.await,
+		1
+	);
+
+	tear_down(&mut zitadel).await;
+
 	Ok(())
 }
 
