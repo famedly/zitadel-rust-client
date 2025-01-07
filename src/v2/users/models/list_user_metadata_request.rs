@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::v2::users::{models, pagination::PaginationRequest};
+use crate::v2::{pagination::PaginationRequest, users::models};
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub(crate) struct ListUserMetadataRequestOuter {

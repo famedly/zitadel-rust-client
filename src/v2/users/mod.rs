@@ -1,6 +1,5 @@
 //! Implementation of the client for the zitadel user's v2 api
 mod models;
-mod pagination;
 
 use anyhow::{Context, Result};
 use base64::prelude::{Engine, BASE64_STANDARD};
@@ -8,7 +7,7 @@ use futures::Stream;
 pub use models::*;
 use serde_json::json;
 
-use super::Zitadel;
+use super::{pagination::PaginationHandler, Zitadel};
 
 impl Zitadel {
 	/// Crates a new human user. [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-add-human-user)
@@ -148,7 +147,7 @@ impl Zitadel {
 		user_id: &str,
 		body: UserServiceListIdpLinksBody,
 	) -> Result<impl Stream<Item = IdpLink> + Send> {
-		Ok(pagination::PaginationHandler::<_, IdpLink>::new(
+		Ok(PaginationHandler::<_, IdpLink>::new(
 			self.clone(),
 			body.page_size(),
 			body,
@@ -178,7 +177,7 @@ impl Zitadel {
 		&mut self,
 		body: ListUsersRequest,
 	) -> Result<impl Stream<Item = User> + Send> {
-		Ok(pagination::PaginationHandler::<_, User>::new(
+		Ok(PaginationHandler::<_, User>::new(
 			self.clone(),
 			body.page_size(),
 			body,
@@ -679,7 +678,7 @@ impl Zitadel {
 		user_id: &str,
 		body: ListUserMetadataRequest,
 	) -> Result<impl Stream<Item = UserMetadataResponse> + Send> {
-		Ok(pagination::PaginationHandler::<_, UserMetadataResponse>::new(
+		Ok(PaginationHandler::<_, UserMetadataResponse>::new(
 			self.clone(),
 			body.page_size(),
 			body,

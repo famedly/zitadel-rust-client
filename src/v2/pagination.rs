@@ -1,3 +1,4 @@
+//! Module to transparently handle response pagination
 use std::{future::Future, pin::Pin, task::Poll};
 
 use anyhow::{Context, Result};
@@ -7,6 +8,7 @@ use url::Url;
 
 use crate::v2::Zitadel;
 
+/// A paginated response
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct PaginatedResponse<T> {
 	#[serde(rename = "result")]
