@@ -12,14 +12,14 @@ use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::Value;
 
-use crate::v2::organization::models;
+use crate::v2::{organization::models, users::AddHumanUserRequest};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddOrganizationRequestAdmin {
 	#[serde(rename = "userId")]
 	user_id: Option<String>,
 	#[serde(rename = "human")]
-	human: Option<models::V2AddHumanUserRequest>,
+	human: Option<AddHumanUserRequest>,
 	#[serde(rename = "roles")]
 	roles: Option<Vec<String>>,
 }
@@ -46,19 +46,16 @@ impl AddOrganizationRequestAdmin {
 		self.user_id = None;
 	}
 
-	pub fn set_human(&mut self, human: models::V2AddHumanUserRequest) {
+	pub fn set_human(&mut self, human: AddHumanUserRequest) {
 		self.human = Some(human);
 	}
 
-	pub fn with_human(
-		mut self,
-		human: models::V2AddHumanUserRequest,
-	) -> AddOrganizationRequestAdmin {
+	pub fn with_human(mut self, human: AddHumanUserRequest) -> AddOrganizationRequestAdmin {
 		self.human = Some(human);
 		self
 	}
 
-	pub fn human(&self) -> Option<&models::V2AddHumanUserRequest> {
+	pub fn human(&self) -> Option<&AddHumanUserRequest> {
 		self.human.as_ref()
 	}
 

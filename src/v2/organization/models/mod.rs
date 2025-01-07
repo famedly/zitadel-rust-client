@@ -16,8 +16,6 @@ mod protobuf_any;
 pub use self::protobuf_any::ProtobufAny;
 mod rpc_status;
 pub use self::rpc_status::RpcStatus;
-mod v2_add_human_user_request;
-pub use self::v2_add_human_user_request::V2AddHumanUserRequest;
 mod v2_add_organization_request;
 pub use self::v2_add_organization_request::V2AddOrganizationRequest;
 mod v2_add_organization_response;
