@@ -9,7 +9,7 @@ use super::Zitadel;
 impl Zitadel {
 	/// Creates a new organization. [Docs](https://zitadel.com/docs/apis/resources/org_service_v2/organization-service-add-organization)
 	pub async fn create_organization_with_admin(
-		&mut self,
+		&self,
 		body: V2AddOrganizationRequest,
 	) -> Result<V2AddOrganizationResponse> {
 		let request = self

@@ -12,7 +12,7 @@ use super::{pagination::PaginationHandler, Zitadel};
 impl Zitadel {
 	/// Crates a new human user. [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-add-human-user)
 	pub async fn create_human_user(
-		&mut self,
+		&self,
 		body: AddHumanUserRequest,
 	) -> Result<AddHumanUserResponse> {
 		let request = self
@@ -26,7 +26,7 @@ impl Zitadel {
 	}
 	/// Add link to an identity provider to an user
 	pub async fn add_idp_link(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceAddIdpLinkBody,
 	) -> Result<AddIdpLinkResponse> {
@@ -43,7 +43,7 @@ impl Zitadel {
 	/// Add a new One-Time-Password (OTP) Email factor to the authenticated
 	/// user. OTP Email will enable the user to verify a OTP with the latest
 	/// verified email. The email has to be verified to add the second factor.
-	pub async fn add_otp_email(&mut self, user_id: &str) -> Result<AddOtpEmailResponse> {
+	pub async fn add_otp_email(&self, user_id: &str) -> Result<AddOtpEmailResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
@@ -58,7 +58,7 @@ impl Zitadel {
 	/// OTP SMS will enable the user to verify a OTP with the latest verified
 	/// phone number. The phone number has to be verified to add the second
 	/// factor.
-	pub async fn add_otpsms(&mut self, user_id: &str) -> Result<AddOtpsmsResponse> {
+	pub async fn add_otpsms(&self, user_id: &str) -> Result<AddOtpsmsResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?)
@@ -72,7 +72,7 @@ impl Zitadel {
 	/// Create a passkey registration link which includes a code and either
 	/// return it or send it to the user.
 	pub async fn create_passkey_registration_link(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceCreatePasskeyRegistrationLinkBody,
 	) -> Result<CreatePasskeyRegistrationLinkResponse> {
@@ -91,7 +91,7 @@ impl Zitadel {
 	/// is already in the state 'deactivated'. Use deactivate user when the user
 	/// should not be able to use the account anymore, but you still need access
 	/// to the user data.
-	pub async fn deactivate_user(&mut self, user_id: &str) -> Result<DeactivateUserResponse> {
+	pub async fn deactivate_user(&self, user_id: &str) -> Result<DeactivateUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/deactivate"))?)
@@ -105,7 +105,7 @@ impl Zitadel {
 	/// The state of the user will be changed to 'deleted'. The user will not be
 	/// able to log in anymore. Endpoints requesting this user will return an
 	/// error 'User not found.
-	pub async fn delete_user(&mut self, user_id: &str) -> Result<DeleteUserResponse> {
+	pub async fn delete_user(&self, user_id: &str) -> Result<DeleteUserResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}"))?)
@@ -117,7 +117,7 @@ impl Zitadel {
 	/// User by ID
 	/// Returns the full user object (human or machine) including the profile,
 	/// email, etc.
-	pub async fn get_user_by_id(&mut self, user_id: &str) -> Result<GetUserByIdResponse> {
+	pub async fn get_user_by_id(&self, user_id: &str) -> Result<GetUserByIdResponse> {
 		let request = self
 			.client
 			.get(self.make_url(&format!("/v2/users/{user_id}"))?)
@@ -130,7 +130,7 @@ impl Zitadel {
 	/// List all possible authentication methods of a user like password,
 	/// passwordless, (T)OTP and more.
 	pub async fn list_authentication_method_types(
-		&mut self,
+		&self,
 		user_id: &str,
 	) -> Result<ListAuthenticationMethodTypesResponse> {
 		let request = self
@@ -143,7 +143,7 @@ impl Zitadel {
 	}
 	/// List links to an identity provider of an user
 	pub fn list_idp_links(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceListIdpLinksBody,
 	) -> Result<impl Stream<Item = IdpLink> + Send> {
@@ -156,7 +156,7 @@ impl Zitadel {
 	}
 	/// List passkeys of an user
 	pub async fn list_passkeys(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceListPasskeysBody,
 	) -> Result<ListPasskeysResponse> {
@@ -173,10 +173,7 @@ impl Zitadel {
 	/// Search Users
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
-	pub fn list_users(
-		&mut self,
-		body: ListUsersRequest,
-	) -> Result<impl Stream<Item = User> + Send> {
+	pub fn list_users(&self, body: ListUsersRequest) -> Result<impl Stream<Item = User> + Send> {
 		Ok(PaginationHandler::<_, User>::new(
 			self.clone(),
 			body.page_size(),
@@ -190,7 +187,7 @@ impl Zitadel {
 	/// already in the state 'locked'. Use this endpoint if the user should not
 	/// be able to log in temporarily because of an event that happened (wrong
 	/// password, etc.).
-	pub async fn lock_user(&mut self, user_id: &str) -> Result<LockUserResponse> {
+	pub async fn lock_user(&self, user_id: &str) -> Result<LockUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/lock"))?)
@@ -202,7 +199,7 @@ impl Zitadel {
 	}
 	/// Request a code to reset a password
 	pub async fn password_reset(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServicePasswordResetBody,
 	) -> Result<PasswordResetResponse> {
@@ -219,7 +216,7 @@ impl Zitadel {
 	/// Reactivate a user with the state 'deactivated'. The user will be able to
 	/// log in again afterward. The endpoint returns an error if the user is not
 	/// in the state 'deactivated'.
-	pub async fn reactivate_user(&mut self, user_id: &str) -> Result<ReactivateUserResponse> {
+	pub async fn reactivate_user(&self, user_id: &str) -> Result<ReactivateUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/reactivate"))?)
@@ -234,7 +231,7 @@ impl Zitadel {
 	/// key credential creation options are returned, which are used to verify
 	/// the passkey.
 	pub async fn register_passkey(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceRegisterPasskeyBody,
 	) -> Result<RegisterPasskeyResponse> {
@@ -250,7 +247,7 @@ impl Zitadel {
 	/// Start the registration of a TOTP generator for a user
 	/// Start the registration of a TOTP generator for a user, as a response a
 	/// secret returned, which is used to initialize a TOTP app or device.
-	pub async fn register_totp(&mut self, user_id: &str) -> Result<RegisterTotpResponse> {
+	pub async fn register_totp(&self, user_id: &str) -> Result<RegisterTotpResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/totp"))?)
@@ -265,7 +262,7 @@ impl Zitadel {
 	/// public key credential creation options are returned, which are used to
 	/// verify the u2f token.
 	pub async fn register_u2_f(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceRegisterU2FBody,
 	) -> Result<RegisterU2FResponse> {
@@ -280,7 +277,7 @@ impl Zitadel {
 	}
 	/// Remove link of an identity provider to an user
 	pub async fn remove_idp_link(
-		&mut self,
+		&self,
 		user_id: &str,
 		idp_id: &str,
 		linked_user_id: &str,
@@ -298,7 +295,7 @@ impl Zitadel {
 	/// Remove the configured One-Time-Password (OTP) Email factor of a user. As
 	/// only one OTP Email per user is allowed, the user will not have OTP Email
 	/// as a second-factor afterward.
-	pub async fn remove_otp_email(&mut self, user_id: &str) -> Result<RemoveOtpEmailResponse> {
+	pub async fn remove_otp_email(&self, user_id: &str) -> Result<RemoveOtpEmailResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
@@ -311,7 +308,7 @@ impl Zitadel {
 	/// Remove the configured One-Time-Password (OTP) SMS factor of a user. As
 	/// only one OTP SMS per user is allowed, the user will not have OTP SMS as
 	/// a second-factor afterward.
-	pub async fn remove_otpsms(&mut self, user_id: &str) -> Result<RemoveOtpsmsResponse> {
+	pub async fn remove_otpsms(&self, user_id: &str) -> Result<RemoveOtpsmsResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?)
@@ -322,7 +319,7 @@ impl Zitadel {
 	}
 	/// Remove passkey from a user
 	pub async fn remove_passkey(
-		&mut self,
+		&self,
 		user_id: &str,
 		passkey_id: &str,
 	) -> Result<RemovePasskeyResponse> {
@@ -335,7 +332,7 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// Delete the user phone
-	pub async fn remove_phone(&mut self, user_id: &str) -> Result<RemovePhoneResponse> {
+	pub async fn remove_phone(&self, user_id: &str) -> Result<RemovePhoneResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/phone"))?)
@@ -349,7 +346,7 @@ impl Zitadel {
 	/// Remove the configured TOTP generator of a user. As only one TOTP
 	/// generator per user is allowed, the user will not have TOTP as a
 	/// second-factor afterward.
-	pub async fn remove_totp(&mut self, user_id: &str) -> Result<RemoveTotpResponse> {
+	pub async fn remove_totp(&self, user_id: &str) -> Result<RemoveTotpResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/totp"))?)
@@ -359,7 +356,7 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// Remove u2f token from a user
-	pub async fn remove_u2_f(&mut self, user_id: &str, u2f_id: &str) -> Result<RemoveU2FResponse> {
+	pub async fn remove_u2_f(&self, user_id: &str, u2f_id: &str) -> Result<RemoveU2FResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/u2f/{u2f_id}"))?)
@@ -370,7 +367,7 @@ impl Zitadel {
 	}
 	/// Resend code to verify user email
 	pub async fn resend_email_code(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceResendEmailCodeBody,
 	) -> Result<ResendEmailCodeResponse> {
@@ -385,7 +382,7 @@ impl Zitadel {
 	}
 	/// Resend code to verify user phone
 	pub async fn resend_phone_code(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceResendPhoneCodeBody,
 	) -> Result<ResendPhoneCodeResponse> {
@@ -402,7 +399,7 @@ impl Zitadel {
 	/// Retrieve the information returned by the identity provider for
 	/// registration or updating an existing user with new information.
 	pub async fn retrieve_identity_provider_intent(
-		&mut self,
+		&self,
 		idp_intent_id: &str,
 		body: UserServiceRetrieveIdentityProviderIntentBody,
 	) -> Result<RetrieveIdentityProviderIntentResponse> {
@@ -420,7 +417,7 @@ impl Zitadel {
 	/// a verification code will be generated, which can be either returned or
 	/// sent to the user by email.
 	pub async fn set_email(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceSetEmailBody,
 	) -> Result<SetEmailResponse> {
@@ -437,7 +434,7 @@ impl Zitadel {
 	/// Change the password of a user with either a verification code or the
 	/// current password.
 	pub async fn set_password(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceSetPasswordBody,
 	) -> Result<SetPasswordResponse> {
@@ -455,7 +452,7 @@ impl Zitadel {
 	/// verification code will be generated, which can be either returned or
 	/// sent to the user by sms.
 	pub async fn set_phone(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceSetPhoneBody,
 	) -> Result<SetPhoneResponse> {
@@ -472,7 +469,7 @@ impl Zitadel {
 	/// Start a flow with an identity provider, for external login, registration
 	/// or linking.
 	pub async fn start_identity_provider_intent(
-		&mut self,
+		&self,
 		body: StartIdentityProviderIntentRequest,
 	) -> Result<StartIdentityProviderIntentResponse> {
 		let request = self
@@ -490,7 +487,7 @@ impl Zitadel {
 	/// already in the state 'locked'. Use this endpoint if the user should not
 	/// be able to log in temporarily because of an event that happened (wrong
 	/// password, etc.).
-	pub async fn unlock_user(&mut self, user_id: &str) -> Result<UnlockUserResponse> {
+	pub async fn unlock_user(&self, user_id: &str) -> Result<UnlockUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/unlock"))?)
@@ -504,7 +501,7 @@ impl Zitadel {
 	/// Update User
 	/// Update all information from a user.
 	pub async fn update_human_user(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UpdateHumanUserRequest,
 	) -> Result<UpdateHumanUserResponse> {
@@ -521,7 +518,7 @@ impl Zitadel {
 	/// Verify the email
 	/// Verify the email with the generated code.
 	pub async fn verify_email(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceVerifyEmailBody,
 	) -> Result<VerifyEmailResponse> {
@@ -537,7 +534,7 @@ impl Zitadel {
 	/// Verify a passkey for a user
 	/// Verify the passkey registration with the public key credential.
 	pub async fn verify_passkey_registration(
-		&mut self,
+		&self,
 		user_id: &str,
 		passkey_id: &str,
 		body: UserServiceVerifyPasskeyRegistrationBody,
@@ -554,7 +551,7 @@ impl Zitadel {
 	/// Verify the phone
 	/// Verify the phone with the generated code.
 	pub async fn verify_phone(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceVerifyPhoneBody,
 	) -> Result<VerifyPhoneResponse> {
@@ -570,7 +567,7 @@ impl Zitadel {
 	/// Verify a TOTP generator for a user
 	/// Verify the TOTP registration with a generated code.
 	pub async fn verify_totp_registration(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: UserServiceVerifyTotpRegistrationBody,
 	) -> Result<VerifyTotpRegistrationResponse> {
@@ -586,7 +583,7 @@ impl Zitadel {
 	/// Verify a u2f token for a user
 	/// Verify the u2f token registration with the public key credential.
 	pub async fn verify_u2_f_registration(
-		&mut self,
+		&self,
 		user_id: &str,
 		u2f_id: &str,
 		body: UserServiceVerifyU2FRegistrationBody,
@@ -602,7 +599,7 @@ impl Zitadel {
 	}
 	/// Get a metadata object from a user by a specific key
 	pub async fn get_user_metadata(
-		&mut self,
+		&self,
 		user_id: &str,
 		key: &str,
 	) -> Result<GetUserMetadataResponse> {
@@ -615,7 +612,7 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// Remove a metadata object from a user with a specific key
-	pub async fn delete_user_metadata(&mut self, user_id: &str, key: &str) -> Result<Details> {
+	pub async fn delete_user_metadata(&self, user_id: &str, key: &str) -> Result<Details> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
@@ -627,7 +624,7 @@ impl Zitadel {
 	/// Set a metadata object for a user
 	/// This method either adds or updates a metadata value for the requested
 	pub async fn set_user_metadata(
-		&mut self,
+		&self,
 		user_id: &str,
 		key: &str,
 		value: &str,
@@ -644,7 +641,7 @@ impl Zitadel {
 	/// Set a metadata object for a user in a bulk
 	/// Add or update multiple metadata values for a user
 	pub async fn set_user_metadata_bulk(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: Vec<SetMetadataEntry>,
 	) -> Result<Details> {
@@ -659,7 +656,7 @@ impl Zitadel {
 	}
 	/// Remove a list of metadata objects from a user with a list of keys
 	pub async fn delete_user_metadata_bulk(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: Vec<String>,
 	) -> Result<Details> {
@@ -674,7 +671,7 @@ impl Zitadel {
 	}
 	/// Get the metadata of a user filtered by your query
 	pub fn list_user_metadata(
-		&mut self,
+		&self,
 		user_id: &str,
 		body: ListUserMetadataRequest,
 	) -> Result<impl Stream<Item = UserMetadataResponse> + Send> {

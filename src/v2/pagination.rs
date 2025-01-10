@@ -73,7 +73,7 @@ where
 }
 
 async fn get_more_data<T: DeserializeOwned + 'static>(
-	mut zitadel: Zitadel,
+	zitadel: Zitadel,
 	query: impl Serialize + Send,
 	endpoint: Url,
 ) -> Result<Vec<T>> {

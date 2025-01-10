@@ -45,7 +45,7 @@ impl Zitadel {
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
-	async fn send_request<T: DeserializeOwned>(&mut self, mut request: Request) -> Result<T> {
+	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
 		if self.token.read().await.is_expired() {
 			self.token.write().await.renew().await?;
 		}
@@ -136,7 +136,7 @@ mod tests {
 
 		let service_account_file = Path::new(SERVICE_USER_KEY_PATH);
 		let url = Url::parse(&mock_server.uri())?;
-		let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+		let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 		zitadel.token.write().await.expiry =
 			OffsetDateTime::now_utc() - time::Duration::minutes(10);
