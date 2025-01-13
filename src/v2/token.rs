@@ -87,9 +87,9 @@ impl ZitadelJWTVerifier {
 			.then_some(())
 			.ok_or(TokenExpiredError)?;
 
-		(payload.not_before().ok_or(MissingClaim("nbf"))? < now)
+		(payload.issued_at().ok_or(MissingClaim("iat"))? < now)
 			.then_some(())
-			.ok_or(TokenNotBeforeError)?;
+			.ok_or(TokenIssuedInFutureError)?;
 
 		Ok(payload)
 	}
@@ -155,9 +155,9 @@ pub enum TokenValidationError {
 	/// Token expired error
 	#[error("The token has expired")]
 	TokenExpiredError,
-	/// Token used before the 'not before'
-	#[error("Token used before 'not before'")]
-	TokenNotBeforeError,
+	/// Token issued in future error
+	#[error("Token issued in future")]
+	TokenIssuedInFutureError,
 	/// Missing token claim error
 	#[error("Token missing the claim '{0}'")]
 	MissingClaim(&'static str),

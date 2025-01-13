@@ -475,9 +475,9 @@ async fn test_e2e_token_verification_negative() -> Result<()> {
 	payload_expired.set_expires_at(&(now - Duration::minutes(5)).into());
 	jwts.push((&payload_expired, &header));
 
-	let mut payload_before = base_payload.clone();
-	payload_before.set_not_before(&(now + Duration::minutes(1)).into());
-	jwts.push((&payload_before, &header));
+	let mut payload_future = base_payload.clone();
+	payload_future.set_issued_at(&(now + Duration::minutes(1)).into());
+	jwts.push((&payload_future, &header));
 
 	let mut payload_wrong_issuer = base_payload.clone();
 	payload_wrong_issuer.set_issuer("Wrong_issuer");
@@ -521,7 +521,7 @@ async fn test_e2e_token_verification_positive() -> Result<()> {
 	let mut base_payload = JwtPayload::new();
 	base_payload.set_issuer(mock.uri());
 	base_payload.set_expires_at(&(now + Duration::minutes(10)).into());
-	base_payload.set_not_before(&(now - Duration::minutes(10)).into());
+	base_payload.set_issued_at(&(now - Duration::minutes(10)).into());
 	base_payload.set_claim("test_claim", Some("test_value".into()))?;
 
 	let mut header = JwsHeader::new();
