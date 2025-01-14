@@ -96,4 +96,16 @@ impl Zitadel {
 
 		self.send_request(request).await
 	}
+
+	/// Create project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
+	pub async fn create_project(&self, body: V1AddProjectRequest) -> Result<V1AddProjectResponse> {
+		let request = self
+			.client
+			.post(self.make_url("management/v1/projects")?)
+			.json(&body)
+			.build()
+			.context("Error building create_project request")?;
+
+		self.send_request(request).await
+	}
 }

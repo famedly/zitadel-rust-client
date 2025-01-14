@@ -20,7 +20,9 @@ use wiremock::{
 	matchers::{method, path},
 	Mock, MockServer, ResponseTemplate,
 };
-use zitadel_rust_client::v2::{authentication::Token, organization::*, token, users::*, Zitadel};
+use zitadel_rust_client::v2::{
+	authentication::Token, management::*, organization::*, token, users::*, Zitadel,
+};
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
 
@@ -88,6 +90,155 @@ async fn test_e2e_create_organization() -> Result<()> {
 			.count()
 			.await,
 		1
+	);
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_create_application() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let project =
+		zitadel.create_project(V1AddProjectRequest::new("TestProject".to_owned())).await?;
+
+	let project_id = project.id().expect("Must have created a project with a valid ID");
+
+	let res = zitadel
+		.create_application(
+			project_id.to_owned(),
+			ManagementServiceAddApiAppBody::new("TestApp".to_owned()),
+		)
+		.await;
+
+	// TODO: Once we have a list application method, we should check
+	// that the org was actually created
+	assert!(res.is_ok());
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_create_action() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let res = zitadel
+		.create_action(V1CreateActionRequest::new(
+			"test-action".to_owned(),
+			"console.log('test-action')".to_owned(),
+		))
+		.await;
+
+	// TODO: Once we have a list action method, we should check that
+	// the action was actually created
+	assert!(res.is_ok());
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_update_action() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let res = zitadel
+		.create_action(V1CreateActionRequest::new(
+			"test-action".to_owned(),
+			"console.log('test-action')".to_owned(),
+		))
+		.await?;
+
+	let action_id = res.id().expect("Must have created an action with a valid ID");
+
+	let res = zitadel
+		.update_action(
+			action_id.to_owned(),
+			ManagementServiceUpdateActionBody::new(
+				"test-action".to_owned(),
+				"console.log('test-action-update')".to_owned(),
+			),
+		)
+		.await;
+
+	// TODO: Once we have a list action method, we should check that
+	// the action was actually updated
+	assert!(res.is_ok());
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_delete_action() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let res = zitadel
+		.create_action(V1CreateActionRequest::new(
+			"test-action".to_owned(),
+			"console.log(test)".to_owned(),
+		))
+		.await?;
+
+	let action_id = res.id().expect("Must have created an action with a valid ID");
+
+	let res = zitadel.delete_action(action_id.to_owned()).await;
+
+	// TODO: Once we have a list action method, we should check that
+	// the action was actually deleted
+	assert!(res.is_ok());
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "trace")]
+async fn test_e2e_set_trigger_actions() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let res = zitadel
+		.create_action(V1CreateActionRequest::new(
+			"test-action".to_owned(),
+			"console.log(test)".to_owned(),
+		))
+		.await?;
+
+	let action_id = res.id().expect("Must have created an action with a valid ID");
+
+	zitadel
+		.set_trigger_actions(
+			1,
+			1,
+			ManagementServiceSetTriggerActionsBody::new()
+				.with_action_ids(vec![action_id.to_owned()]),
+		)
+		.await?;
+
+	let res = zitadel.get_flow(1).await?;
+	assert_eq!(
+		res.flow().and_then(|flow| flow._type().and_then(|t| t.id())),
+		Some(&"1".to_owned())
 	);
 
 	tear_down(&zitadel).await;
