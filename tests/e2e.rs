@@ -25,7 +25,7 @@ use zitadel_rust_client::v2::{authentication::Token, organization::*, token, use
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
 
 /// Created an user and returns the user ID
-async fn create_user(zitadel: &mut Zitadel, first_name: &str, last_name: &str) -> Result<String> {
+async fn create_user(zitadel: &Zitadel, first_name: &str, last_name: &str) -> Result<String> {
 	let user = AddHumanUserRequest::new(
 		SetHumanProfile::new(first_name.to_owned(), last_name.to_owned()),
 		SetHumanEmail::new(format!("{first_name}.{last_name}@domain.example")),
@@ -35,7 +35,7 @@ async fn create_user(zitadel: &mut Zitadel, first_name: &str, last_name: &str) -
 	Ok(ret.user_id().expect("Couldn't get the user id from response").clone())
 }
 
-async fn tear_down(zitadel: &mut Zitadel) {
+async fn tear_down(zitadel: &Zitadel) {
 	let query = ListUsersRequest::new(vec![
 		SearchQuery::new().with_type_query(TypeQuery::new(Userv2Type::Human))
 	]);
@@ -63,7 +63,7 @@ async fn test_e2e_create_token() -> Result<()> {
 async fn test_e2e_create_organization() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let admins = vec![
 		(AddOrganizationRequestAdmin::new().with_human(AddHumanUserRequest::new(
@@ -90,7 +90,7 @@ async fn test_e2e_create_organization() -> Result<()> {
 		1
 	);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -100,9 +100,9 @@ async fn test_e2e_create_organization() -> Result<()> {
 async fn test_e2e_create_human_user() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
-	let resp = create_user(&mut zitadel, "John", "Doe").await;
+	let resp = create_user(&zitadel, "John", "Doe").await;
 
 	if let Err(e) = &resp {
 		tracing::error!("Error: {e}");
@@ -110,7 +110,7 @@ async fn test_e2e_create_human_user() -> Result<()> {
 
 	assert!(resp.is_ok());
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -120,7 +120,7 @@ async fn test_e2e_create_human_user() -> Result<()> {
 async fn test_e2e_list_human_users() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let mut users = Vec::new();
 
@@ -148,7 +148,7 @@ async fn test_e2e_list_human_users() -> Result<()> {
 	let user_emails: Vec<_> = users.into_iter().map(|user| user.email().email().clone()).collect();
 	assert_eq!(res_user_emails, user_emails);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -158,7 +158,7 @@ async fn test_e2e_list_human_users() -> Result<()> {
 async fn test_e2e_list_idp_links() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let idp_links = vec![];
 
@@ -176,7 +176,7 @@ async fn test_e2e_list_idp_links() -> Result<()> {
 
 	assert_eq!(stream.count().await, idp_links.len());
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -186,12 +186,12 @@ async fn test_e2e_list_idp_links() -> Result<()> {
 async fn test_e2e_change_user() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let last_name = "Doe";
 	let first_name = "John";
 
-	let id = create_user(&mut zitadel, first_name, last_name).await?;
+	let id = create_user(&zitadel, first_name, last_name).await?;
 
 	let ret = zitadel.get_user_by_id(&id).await?;
 
@@ -219,7 +219,7 @@ async fn test_e2e_change_user() -> Result<()> {
 
 	assert_eq!(rest_last_name, new_last_name);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -229,9 +229,9 @@ async fn test_e2e_change_user() -> Result<()> {
 async fn test_e2e_activate_deactivate() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
-	let id = create_user(&mut zitadel, "John", "Doe").await?;
+	let id = create_user(&zitadel, "John", "Doe").await?;
 
 	let ret = zitadel.get_user_by_id(&id).await?;
 	let Some(user_state) = ret.user().and_then(|u| u.state()) else {
@@ -255,7 +255,7 @@ async fn test_e2e_activate_deactivate() -> Result<()> {
 	};
 	assert_eq!(user_state, &UserState::Active);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -265,14 +265,14 @@ async fn test_e2e_activate_deactivate() -> Result<()> {
 async fn test_e2e_delete_user() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let deleted_user_name = "John";
 	let user_last_name = "Doe";
 
-	let id = create_user(&mut zitadel, deleted_user_name, user_last_name).await?;
+	let id = create_user(&zitadel, deleted_user_name, user_last_name).await?;
 
-	create_user(&mut zitadel, "John_2", user_last_name).await?;
+	create_user(&zitadel, "John_2", user_last_name).await?;
 
 	let query = ListUsersRequest::new(vec![
 		SearchQuery::new().with_last_name_query(LastNameQuery::new(user_last_name.to_owned()))
@@ -297,7 +297,7 @@ async fn test_e2e_delete_user() -> Result<()> {
 		.await;
 	assert_eq!(user_count, 1);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -307,7 +307,7 @@ async fn test_e2e_delete_user() -> Result<()> {
 async fn test_e2e_user_metadata() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let metadata = vec![("key1", "value1"), ("key2", "value2")];
 
@@ -349,7 +349,7 @@ async fn test_e2e_user_metadata() -> Result<()> {
 		.expect("Unable to get updated value from response of get_user_metadata");
 	assert_eq!(value, updated_value);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
@@ -359,7 +359,7 @@ async fn test_e2e_user_metadata() -> Result<()> {
 async fn test_e2e_user_metadata_bulk() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
-	let mut zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let metadata = vec![
 		SetMetadataEntry::new("key1".to_owned(), "value1".to_owned()),
@@ -427,7 +427,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 			.await == 0
 	);
 
-	tear_down(&mut zitadel).await;
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
