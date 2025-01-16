@@ -149,7 +149,6 @@ impl Zitadel {
 	) -> Result<impl Stream<Item = IdpLink> + Send> {
 		Ok(PaginationHandler::<_, IdpLink>::new(
 			self.clone(),
-			body.page_size(),
 			body,
 			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
 		))
@@ -174,12 +173,7 @@ impl Zitadel {
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
 	pub fn list_users(&self, body: ListUsersRequest) -> Result<impl Stream<Item = User> + Send> {
-		Ok(PaginationHandler::<_, User>::new(
-			self.clone(),
-			body.page_size(),
-			body,
-			self.make_url("/v2/users")?,
-		))
+		Ok(PaginationHandler::<_, User>::new(self.clone(), body, self.make_url("/v2/users")?))
 	}
 	/// Lock user
 	/// The state of the user will be changed to 'locked'. The user will not be
@@ -677,7 +671,6 @@ impl Zitadel {
 	) -> Result<impl Stream<Item = UserMetadataResponse> + Send> {
 		Ok(PaginationHandler::<_, UserMetadataResponse>::new(
 			self.clone(),
-			body.page_size(),
 			body,
 			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
 		))

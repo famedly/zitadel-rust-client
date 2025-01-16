@@ -110,18 +110,14 @@ impl ListUsersRequest {
 		self.page_size = page_size;
 		self
 	}
-
-	pub fn page_size(&self) -> usize {
-		self.page_size
-	}
 }
 
 impl PaginationRequest for ListUsersRequest {
 	type Item = ListUsersRequestOuter;
-	fn to_paginated_request(&self, page: usize, page_size: usize) -> Self::Item {
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
 		let page = models::ListQuery::new()
-			.with_limit(page_size)
-			.with_offset((page * page_size).to_string())
+			.with_limit(self.page_size())
+			.with_offset((page * self.page_size()).to_string())
 			.with_asc(self.asc.unwrap_or_default());
 		let mut query =
 			ListUsersRequestOuter::new().with_query(page).with_queries(self.queries.clone());
@@ -129,5 +125,9 @@ impl PaginationRequest for ListUsersRequest {
 			query.set_sorting_column(sorting_column);
 		}
 		query
+	}
+
+	fn page_size(&self) -> usize {
+		self.page_size
 	}
 }

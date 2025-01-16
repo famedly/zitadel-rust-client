@@ -26,7 +26,8 @@ where
 
 pub(crate) trait PaginationRequest {
 	type Item: Serialize + 'static;
-	fn to_paginated_request(&self, page: usize, page_size: usize) -> Self::Item;
+	fn to_paginated_request(&self, page: usize) -> Self::Item;
+	fn page_size(&self) -> usize;
 }
 
 type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send;
@@ -40,7 +41,6 @@ where
 	query: Box<dyn PaginationRequest<Item = Q> + Send>,
 	endpoint: Url,
 	page: usize,
-	page_size: usize,
 	buffer: Vec<T>,
 	done: bool,
 	data_fut: Pin<Box<DataFuture<T>>>,
@@ -53,18 +53,16 @@ where
 {
 	pub(crate) fn new(
 		zitadel: Zitadel,
-		page_size: usize,
 		query: impl PaginationRequest<Item = Q> + Send + 'static,
 		endpoint: Url,
 	) -> Self {
 		let page = 0;
-		let req_query = query.to_paginated_request(page, page_size);
+		let req_query = query.to_paginated_request(page);
 		Self {
 			zitadel: zitadel.clone(),
 			query: Box::new(query),
 			endpoint: endpoint.clone(),
 			page,
-			page_size,
 			buffer: Vec::new(),
 			done: false,
 			data_fut: Box::pin(get_more_data::<T>(zitadel, req_query, endpoint)),
@@ -120,10 +118,10 @@ where
 						self.buffer.reverse();
 
 						self.page += 1;
-						self.done = self.buffer.len() < self.page_size;
+						self.done = self.buffer.len() < self.query.page_size();
 						self.data_fut = Box::pin(get_more_data::<T>(
 							self.zitadel.clone(),
-							self.query.to_paginated_request(self.page, self.page_size),
+							self.query.to_paginated_request(self.page),
 							self.endpoint.clone(),
 						));
 					}
