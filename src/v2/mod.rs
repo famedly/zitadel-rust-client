@@ -72,6 +72,8 @@ impl Zitadel {
 			bail!("The request resulted in error. Response: {status_code}. Body: {body}")
 		}
 
+		tracing::trace!("Response: {}", body);
+
 		Ok(serde_json::from_str::<T>(&body)?)
 	}
 
