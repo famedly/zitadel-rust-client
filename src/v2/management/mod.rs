@@ -114,7 +114,24 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 
-	/// Search for applications [Docs]()
+	/// Remove application. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-app)
+	pub async fn remove_application(
+		&self,
+		project_id: String,
+		application_id: String,
+	) -> Result<V1RemoveAppResponse> {
+		let request =
+			self.client
+				.delete(self.make_url(&format!(
+					"management/v1/projects/{project_id}/apps/{application_id}"
+				))?)
+				.build()
+				.context("Error building remove_application request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Search for applications [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-apps)
 	pub fn list_applications(
 		&self,
 		project_id: String,
@@ -137,6 +154,94 @@ impl Zitadel {
 			.context("Error building create_project request")?;
 
 		self.send_request(request).await
+	}
+
+	/// Remove project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-project)
+	pub async fn remove_project(&self, project_id: String) -> Result<V1RemoveProjectResponse> {
+		let request = self
+			.client
+			.delete(self.make_url(&format!("management/v1/projects/{project_id}"))?)
+			.build()
+			.context("Error building delete_project request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Search for projects [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-projects)
+	pub fn list_projects(
+		&self,
+		body: ListProjectsRequest,
+	) -> Result<impl Stream<Item = V1Project>> {
+		Ok(PaginationHandler::<_, V1Project>::new(
+			self.clone(),
+			body,
+			self.make_url("management/v1/projects/_search")?,
+		))
+	}
+}
+
+/// Pagination-supporting project search
+#[derive(Clone, Debug)]
+pub struct ListProjectsRequest {
+	inner_request: V1ListProjectsRequest,
+}
+
+impl ListProjectsRequest {
+	/// Constructor
+	#[must_use]
+	pub fn new(queries: Vec<V1ProjectQuery>) -> Self {
+		Self { inner_request: V1ListProjectsRequest::new().with_queries(queries) }
+	}
+
+	/// Use the supplied ListQuery
+	#[must_use]
+	pub fn with_query(mut self, query: V1ListQuery) -> Self {
+		self.inner_request.set_query(query);
+		self
+	}
+
+	/// Use the supplied application queries
+	#[must_use]
+	pub fn with_queries(mut self, queries: Vec<V1ProjectQuery>) -> Self {
+		self.inner_request.set_queries(queries);
+		self
+	}
+
+	delegate! {
+		to self.inner_request {
+			/// Set the supplied ListQuery
+			pub fn set_query(&mut self, query: V1ListQuery);
+			/// The ListQuery currently used for this request
+			#[must_use] pub fn query(&self) -> Option<&V1ListQuery>;
+			/// Reset the ListQuery to None
+			pub fn reset_query(&mut self);
+			/// Set the supplied app queries
+			pub fn set_queries(&mut self, queries: Vec<V1ProjectQuery>);
+			/// The app queries currently used for this request
+			#[must_use] pub fn queries(&self) -> Option<&Vec<V1ProjectQuery>>;
+			/// Reset the app queries to None
+			pub fn reset_queries(&mut self);
+		}
+	}
+}
+
+impl PaginationRequest for ListProjectsRequest {
+	type Item = V1ListProjectsRequest;
+
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		self.inner_request.clone().with_query(
+			self.inner_request
+				.query()
+				.unwrap_or(&V1ListQuery::new())
+				.clone()
+				.with_offset((page * self.page_size()).to_string()),
+		)
+	}
+
+	fn page_size(&self) -> usize {
+		(*self.inner_request.query().and_then(|query| query.limit()).unwrap_or(&1000))
+			.try_into()
+			.unwrap_or(1000)
 	}
 }
 

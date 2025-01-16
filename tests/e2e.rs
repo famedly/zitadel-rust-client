@@ -49,6 +49,44 @@ async fn tear_down(zitadel: &Zitadel) {
 		let id = user.user_id().expect("Couldn't get user id during tear down.");
 		zitadel.delete_user(id).await.expect("Error deleting user");
 	}
+
+	let mut stream = zitadel
+		.search_actions(ListActionsRequest::new(vec![]))
+		.expect("Error getting the list of actions to tear down");
+
+	while let Some(action) = stream.next().await {
+		let id = action.id().expect("Couldn't get action id during tear down.");
+		zitadel.delete_action(id.clone()).await.expect("Error deleting action");
+	}
+
+	let mut stream = zitadel
+		.list_projects(ListProjectsRequest::new(vec![]))
+		.expect("Error getting the list of projects to tear down");
+
+	while let Some(project) = stream.next().await {
+		tracing::debug!("{:?}", project);
+
+		let id = project.id().expect("Couldn't get project id during tear down.");
+
+		let mut stream = zitadel
+			.list_applications(id.clone(), ListApplicationsRequest::new(vec![]))
+			.expect("Error getting the list of applications to tear down");
+
+		while let Some(application) = stream.next().await {
+			zitadel
+				.remove_application(
+					id.clone(),
+					application
+						.id()
+						.expect("Couldn't get application id during tear down.")
+						.clone(),
+				)
+				.await
+				.expect("Failed to remove application during teardown");
+		}
+
+		zitadel.remove_project(id.clone()).await.expect("Error deleting project");
+	}
 }
 
 #[tokio::test]
@@ -109,16 +147,53 @@ async fn test_e2e_create_application() -> Result<()> {
 
 	let project_id = project.id().expect("Must have created a project with a valid ID");
 
-	let res = zitadel
+	zitadel
 		.create_application(
 			project_id.to_owned(),
 			ManagementServiceAddApiAppBody::new("TestApp".to_owned()),
 		)
-		.await;
+		.await?;
 
-	// TODO: Once we have a list application method, we should check
-	// that the org was actually created
-	assert!(res.is_ok());
+	let stream =
+		zitadel.list_applications(project_id.to_owned(), ListApplicationsRequest::new(vec![]))?;
+
+	let apps: Vec<String> =
+		stream.map(|app| app.name().expect("App name must be set").clone()).collect().await;
+	assert_eq!(apps, ["TestApp"]);
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_list_applications() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	// TODO: Figure out why the teardown fails to delete this project
+	let project =
+		zitadel.create_project(V1AddProjectRequest::new("TestProject2".to_owned())).await?;
+
+	let project_id = project.id().expect("Must have created a project with a valid ID");
+
+	let mut application_names = Vec::new();
+
+	for i in 0..10 {
+		let name = format!("TestApp{i}");
+		let application = ManagementServiceAddApiAppBody::new(name.clone());
+		application_names.push(name);
+		assert!(zitadel.create_application(project_id.to_owned(), application).await.is_ok());
+	}
+
+	let stream =
+		zitadel.list_applications(project_id.to_owned(), ListApplicationsRequest::new(vec![]))?;
+
+	let found_application_names: Vec<String> =
+		stream.map(|app| app.name().expect("No name found for action").clone()).collect().await;
+	assert_eq!(found_application_names, application_names);
 
 	tear_down(&zitadel).await;
 
@@ -139,9 +214,48 @@ async fn test_e2e_create_action() -> Result<()> {
 		))
 		.await;
 
-	// TODO: Once we have a list action method, we should check that
-	// the action was actually created
 	assert!(res.is_ok());
+
+	let stream = zitadel.search_actions(ListActionsRequest::new(vec![V1ActionQuery::new()
+		.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]))?;
+
+	let actions: Vec<String> = stream
+		.map(|action| action.name().expect("No name found for action").clone())
+		.collect()
+		.await;
+	assert_eq!(actions, vec!["test-action"]);
+
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_list_actions() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	let mut action_names = Vec::new();
+
+	for i in 0..10 {
+		let name = format!("test-action-{i}");
+
+		let action =
+			V1CreateActionRequest::new(name.clone(), "console.log('test-action')".to_owned());
+
+		action_names.push(name);
+		assert!(zitadel.create_action(action).await.is_ok());
+	}
+
+	let stream = zitadel.search_actions(ListActionsRequest::new(vec![]))?;
+
+	let found_action_names: Vec<String> = stream
+		.map(|action| action.name().expect("No name found for action").clone())
+		.collect()
+		.await;
+	assert_eq!(found_action_names, action_names);
 
 	tear_down(&zitadel).await;
 
@@ -164,7 +278,7 @@ async fn test_e2e_update_action() -> Result<()> {
 
 	let action_id = res.id().expect("Must have created an action with a valid ID");
 
-	let res = zitadel
+	zitadel
 		.update_action(
 			action_id.to_owned(),
 			ManagementServiceUpdateActionBody::new(
@@ -172,11 +286,15 @@ async fn test_e2e_update_action() -> Result<()> {
 				"console.log('test-action-update')".to_owned(),
 			),
 		)
-		.await;
+		.await?;
 
-	// TODO: Once we have a list action method, we should check that
-	// the action was actually updated
-	assert!(res.is_ok());
+	let mut stream = zitadel.search_actions(ListActionsRequest::new(vec![V1ActionQuery::new()
+		.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]))?;
+
+	let action = stream.next().await.expect("Action must exist");
+
+	assert_eq!(action.name(), Some(&"test-action".to_owned()));
+	assert_eq!(action.script(), Some(&"console.log('test-action-update')".to_owned()));
 
 	tear_down(&zitadel).await;
 
@@ -199,11 +317,12 @@ async fn test_e2e_delete_action() -> Result<()> {
 
 	let action_id = res.id().expect("Must have created an action with a valid ID");
 
-	let res = zitadel.delete_action(action_id.to_owned()).await;
+	zitadel.delete_action(action_id.to_owned()).await?;
 
-	// TODO: Once we have a list action method, we should check that
-	// the action was actually deleted
-	assert!(res.is_ok());
+	let stream = zitadel.search_actions(ListActionsRequest::new(vec![V1ActionQuery::new()
+		.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]))?;
+
+	assert_eq!(stream.count().await, 0);
 
 	tear_down(&zitadel).await;
 
