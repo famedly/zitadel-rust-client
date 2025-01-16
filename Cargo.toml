@@ -39,6 +39,7 @@ futures = "0.3.30"
 pbjson-types = "0.6.0"
 josekit = { git = "https://github.com/famedly/josekit-rs.git", rev = "5941d0f39d034e9c6d96dc47f391926f5e3038fa" }
 cache_control = "0.2.0"
+delegate = "0.13.2"
 
 [lints.rust]
 dead_code = "warn"

@@ -2,9 +2,14 @@
 mod models;
 
 use anyhow::{Context, Result};
+use delegate::delegate;
+use futures::Stream;
 pub use models::*;
 
-use super::Zitadel;
+use super::{
+	pagination::{PaginationHandler, PaginationRequest},
+	Zitadel,
+};
 
 impl Zitadel {
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
@@ -48,6 +53,18 @@ impl Zitadel {
 			.context("Error building delete_action request")?;
 
 		self.send_request(request).await
+	}
+
+	/// Search for actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-actions)
+	pub fn search_actions(
+		&self,
+		body: ListActionsRequest,
+	) -> Result<impl Stream<Item = V1Action> + Send> {
+		Ok(PaginationHandler::<_, V1Action>::new(
+			self.clone(),
+			body,
+			self.make_url("management/v1/actions/_search")?,
+		))
 	}
 
 	/// Get a flow. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-flow)
@@ -97,6 +114,19 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 
+	/// Search for applications [Docs]()
+	pub fn list_applications(
+		&self,
+		project_id: String,
+		body: ListApplicationsRequest,
+	) -> Result<impl Stream<Item = V1App>> {
+		Ok(PaginationHandler::<_, V1App>::new(
+			self.clone(),
+			body,
+			self.make_url(&format!("management/v1/projects/{project_id}/apps/_search"))?,
+		))
+	}
+
 	/// Create project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
 	pub async fn create_project(&self, body: V1AddProjectRequest) -> Result<V1AddProjectResponse> {
 		let request = self
@@ -107,5 +137,137 @@ impl Zitadel {
 			.context("Error building create_project request")?;
 
 		self.send_request(request).await
+	}
+}
+
+/// Pagination-supporting application search
+#[derive(Clone, Debug)]
+pub struct ListApplicationsRequest {
+	inner_request: ManagementServiceListAppsBody,
+}
+
+impl ListApplicationsRequest {
+	/// Constructor
+	#[must_use]
+	pub fn new(queries: Vec<V1AppQuery>) -> Self {
+		Self { inner_request: ManagementServiceListAppsBody::new().with_queries(queries) }
+	}
+
+	/// Use the supplied ListQuery
+	#[must_use]
+	pub fn with_query(mut self, query: V1ListQuery) -> Self {
+		self.inner_request.set_query(query);
+		self
+	}
+
+	/// Use the supplied application queries
+	#[must_use]
+	pub fn with_queries(mut self, queries: Vec<V1AppQuery>) -> Self {
+		self.inner_request.set_queries(queries);
+		self
+	}
+
+	delegate! {
+		to self.inner_request {
+			/// Set the supplied ListQuery
+			pub fn set_query(&mut self, query: V1ListQuery);
+			/// The ListQuery currently used for this request
+			#[must_use] pub fn query(&self) -> Option<&V1ListQuery>;
+			/// Reset the ListQuery to None
+			pub fn reset_query(&mut self);
+			/// Set the supplied app queries
+			pub fn set_queries(&mut self, queries: Vec<V1AppQuery>);
+			/// The app queries currently used for this request
+			#[must_use] pub fn queries(&self) -> Option<&Vec<V1AppQuery>>;
+			/// Reset the app queries to None
+			pub fn reset_queries(&mut self);
+		}
+	}
+}
+
+impl PaginationRequest for ListApplicationsRequest {
+	type Item = ManagementServiceListAppsBody;
+
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		self.inner_request.clone().with_query(
+			self.inner_request
+				.query()
+				.unwrap_or(&V1ListQuery::new())
+				.clone()
+				.with_offset((page * self.page_size()).to_string()),
+		)
+	}
+
+	fn page_size(&self) -> usize {
+		(*self.inner_request.query().and_then(|query| query.limit()).unwrap_or(&1000))
+			.try_into()
+			.unwrap_or(1000)
+	}
+}
+
+/// Pagination-supporting action search
+#[derive(Clone, Debug)]
+pub struct ListActionsRequest {
+	inner_request: V1ListActionsRequest,
+}
+
+impl ListActionsRequest {
+	/// Constructor
+	#[must_use]
+	pub fn new(queries: Vec<V1ActionQuery>) -> Self {
+		ListActionsRequest { inner_request: V1ListActionsRequest::new().with_queries(queries) }
+	}
+
+	/// Use the supplied ListQuery
+	#[must_use]
+	pub fn with_query(mut self, query: V1ListQuery) -> Self {
+		self.inner_request.set_query(query);
+		self
+	}
+
+	/// Use the supplied action queries
+	#[must_use]
+	pub fn with_queries(mut self, queries: Vec<V1ActionQuery>) -> Self {
+		self.inner_request.set_queries(queries);
+		self
+	}
+
+	delegate! {
+		to self.inner_request {
+			/// Set the supplied ListQuery
+			pub fn set_query(&mut self, query: V1ListQuery);
+			/// The ListQuery currently used for this request
+			#[must_use] pub fn query(&self) -> Option<&V1ListQuery>;
+			/// Reset the ListQuery to None
+			pub fn reset_query(&mut self);
+			/// Set the supplied action queries
+			pub fn set_queries(&mut self, queries: Vec<V1ActionQuery>);
+			/// The action queries currently used for this request
+			#[must_use] pub fn queries(&self) -> Option<&Vec<V1ActionQuery>>;
+			/// Reset the action queries to None
+			pub fn reset_queries(&mut self);
+		}
+	}
+}
+
+impl PaginationRequest for ListActionsRequest {
+	type Item = V1ListActionsRequest;
+
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		self.inner_request.clone().with_query(
+			self.inner_request
+				.query()
+				.unwrap_or(&V1ListQuery::new())
+				.clone()
+				.with_offset((page * self.page_size()).to_string()),
+		)
+	}
+
+	fn page_size(&self) -> usize {
+		(*self.inner_request.query().and_then(|query| query.limit()).unwrap_or(&1000))
+			.try_into()
+			// Realistically, page sizes should never be large enough
+			// to hit the platform MAX_INT, but hey, I guess we can still avoid crashing.
+			.unwrap_or(1000)
 	}
 }
