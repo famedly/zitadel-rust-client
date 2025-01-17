@@ -59,7 +59,7 @@ impl Zitadel {
 	pub fn search_actions(
 		&self,
 		body: ListActionsRequest,
-	) -> Result<impl Stream<Item = V1Action> + Send> {
+	) -> Result<impl Stream<Item = V1Action> + Send + Sync> {
 		Ok(PaginationHandler::<_, V1Action>::new(
 			self.clone(),
 			body,

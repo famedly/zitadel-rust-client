@@ -30,15 +30,15 @@ pub(crate) trait PaginationRequest {
 	fn page_size(&self) -> usize;
 }
 
-type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send;
+type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send + Sync;
 
 pub(crate) struct PaginationHandler<Q, T>
 where
-	Q: Serialize + Send,
+	Q: Serialize + Send + Sync,
 	T: DeserializeOwned + 'static,
 {
 	zitadel: Zitadel,
-	query: Box<dyn PaginationRequest<Item = Q> + Send>,
+	query: Box<dyn PaginationRequest<Item = Q> + Send + Sync>,
 	endpoint: Url,
 	page: usize,
 	buffer: Vec<T>,
@@ -48,12 +48,12 @@ where
 
 impl<Q, T> PaginationHandler<Q, T>
 where
-	Q: Serialize + Send + 'static,
+	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
 {
 	pub(crate) fn new(
 		zitadel: Zitadel,
-		query: impl PaginationRequest<Item = Q> + Send + 'static,
+		query: impl PaginationRequest<Item = Q> + Send + Sync + 'static,
 		endpoint: Url,
 	) -> Self {
 		let page = 0;
@@ -72,7 +72,7 @@ where
 
 async fn get_more_data<T: DeserializeOwned + 'static>(
 	zitadel: Zitadel,
-	query: impl Serialize + Send,
+	query: impl Serialize + Send + Sync,
 	endpoint: Url,
 ) -> Result<Vec<T>> {
 	let request = zitadel
@@ -88,14 +88,14 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 
 impl<Q, T> Unpin for PaginationHandler<Q, T>
 where
-	Q: Serialize + Send + 'static,
+	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
 {
 }
 
 impl<Q, T> Stream for PaginationHandler<Q, T>
 where
-	Q: Serialize + Send + 'static,
+	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
 {
 	type Item = T;
