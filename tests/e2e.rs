@@ -10,7 +10,7 @@
 
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Context, Result};
 use futures::StreamExt;
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
 use test_log::{self, test};
@@ -56,7 +56,7 @@ async fn tear_down(zitadel: &Zitadel) {
 
 	while let Some(action) = stream.next().await {
 		let id = action.id().expect("Couldn't get action id during tear down.");
-		zitadel.delete_action(id.clone()).await.expect("Error deleting action");
+		zitadel.delete_action(None, id.clone()).await.expect("Error deleting action");
 	}
 
 	let mut stream = zitadel
@@ -75,6 +75,7 @@ async fn tear_down(zitadel: &Zitadel) {
 		while let Some(application) = stream.next().await {
 			zitadel
 				.remove_application(
+					None,
 					id.clone(),
 					application
 						.id()
@@ -85,7 +86,7 @@ async fn tear_down(zitadel: &Zitadel) {
 				.expect("Failed to remove application during teardown");
 		}
 
-		zitadel.remove_project(id.clone()).await.expect("Error deleting project");
+		zitadel.remove_project(None, id.clone()).await.expect("Error deleting project");
 	}
 }
 
@@ -143,12 +144,13 @@ async fn test_e2e_create_application() -> Result<()> {
 	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let project =
-		zitadel.create_project(V1AddProjectRequest::new("TestProject".to_owned())).await?;
+		zitadel.create_project(None, V1AddProjectRequest::new("TestProject".to_owned())).await?;
 
 	let project_id = project.id().expect("Must have created a project with a valid ID");
 
 	zitadel
 		.create_application(
+			None,
 			project_id.to_owned(),
 			ManagementServiceAddApiAppBody::new("TestApp".to_owned()),
 		)
@@ -175,7 +177,7 @@ async fn test_e2e_list_applications() -> Result<()> {
 
 	// TODO: Figure out why the teardown fails to delete this project
 	let project =
-		zitadel.create_project(V1AddProjectRequest::new("TestProject2".to_owned())).await?;
+		zitadel.create_project(None, V1AddProjectRequest::new("TestProject2".to_owned())).await?;
 
 	let project_id = project.id().expect("Must have created a project with a valid ID");
 
@@ -185,7 +187,7 @@ async fn test_e2e_list_applications() -> Result<()> {
 		let name = format!("TestApp{i}");
 		let application = ManagementServiceAddApiAppBody::new(name.clone());
 		application_names.push(name);
-		assert!(zitadel.create_application(project_id.to_owned(), application).await.is_ok());
+		assert!(zitadel.create_application(None, project_id.to_owned(), application).await.is_ok());
 	}
 
 	let stream =
@@ -208,10 +210,13 @@ async fn test_e2e_create_action() -> Result<()> {
 	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let res = zitadel
-		.create_action(V1CreateActionRequest::new(
-			"test-action".to_owned(),
-			"console.log('test-action')".to_owned(),
-		))
+		.create_action(
+			None,
+			V1CreateActionRequest::new(
+				"test-action".to_owned(),
+				"console.log('test-action')".to_owned(),
+			),
+		)
 		.await;
 
 	assert!(res.is_ok());
@@ -246,7 +251,7 @@ async fn test_e2e_list_actions() -> Result<()> {
 			V1CreateActionRequest::new(name.clone(), "console.log('test-action')".to_owned());
 
 		action_names.push(name);
-		assert!(zitadel.create_action(action).await.is_ok());
+		assert!(zitadel.create_action(None, action).await.is_ok());
 	}
 
 	let stream = zitadel.search_actions(ListActionsRequest::new(vec![]))?;
@@ -270,16 +275,20 @@ async fn test_e2e_update_action() -> Result<()> {
 	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let res = zitadel
-		.create_action(V1CreateActionRequest::new(
-			"test-action".to_owned(),
-			"console.log('test-action')".to_owned(),
-		))
+		.create_action(
+			None,
+			V1CreateActionRequest::new(
+				"test-action".to_owned(),
+				"console.log('test-action')".to_owned(),
+			),
+		)
 		.await?;
 
 	let action_id = res.id().expect("Must have created an action with a valid ID");
 
 	zitadel
 		.update_action(
+			None,
 			action_id.to_owned(),
 			ManagementServiceUpdateActionBody::new(
 				"test-action".to_owned(),
@@ -309,15 +318,15 @@ async fn test_e2e_delete_action() -> Result<()> {
 	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let res = zitadel
-		.create_action(V1CreateActionRequest::new(
-			"test-action".to_owned(),
-			"console.log(test)".to_owned(),
-		))
+		.create_action(
+			None,
+			V1CreateActionRequest::new("test-action".to_owned(), "console.log(test)".to_owned()),
+		)
 		.await?;
 
 	let action_id = res.id().expect("Must have created an action with a valid ID");
 
-	zitadel.delete_action(action_id.to_owned()).await?;
+	zitadel.delete_action(None, action_id.to_owned()).await?;
 
 	let stream = zitadel.search_actions(ListActionsRequest::new(vec![V1ActionQuery::new()
 		.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]))?;
@@ -337,16 +346,17 @@ async fn test_e2e_set_trigger_actions() -> Result<()> {
 	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
 
 	let res = zitadel
-		.create_action(V1CreateActionRequest::new(
-			"test-action".to_owned(),
-			"console.log(test)".to_owned(),
-		))
+		.create_action(
+			None,
+			V1CreateActionRequest::new("test-action".to_owned(), "console.log(test)".to_owned()),
+		)
 		.await?;
 
 	let action_id = res.id().expect("Must have created an action with a valid ID");
 
 	zitadel
 		.set_trigger_actions(
+			None,
 			1,
 			1,
 			ManagementServiceSetTriggerActionsBody::new()
@@ -354,7 +364,7 @@ async fn test_e2e_set_trigger_actions() -> Result<()> {
 		)
 		.await?;
 
-	let res = zitadel.get_flow(1).await?;
+	let res = zitadel.get_flow(None, 1).await?;
 	assert_eq!(
 		res.flow().and_then(|flow| flow._type().and_then(|t| t.id())),
 		Some(&"1".to_owned())
@@ -844,6 +854,187 @@ async fn test_e2e_token_verification_positive() -> Result<()> {
 	let verification_result = token_verifier.verify(jwt).await;
 	println!("verification_result: {:?}", verification_result);
 	assert!(verification_result.is_ok());
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_organization_scoped_operations() -> Result<()> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+
+	let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
+
+	// Create two organizations to test scoping
+	let org_name = "test-org-scoped";
+	let org_response = zitadel
+		.create_organization_with_admin(V2AddOrganizationRequest::new(org_name.to_owned()))
+		.await?;
+	let org_id = org_response
+		.organization_id()
+		.expect("Organization ID should be present in response")
+		.to_owned();
+
+	// Create a project in this organization
+	let project = zitadel
+		.create_project(
+			Some(org_id.clone()),
+			V1AddProjectRequest::new("OrgScopedProject".to_owned()),
+		)
+		.await
+		.with_context(|| format!("Failed to create project in organization {}", org_id))?;
+	let project_id = project.id().expect("Project ID should be present in response").to_owned();
+
+	// Verify project exists in the correct organization
+	let project_request = ListProjectsRequest::new(vec![V1ProjectQuery::new()
+		.with_name_query(V1ProjectNameQuery::new().with_name("OrgScopedProject".to_owned()))]);
+	let project_response = zitadel
+		.list_projects_without_pagination(None, project_request.clone())
+		.await
+		.with_context(|| "Failed to list projects in default organization")?;
+	assert!(project_response.result.is_none());
+	let project_response = zitadel
+		.list_projects_without_pagination(Some(org_id.clone()), project_request)
+		.await
+		.with_context(|| format!("Failed to list projects in organization {}", org_id))?;
+	assert_eq!(project_response.result.expect("Empty result for projects").len(), 1);
+
+	// Create an application in this organization's project
+	let app = zitadel
+		.create_application(
+			Some(org_id.clone()),
+			project_id.clone(),
+			ManagementServiceAddApiAppBody::new("OrgScopedApp".to_owned()),
+		)
+		.await
+		.with_context(|| format!("Failed to create application in organization {}", org_id))?;
+	let app_id = app.app_id().expect("Application ID should be present in response").to_owned();
+
+	// Verify application exists in the correct project/organization
+	// NOTE: Maybe Zitadel bug -> request uses the project ID to search for
+	// applications and disregards the org_id
+	let app_request = ListApplicationsRequest::new(vec![V1AppQuery::new()
+		.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned()))]);
+	let app_response = zitadel
+		.list_applications_without_pagination(Some(org_id.clone()), project_id.clone(), app_request)
+		.await
+		.with_context(|| format!("Failed to list applications in organization {}", org_id))?;
+	assert_eq!(app_response.result.expect("Empty result for applications").len(), 1);
+
+	// Create an action in this organization
+	let action = zitadel
+		.create_action(
+			Some(org_id.clone()),
+			V1CreateActionRequest::new(
+				"org-scoped-action".to_owned(),
+				"console.log('org-scoped')".to_owned(),
+			),
+		)
+		.await
+		.with_context(|| format!("Failed to create action in organization {}", org_id))?;
+	let action_id = action.id().expect("Action ID should be present in response").to_owned();
+
+	// Verify we can find the action when searching with org_id
+	let actions_request = ListActionsRequest::new(vec![V1ActionQuery::new()
+		.with_action_name_query(
+			V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
+		)]);
+	let actions_response = zitadel
+		.list_actions_without_pagination(None, actions_request.clone())
+		.await
+		.with_context(|| "Failed to list actions in default organization")?;
+	assert!(actions_response.result.is_none());
+	let actions_response = zitadel
+		.list_actions_without_pagination(Some(org_id.clone()), actions_request)
+		.await
+		.with_context(|| format!("Failed to list actions in organization {}", org_id))?;
+	assert_eq!(actions_response.result.expect("Empty result for actions").len(), 1);
+
+	// Try to update the action with wrong organization ID - should fail
+	let update_result = zitadel
+		.update_action(
+			None,
+			action_id.clone(),
+			ManagementServiceUpdateActionBody::new(
+				"org-scoped-action".to_owned(),
+				"console.log('should-not-update')".to_owned(),
+			),
+		)
+		.await;
+	assert!(update_result.is_err(), "Update with wrong org ID should fail");
+
+	// Update the action with correct organization ID
+	zitadel
+		.update_action(
+			Some(org_id.clone()),
+			action_id.clone(),
+			ManagementServiceUpdateActionBody::new(
+				"org-scoped-action".to_owned(),
+				"console.log('updated-org-scoped')".to_owned(),
+			),
+		)
+		.await
+		.with_context(|| format!("Failed to update action in organization {}", org_id))?;
+
+	// Verify the action was updated with the correct content
+	let actions_request = ListActionsRequest::new(vec![V1ActionQuery::new()
+		.with_action_name_query(
+			V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
+		)]);
+	let actions_response = zitadel
+		.list_actions_without_pagination(Some(org_id.clone()), actions_request)
+		.await
+		.with_context(|| format!("Failed to list actions in organization {}", org_id))?;
+	let result = actions_response.result.expect("Empty result for actions");
+	assert_eq!(result.len(), 1);
+	assert_eq!(result[0].script(), Some(&"console.log('updated-org-scoped')".to_owned()));
+
+	// Set up flow triggers with the action
+	zitadel
+		.set_trigger_actions(
+			Some(org_id.clone()),
+			1,
+			1,
+			ManagementServiceSetTriggerActionsBody::new().with_action_ids(vec![action_id.clone()]),
+		)
+		.await
+		.with_context(|| format!("Failed to set up flow triggers in organization {}", org_id))?;
+
+	// Try to set up flow triggers with wrong organization ID - should fail
+	let trigger_result = zitadel
+		.set_trigger_actions(
+			None,
+			1,
+			1,
+			ManagementServiceSetTriggerActionsBody::new().with_action_ids(vec![action_id.clone()]),
+		)
+		.await;
+	assert!(trigger_result.is_err(), "Setting triggers with wrong org ID should fail");
+
+	// Verify flow is set up correctly
+	let flow = zitadel
+		.get_flow(Some(org_id.clone()), 1)
+		.await
+		.with_context(|| format!("Failed to get flow in organization {}", org_id))?;
+	assert_eq!(flow.flow().and_then(|f| f._type().and_then(|t| t.id())), Some(&"1".to_owned()));
+
+	// Manual clean up,
+	// because the tear_down function cleans up default org namespace only
+	zitadel
+		.delete_action(Some(org_id.clone()), action_id)
+		.await
+		.with_context(|| format!("Failed to delete action in organization {}", org_id))?;
+	zitadel
+		.remove_application(Some(org_id.clone()), project_id.clone(), app_id)
+		.await
+		.with_context(|| format!("Failed to delete application in organization {}", org_id))?;
+	zitadel
+		.remove_project(Some(org_id.clone()), project_id)
+		.await
+		.with_context(|| format!("Failed to delete project in organization {}", org_id))?;
+
+	tear_down(&zitadel).await;
 
 	Ok(())
 }
