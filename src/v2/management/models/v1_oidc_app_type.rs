@@ -11,24 +11,20 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC application type
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcAppType {}
+pub enum V1OidcAppType {
+	#[serde(rename = "OIDC_APP_TYPE_WEB")]
+	Web,
+	#[serde(rename = "OIDC_APP_TYPE_USER_AGENT")]
+	UserAgent,
+	#[serde(rename = "OIDC_APP_TYPE_NATIVE")]
+	Native,
+}
 
 impl V1OidcAppType {
 	pub fn new() -> V1OidcAppType {
-		V1OidcAppType {}
+		V1OidcAppType::Web
 	}
 }
-
-// TODO enum
-// List of v1OIDCAppType
-//const (
-//
-//
-//
-//)

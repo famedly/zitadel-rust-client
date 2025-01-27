@@ -11,24 +11,20 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC response type
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcResponseType {}
+pub enum V1OidcResponseType {
+	#[serde(rename = "OIDC_RESPONSE_TYPE_CODE")]
+	Code,
+	#[serde(rename = "OIDC_RESPONSE_TYPE_ID_TOKEN")]
+	IdToken,
+	#[serde(rename = "OIDC_RESPONSE_TYPE_ID_TOKEN_TOKEN")]
+	IdTokenToken,
+}
 
 impl V1OidcResponseType {
 	pub fn new() -> V1OidcResponseType {
-		V1OidcResponseType {}
+		V1OidcResponseType::Code
 	}
 }
-
-// TODO enum
-// List of v1OIDCResponseType
-//const (
-//
-//
-//
-//)

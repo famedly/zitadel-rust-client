@@ -11,24 +11,17 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::v2::management::models;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1ApiAuthMethodType {}
+pub enum V1ApiAuthMethodType {
+	#[serde(rename = "API_AUTH_METHOD_TYPE_BASIC")]
+	Basic,
+	#[serde(rename = "API_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT")]
+	PrivateKeyJwt,
+}
 
 impl V1ApiAuthMethodType {
 	pub fn new() -> V1ApiAuthMethodType {
-		V1ApiAuthMethodType {}
+		V1ApiAuthMethodType::Basic
 	}
 }
-
-// TODO enum
-// List of v1APIAuthMethodType
-//const (
-//
-//
-//
-//)

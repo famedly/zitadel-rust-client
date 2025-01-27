@@ -11,24 +11,20 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// Project state
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1ProjectState {}
+pub enum V1ProjectState {
+	#[serde(rename = "PROJECT_STATE_UNSPECIFIED")]
+	Unspecified,
+	#[serde(rename = "PROJECT_STATE_ACTIVE")]
+	Active,
+	#[serde(rename = "PROJECT_STATE_INACTIVE")]
+	Inactive,
+}
 
 impl V1ProjectState {
 	pub fn new() -> V1ProjectState {
-		V1ProjectState {}
+		V1ProjectState::Unspecified
 	}
 }
-
-// TODO enum
-// List of v1ProjectState
-//const (
-//
-//
-//
-//)

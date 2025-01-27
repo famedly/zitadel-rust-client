@@ -11,24 +11,22 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC authentication method type
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcAuthMethodType {}
+pub enum V1OidcAuthMethodType {
+	#[serde(rename = "OIDC_AUTH_METHOD_TYPE_BASIC")]
+	Basic,
+	#[serde(rename = "OIDC_AUTH_METHOD_TYPE_POST")]
+	Post,
+	#[serde(rename = "OIDC_AUTH_METHOD_TYPE_NONE")]
+	None,
+	#[serde(rename = "OIDC_AUTH_METHOD_TYPE_PRIVATE_KEY_JWT")]
+	PrivateKeyJwt,
+}
 
 impl V1OidcAuthMethodType {
 	pub fn new() -> V1OidcAuthMethodType {
-		V1OidcAuthMethodType {}
+		V1OidcAuthMethodType::Basic
 	}
 }
-
-// TODO enum
-// List of v1OIDCAuthMethodType
-//const (
-//
-//
-//
-//)

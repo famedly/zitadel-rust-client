@@ -11,24 +11,16 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC version
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcVersion {}
+pub enum V1OidcVersion {
+	#[serde(rename = "OIDC_VERSION_1_0")]
+	V1_0,
+}
 
 impl V1OidcVersion {
 	pub fn new() -> V1OidcVersion {
-		V1OidcVersion {}
+		V1OidcVersion::V1_0
 	}
 }
-
-// TODO enum
-// List of v1OIDCVersion
-//const (
-//
-//
-//
-//)

@@ -11,24 +11,18 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC access token type
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcTokenType {}
+pub enum V1OidcTokenType {
+	#[serde(rename = "OIDC_TOKEN_TYPE_BEARER")]
+	Bearer,
+	#[serde(rename = "OIDC_TOKEN_TYPE_JWT")]
+	Jwt,
+}
 
 impl V1OidcTokenType {
 	pub fn new() -> V1OidcTokenType {
-		V1OidcTokenType {}
+		V1OidcTokenType::Bearer
 	}
 }
-
-// TODO enum
-// List of v1OIDCTokenType
-//const (
-//
-//
-//
-//)

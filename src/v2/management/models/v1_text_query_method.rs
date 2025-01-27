@@ -11,24 +11,30 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// Text query method
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1TextQueryMethod {}
+pub enum V1TextQueryMethod {
+	#[serde(rename = "TEXT_QUERY_METHOD_EQUALS")]
+	Equals,
+	#[serde(rename = "TEXT_QUERY_METHOD_EQUALS_IGNORE_CASE")]
+	EqualsIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_STARTS_WITH")]
+	StartsWith,
+	#[serde(rename = "TEXT_QUERY_METHOD_STARTS_WITH_IGNORE_CASE")]
+	StartsWithIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_CONTAINS")]
+	Contains,
+	#[serde(rename = "TEXT_QUERY_METHOD_CONTAINS_IGNORE_CASE")]
+	ContainsIgnoreCase,
+	#[serde(rename = "TEXT_QUERY_METHOD_ENDS_WITH")]
+	EndsWith,
+	#[serde(rename = "TEXT_QUERY_METHOD_ENDS_WITH_IGNORE_CASE")]
+	EndsWithIgnoreCase,
+}
 
 impl V1TextQueryMethod {
 	pub fn new() -> V1TextQueryMethod {
-		V1TextQueryMethod {}
+		V1TextQueryMethod::Equals
 	}
 }
-
-// TODO enum
-// List of v1TextQueryMethod
-//const (
-//
-//
-//
-//)

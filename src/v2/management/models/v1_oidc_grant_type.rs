@@ -11,24 +11,24 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+/// OIDC grant type
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OidcGrantType {}
+pub enum V1OidcGrantType {
+	#[serde(rename = "OIDC_GRANT_TYPE_AUTHORIZATION_CODE")]
+	AuthorizationCode,
+	#[serde(rename = "OIDC_GRANT_TYPE_IMPLICIT")]
+	Implicit,
+	#[serde(rename = "OIDC_GRANT_TYPE_REFRESH_TOKEN")]
+	RefreshToken,
+	#[serde(rename = "OIDC_GRANT_TYPE_DEVICE_CODE")]
+	DeviceCode,
+	#[serde(rename = "OIDC_GRANT_TYPE_TOKEN_EXCHANGE")]
+	TokenExchange,
+}
 
 impl V1OidcGrantType {
 	pub fn new() -> V1OidcGrantType {
-		V1OidcGrantType {}
+		V1OidcGrantType::AuthorizationCode
 	}
 }
-
-// TODO enum
-// List of v1OIDCGrantType
-//const (
-//
-//
-//
-//)
