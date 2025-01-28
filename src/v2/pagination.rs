@@ -2,10 +2,12 @@
 use std::{future::Future, pin::Pin, task::Poll};
 
 use anyhow::{Context, Result};
+use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
+use super::HEADER_ZITADEL_ORGANIZATION_ID;
 use crate::v2::Zitadel;
 
 /// A paginated response
@@ -32,6 +34,13 @@ pub(crate) trait PaginationRequest {
 
 type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send + Sync;
 
+/// A handler for paginated requests.
+///
+/// Fetches the data from the Zitadel API and
+/// returns a stream of the data.
+///
+/// **Some Zitadel endpoints allow to set an `org_id`. If not provided, the
+/// organization of the caller is used.**
 pub(crate) struct PaginationHandler<Q, T>
 where
 	Q: Serialize + Send + Sync,
@@ -44,6 +53,7 @@ where
 	buffer: Vec<T>,
 	done: bool,
 	data_fut: Pin<Box<DataFuture<T>>>,
+	org_id: Option<String>,
 }
 
 impl<Q, T> PaginationHandler<Q, T>
@@ -55,6 +65,7 @@ where
 		zitadel: Zitadel,
 		query: impl PaginationRequest<Item = Q> + Send + Sync + 'static,
 		endpoint: Url,
+		org_id: Option<String>,
 	) -> Self {
 		let page = 0;
 		let req_query = query.to_paginated_request(page);
@@ -65,7 +76,8 @@ where
 			page,
 			buffer: Vec::new(),
 			done: false,
-			data_fut: Box::pin(get_more_data::<T>(zitadel, req_query, endpoint)),
+			data_fut: Box::pin(get_more_data::<T>(zitadel, req_query, endpoint, org_id.clone())),
+			org_id,
 		}
 	}
 }
@@ -74,10 +86,12 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 	zitadel: Zitadel,
 	query: impl Serialize + Send + Sync,
 	endpoint: Url,
+	org_id: Option<String>,
 ) -> Result<Vec<T>> {
 	let request = zitadel
 		.client
 		.post(endpoint)
+		.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 		.json(&query)
 		.build()
 		.context("Error building request for pagination")?;
@@ -123,6 +137,7 @@ where
 							self.zitadel.clone(),
 							self.query.to_paginated_request(self.page),
 							self.endpoint.clone(),
+							self.org_id.clone(),
 						));
 					}
 					Err(e) => {

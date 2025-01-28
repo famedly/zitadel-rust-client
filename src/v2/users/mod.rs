@@ -142,6 +142,7 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// List links to an identity provider of an user
+	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-idp-links)
 	pub fn list_idp_links(
 		&self,
 		user_id: &str,
@@ -151,6 +152,7 @@ impl Zitadel {
 			self.clone(),
 			body,
 			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
+			None, // Endpoint does not support org_id
 		))
 	}
 	/// List passkeys of an user
@@ -172,12 +174,19 @@ impl Zitadel {
 	/// Search Users
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
+	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-users)
 	pub fn list_users(
 		&self,
 		body: ListUsersRequest,
 	) -> Result<impl Stream<Item = User> + Send + Sync> {
-		Ok(PaginationHandler::<_, User>::new(self.clone(), body, self.make_url("/v2/users")?))
+		Ok(PaginationHandler::<_, User>::new(
+			self.clone(),
+			body,
+			self.make_url("/v2/users")?,
+			None, // Endpoint does not support org_id
+		))
 	}
+
 	/// Lock user
 	/// The state of the user will be changed to 'locked'. The user will not be
 	/// able to log in anymore. The endpoint returns an error if the user is
@@ -667,6 +676,7 @@ impl Zitadel {
 		self.send_request(request).await
 	}
 	/// Get the metadata of a user filtered by your query
+	/// [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-metadata)
 	pub fn list_user_metadata(
 		&self,
 		user_id: &str,
@@ -676,6 +686,7 @@ impl Zitadel {
 			self.clone(),
 			body,
 			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
+			None, // TODO: Breaking change -> possibility to add org_id to function args
 		))
 	}
 }

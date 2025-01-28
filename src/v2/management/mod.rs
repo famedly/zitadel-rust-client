@@ -11,27 +11,20 @@ use serde::{Deserialize, Serialize};
 
 use super::{
 	pagination::{PaginationHandler, PaginationRequest},
-	Zitadel,
+	Zitadel, HEADER_ZITADEL_ORGANIZATION_ID,
 };
-
-/// Metadata/Header for Zitadel organization ID, used to set/get metadata for
-/// organizations.
-pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
 
 impl Zitadel {
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
 	pub async fn create_action(
 		&self,
-		organization_id: Option<String>,
 		body: V1CreateActionRequest,
+		org_id: Option<String>,
 	) -> Result<V1CreateActionResponse> {
 		let request = self
 			.client
 			.post(self.make_url("management/v1/actions")?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
 			.build()
 			.context("Error building create_action request")?;
@@ -42,17 +35,14 @@ impl Zitadel {
 	/// Update action. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-action)
 	pub async fn update_action(
 		&self,
-		organization_id: Option<String>,
 		action_id: String,
 		body: ManagementServiceUpdateActionBody,
+		org_id: Option<String>,
 	) -> Result<V1UpdateActionResponse> {
 		let request = self
 			.client
 			.put(self.make_url(&format!("management/v1/actions/{action_id}"))?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
 			.build()
 			.context("Error building update_action request")?;
@@ -63,16 +53,13 @@ impl Zitadel {
 	/// Delete action. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-delete-action)
 	pub async fn delete_action(
 		&self,
-		organization_id: Option<String>,
 		action_id: String,
+		org_id: Option<String>,
 	) -> Result<V1DeleteActionResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("management/v1/actions/{action_id}"))?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ManagementServiceDeleteActionBody::new())
 			.build()
 			.context("Error building delete_action request")?;
@@ -81,48 +68,29 @@ impl Zitadel {
 	}
 
 	/// Search for actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-actions)
-	pub fn search_actions(
+	pub fn list_actions(
 		&self,
 		body: ListActionsRequest,
+		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1Action> + Send + Sync> {
-		// TODO: Make it possible to use HEADER_ZITADEL_ORGANIZATION_ID
 		Ok(PaginationHandler::<_, V1Action>::new(
 			self.clone(),
 			body,
 			self.make_url("management/v1/actions/_search")?,
+			org_id,
 		))
-	}
-
-	/// Search for actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-actions)
-	pub async fn list_actions_without_pagination(
-		&self,
-		org_id: Option<String>,
-		body: ListActionsRequest,
-	) -> Result<SearchWithoutPaginationResponse<V1Action>> {
-		let request = self
-			.client
-			.post(self.make_url("management/v1/actions/_search")?)
-			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
-			.json(&body.inner_request)
-			.build()
-			.context("Error building list_actions_without_pagination request")?;
-
-		self.send_request(request).await
 	}
 
 	/// Get a flow. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-flow)
 	pub async fn get_flow(
 		&self,
-		organization_id: Option<String>,
 		flow_type: u32,
+		org_id: Option<String>,
 	) -> Result<V1GetFlowResponse> {
 		let request = self
 			.client
 			.get(self.make_url(&format!("management/v1/flows/{flow_type}"))?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.build()
 			.context("Error building get_flow request")?;
 
@@ -132,21 +100,18 @@ impl Zitadel {
 	/// Set trigger actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-set-trigger-actions)
 	pub async fn set_trigger_actions(
 		&self,
-		organization_id: Option<String>,
 		// TODO: Should we provide enums for these?
 		flow_type: u32,
 		trigger_type: u32,
 		body: ManagementServiceSetTriggerActionsBody,
+		org_id: Option<String>,
 	) -> Result<V1SetTriggerActionsResponse> {
 		let request = self
 			.client
 			.post(
 				self.make_url(&format!("management/v1/flows/{flow_type}/trigger/{trigger_type}"))?,
 			)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
 			.build()
 			.context("Error building set_trigger_actions request")?;
@@ -157,17 +122,14 @@ impl Zitadel {
 	/// Create application. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-api-app)
 	pub async fn create_application(
 		&self,
-		organization_id: Option<String>,
 		project_id: String,
 		body: ManagementServiceAddApiAppBody,
+		org_id: Option<String>,
 	) -> Result<V1AddApiAppResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/apps/api"))?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
 			.build()
 			.context("Error building create_application request")?;
@@ -178,9 +140,9 @@ impl Zitadel {
 	/// Remove application. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-app)
 	pub async fn remove_application(
 		&self,
-		organization_id: Option<String>,
 		project_id: String,
 		application_id: String,
+		org_id: Option<String>,
 	) -> Result<V1RemoveAppResponse> {
 		let request =
 			self.client
@@ -189,7 +151,7 @@ impl Zitadel {
 				))?)
 				.header(
 					HEADER_ZITADEL_ORGANIZATION_ID,
-					HeaderValue::from_str(&organization_id.unwrap_or_default())?,
+					HeaderValue::from_str(&org_id.unwrap_or_default())?,
 				)
 				.build()
 				.context("Error building remove_application request")?;
@@ -202,46 +164,26 @@ impl Zitadel {
 		&self,
 		project_id: String,
 		body: ListApplicationsRequest,
+		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1App>> {
-		// TODO: Make it possible to use HEADER_ZITADEL_ORGANIZATION_ID
 		Ok(PaginationHandler::<_, V1App>::new(
 			self.clone(),
 			body,
 			self.make_url(&format!("management/v1/projects/{project_id}/apps/_search"))?,
+			org_id,
 		))
-	}
-
-	/// Search for applications [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-apps)
-	pub async fn list_applications_without_pagination(
-		&self,
-		org_id: Option<String>,
-		project_id: String,
-		body: ListApplicationsRequest,
-	) -> Result<SearchWithoutPaginationResponse<V1App>> {
-		let request = self
-			.client
-			.post(self.make_url(&format!("management/v1/projects/{project_id}/apps/_search"))?)
-			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
-			.json(&body.inner_request)
-			.build()
-			.context("Error building list_applications_without_pagination request")?;
-
-		self.send_request(request).await
 	}
 
 	/// Create project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
 	pub async fn create_project(
 		&self,
-		organization_id: Option<String>,
 		body: V1AddProjectRequest,
+		org_id: Option<String>,
 	) -> Result<V1AddProjectResponse> {
 		let request = self
 			.client
 			.post(self.make_url("management/v1/projects")?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
 			.build()
 			.context("Error building create_project request")?;
@@ -252,16 +194,13 @@ impl Zitadel {
 	/// Remove project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-project)
 	pub async fn remove_project(
 		&self,
-		organization_id: Option<String>,
 		project_id: String,
+		org_id: Option<String>,
 	) -> Result<V1RemoveProjectResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("management/v1/projects/{project_id}"))?)
-			.header(
-				HEADER_ZITADEL_ORGANIZATION_ID,
-				HeaderValue::from_str(&organization_id.unwrap_or_default())?,
-			)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.build()
 			.context("Error building delete_project request")?;
 
@@ -272,30 +211,14 @@ impl Zitadel {
 	pub fn list_projects(
 		&self,
 		body: ListProjectsRequest,
+		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1Project>> {
-		// TODO: Make it possible to use HEADER_ZITADEL_ORGANIZATION_ID
 		Ok(PaginationHandler::<_, V1Project>::new(
 			self.clone(),
 			body,
 			self.make_url("management/v1/projects/_search")?,
+			org_id,
 		))
-	}
-
-	/// Search for projects [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-projects)
-	pub async fn list_projects_without_pagination(
-		&self,
-		org_id: Option<String>,
-		body: ListProjectsRequest,
-	) -> Result<SearchWithoutPaginationResponse<V1Project>> {
-		let request = self
-			.client
-			.post(self.make_url("management/v1/projects/_search")?)
-			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
-			.json(&body.inner_request)
-			.build()
-			.context("Error building list_projects_without_pagination request")?;
-
-		self.send_request(request).await
 	}
 }
 

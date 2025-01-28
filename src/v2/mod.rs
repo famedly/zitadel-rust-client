@@ -21,6 +21,10 @@ use url::Url;
 /// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 
+/// Metadata/Header for Zitadel organization ID, used to set/get metadata for
+/// organizations.
+pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
+
 /// Zitadel client for using the HTTP v2 api
 #[derive(Debug, Clone)]
 pub struct Zitadel {
