@@ -4,22 +4,37 @@ mod models;
 use anyhow::{Context, Result};
 use delegate::delegate;
 use futures::Stream;
-pub use models::*;
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, InvalidHeaderValue};
 
 use super::{
 	pagination::{PaginationHandler, PaginationRequest},
 	Zitadel,
 };
+pub use models::*;
+
+fn try_into_headermap(organization: Option<String>) -> Result<HeaderMap, InvalidHeaderValue> {
+	organization
+		.into_iter()
+		.map(|org| {
+			Ok::<_, InvalidHeaderValue>((
+				HeaderName::from_static("x-zitadel-orgid"),
+				HeaderValue::from_str(&org)?,
+			))
+		})
+		.collect()
+}
 
 impl Zitadel {
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
 	pub async fn create_action(
 		&self,
 		body: V1CreateActionRequest,
+		organization: Option<String>,
 	) -> Result<V1CreateActionResponse> {
 		let request = self
 			.client
 			.post(self.make_url("management/v1/actions")?)
+			.headers(try_into_headermap(organization)?)
 			.json(&body)
 			.build()
 			.context("Error building create_action request")?;
@@ -32,10 +47,12 @@ impl Zitadel {
 		&self,
 		action_id: String,
 		body: ManagementServiceUpdateActionBody,
+		organization: Option<String>,
 	) -> Result<V1UpdateActionResponse> {
 		let request = self
 			.client
 			.put(self.make_url(&format!("management/v1/actions/{action_id}"))?)
+			.headers(try_into_headermap(organization)?)
 			.json(&body)
 			.build()
 			.context("Error building update_action request")?;
@@ -44,10 +61,15 @@ impl Zitadel {
 	}
 
 	/// Delete action. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-delete-action)
-	pub async fn delete_action(&self, action_id: String) -> Result<V1DeleteActionResponse> {
+	pub async fn delete_action(
+		&self,
+		action_id: String,
+		organization: Option<String>,
+	) -> Result<V1DeleteActionResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("management/v1/actions/{action_id}"))?)
+			.headers(try_into_headermap(organization)?)
 			.json(&ManagementServiceDeleteActionBody::new())
 			.build()
 			.context("Error building delete_action request")?;
@@ -68,10 +90,15 @@ impl Zitadel {
 	}
 
 	/// Get a flow. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-flow)
-	pub async fn get_flow(&self, flow_type: u32) -> Result<V1GetFlowResponse> {
+	pub async fn get_flow(
+		&self,
+		flow_type: u32,
+		organization: Option<String>,
+	) -> Result<V1GetFlowResponse> {
 		let request = self
 			.client
 			.get(self.make_url(&format!("management/v1/flows/{flow_type}"))?)
+			.headers(try_into_headermap(organization)?)
 			.build()
 			.context("Error building get_flow request")?;
 
@@ -85,12 +112,14 @@ impl Zitadel {
 		flow_type: u32,
 		trigger_type: u32,
 		body: ManagementServiceSetTriggerActionsBody,
+		organization: Option<String>,
 	) -> Result<V1SetTriggerActionsResponse> {
 		let request = self
 			.client
 			.post(
 				self.make_url(&format!("management/v1/flows/{flow_type}/trigger/{trigger_type}"))?,
 			)
+			.headers(try_into_headermap(organization)?)
 			.json(&body)
 			.build()
 			.context("Error building set_trigger_actions request")?;
@@ -103,10 +132,12 @@ impl Zitadel {
 		&self,
 		project_id: String,
 		body: ManagementServiceAddApiAppBody,
+		organization: Option<String>,
 	) -> Result<V1AddApiAppResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/apps/api"))?)
+			.headers(try_into_headermap(organization)?)
 			.json(&body)
 			.build()
 			.context("Error building create_application request")?;
@@ -119,12 +150,14 @@ impl Zitadel {
 		&self,
 		project_id: String,
 		application_id: String,
+		organization: Option<String>,
 	) -> Result<V1RemoveAppResponse> {
 		let request =
 			self.client
 				.delete(self.make_url(&format!(
 					"management/v1/projects/{project_id}/apps/{application_id}"
 				))?)
+				.headers(try_into_headermap(organization)?)
 				.build()
 				.context("Error building remove_application request")?;
 
@@ -145,10 +178,15 @@ impl Zitadel {
 	}
 
 	/// Create project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
-	pub async fn create_project(&self, body: V1AddProjectRequest) -> Result<V1AddProjectResponse> {
+	pub async fn create_project(
+		&self,
+		body: V1AddProjectRequest,
+		organization: Option<String>,
+	) -> Result<V1AddProjectResponse> {
 		let request = self
 			.client
 			.post(self.make_url("management/v1/projects")?)
+			.headers(try_into_headermap(organization)?)
 			.json(&body)
 			.build()
 			.context("Error building create_project request")?;
@@ -157,10 +195,15 @@ impl Zitadel {
 	}
 
 	/// Remove project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-project)
-	pub async fn remove_project(&self, project_id: String) -> Result<V1RemoveProjectResponse> {
+	pub async fn remove_project(
+		&self,
+		project_id: String,
+		organization: Option<String>,
+	) -> Result<V1RemoveProjectResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("management/v1/projects/{project_id}"))?)
+			.headers(try_into_headermap(organization)?)
 			.build()
 			.context("Error building delete_project request")?;
 
