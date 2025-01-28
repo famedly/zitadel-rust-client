@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-01-28
+
+### Features
+
+- Add token validation helper
+- Add scope to tokens
+- Add organization models
+- Add create organization endpoint
+- Add management models
+- Tweak management models to look and work correctly
+- Add trace log for response bodies
+- Add non-search action endpoints
+- Test non-search action endpoints
+- Implement paginated action requests
+- Add Sync to pagination types
+- Add org id to header for v2 management queries
+- Add new Enum Models for V2
+- [**breaking**] Add organization ID option to pagination requests
+
+### Bug Fixes
+
+- Get_user_by_id failing on user not found
+- Don't require mutable references to Zitadel for requests
+
+### Refactor
+
+- Add iat claim and remove nbf claim
+- [**breaking**] Move pagination module to top-level
+- [**breaking**] Merge cross-API human creation requests
+- Make pagination implementation slightly more ergonomic
+
+### Testing
+
+- Add token verify tests
+- Add positive token verification test
+- Remove mutability from test helpers
+- Test paginated action requests
+
 ## [0.1.0] - 2024-11-13
 
 ### Features
