@@ -73,7 +73,7 @@ impl Zitadel {
 		body: ListActionsRequest,
 		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1Action> + Send + Sync> {
-		Ok(PaginationHandler::<_, V1Action>::new(
+		Ok(PaginationHandler::new(
 			self.clone(),
 			body,
 			self.make_url("management/v1/actions/_search")?,
@@ -166,7 +166,7 @@ impl Zitadel {
 		body: ListApplicationsRequest,
 		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1App>> {
-		Ok(PaginationHandler::<_, V1App>::new(
+		Ok(PaginationHandler::new(
 			self.clone(),
 			body,
 			self.make_url(&format!("management/v1/projects/{project_id}/apps/_search"))?,
@@ -213,7 +213,7 @@ impl Zitadel {
 		body: ListProjectsRequest,
 		org_id: Option<String>,
 	) -> Result<impl Stream<Item = V1Project>> {
-		Ok(PaginationHandler::<_, V1Project>::new(
+		Ok(PaginationHandler::new(
 			self.clone(),
 			body,
 			self.make_url("management/v1/projects/_search")?,

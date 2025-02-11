@@ -4,6 +4,7 @@ use std::{future::Future, pin::Pin, task::Poll};
 use anyhow::{Context, Result};
 use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
+use reqwest::header::HeaderValue;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
@@ -41,13 +42,14 @@ type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send + Sync;
 ///
 /// **Some Zitadel endpoints allow to set an `org_id`. If not provided, the
 /// organization of the caller is used.**
-pub(crate) struct PaginationHandler<Q, T>
+pub(crate) struct PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync,
 	T: DeserializeOwned + 'static,
+	R: PaginationRequest<Item = Q> + Send + Sync,
 {
 	zitadel: Zitadel,
-	query: Box<dyn PaginationRequest<Item = Q> + Send + Sync>,
+	query: R,
 	endpoint: Url,
 	page: usize,
 	buffer: Vec<T>,
@@ -56,22 +58,18 @@ where
 	org_id: Option<String>,
 }
 
-impl<Q, T> PaginationHandler<Q, T>
+impl<Q, T, R> PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
+	R: PaginationRequest<Item = Q> + Send + Sync,
 {
-	pub(crate) fn new(
-		zitadel: Zitadel,
-		query: impl PaginationRequest<Item = Q> + Send + Sync + 'static,
-		endpoint: Url,
-		org_id: Option<String>,
-	) -> Self {
+	pub(crate) fn new(zitadel: Zitadel, query: R, endpoint: Url, org_id: Option<String>) -> Self {
 		let page = 0;
 		let req_query = query.to_paginated_request(page);
 		Self {
 			zitadel: zitadel.clone(),
-			query: Box::new(query),
+			query,
 			endpoint: endpoint.clone(),
 			page,
 			buffer: Vec::new(),
@@ -88,6 +86,7 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 	endpoint: Url,
 	org_id: Option<String>,
 ) -> Result<Vec<T>> {
+	let org_id = org_id.as_deref().map(HeaderValue::from_str).transpose()?;
 	let request = zitadel
 		.client
 		.post(endpoint)
@@ -100,17 +99,19 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 	Ok(resp.take_result().unwrap_or(Vec::new()))
 }
 
-impl<Q, T> Unpin for PaginationHandler<Q, T>
+impl<Q, T, R> Unpin for PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
+	R: PaginationRequest<Item = Q> + Send + Sync,
 {
 }
 
-impl<Q, T> Stream for PaginationHandler<Q, T>
+impl<Q, T, R> Stream for PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
+	R: PaginationRequest<Item = Q> + Send + Sync,
 {
 	type Item = T;
 	fn poll_next(

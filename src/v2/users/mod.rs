@@ -126,7 +126,6 @@ impl Zitadel {
 
 		self.send_request(request).await
 	}
-	/// List all possible authentication methods of a user
 	/// List all possible authentication methods of a user like password,
 	/// passwordless, (T)OTP and more.
 	pub async fn list_authentication_method_types(
@@ -148,7 +147,7 @@ impl Zitadel {
 		user_id: &str,
 		body: UserServiceListIdpLinksBody,
 	) -> Result<impl Stream<Item = IdpLink> + Send + Sync> {
-		Ok(PaginationHandler::<_, IdpLink>::new(
+		Ok(PaginationHandler::new(
 			self.clone(),
 			body,
 			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
@@ -179,12 +178,7 @@ impl Zitadel {
 		&self,
 		body: ListUsersRequest,
 	) -> Result<impl Stream<Item = User> + Send + Sync> {
-		Ok(PaginationHandler::<_, User>::new(
-			self.clone(),
-			body,
-			self.make_url("/v2/users")?,
-			None, // Endpoint does not support org_id
-		))
+		Ok(PaginationHandler::new(self.clone(), body, self.make_url("/v2/users")?, None))
 	}
 
 	/// Lock user
@@ -682,7 +676,7 @@ impl Zitadel {
 		user_id: &str,
 		body: ListUserMetadataRequest,
 	) -> Result<impl Stream<Item = UserMetadataResponse> + Send + Sync> {
-		Ok(PaginationHandler::<_, UserMetadataResponse>::new(
+		Ok(PaginationHandler::new(
 			self.clone(),
 			body,
 			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
