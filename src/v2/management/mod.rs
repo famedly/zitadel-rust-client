@@ -220,6 +220,24 @@ impl Zitadel {
 			org_id,
 		))
 	}
+
+	/// List Project Grant Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-grant-members)
+	pub fn list_project_grant_members(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		grant_id: &str,
+		queries: Vec<Zitadelmemberv1SearchQuery>,
+	) -> Result<impl Stream<Item = V1Member>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			Some(queries),
+			self.make_url(&format!(
+				"management/v1/projects/{project_id}/grants/{grant_id}/members/_search"
+			))?,
+			org_id,
+		))
+	}
 }
 
 /// Pagination-supporting project search
