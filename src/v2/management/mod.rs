@@ -7,10 +7,10 @@ use famedly_rust_utils::GenericCombinators;
 use futures::Stream;
 pub use models::*;
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use super::{
-	pagination::{PaginationHandler, PaginationRequest},
+	pagination::{PaginationHandler, PaginationParams, PaginationRequest},
 	Zitadel, HEADER_ZITADEL_ORGANIZATION_ID,
 };
 
@@ -220,6 +220,202 @@ impl Zitadel {
 			org_id,
 		))
 	}
+
+	/// List Project Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-members
+	pub fn list_project_members(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
+	) -> Result<impl Stream<Item = V1Member>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, queries),
+			self.make_url(&format!("management/v1/projects/{project_id}/members/_search"))?,
+			org_id,
+		))
+	}
+
+	/// Add Project Grant [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-grant)
+	pub async fn add_project_grant(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		granted_org_id: String,
+		role_keys: Option<Vec<String>>,
+	) -> Result<V1AddProjectGrantResponse> {
+		let request = self
+			.client
+			.post(self.make_url(&format!("management/v1/projects/{project_id}/grants"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(
+				&ManagementServiceAddProjectGrantBody::new()
+					.with_granted_org_id(granted_org_id)
+					.chain_opt(role_keys, ManagementServiceAddProjectGrantBody::with_role_keys),
+			)
+			.build()
+			.context("Error building add_project_grant request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Add Project Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-member)
+	pub async fn add_project_member(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		user_id: String,
+		roles: Vec<String>,
+	) -> Result<V1AddProjectMemberResponse> {
+		type ReqBody = ManagementServiceAddProjectMemberBody;
+		let request = self
+			.client
+			.post(self.make_url(&format!("management/v1/projects/{project_id}/members"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ReqBody::new().with_user_id(user_id).with_roles(roles))
+			.build()
+			.context("Error building add_project_member request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Add Organization Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-org-member)
+	pub async fn add_organization_member(
+		&self,
+		org_id: Option<String>,
+		user_id: String,
+		roles: Vec<String>,
+	) -> Result<V1AddOrgMemberResponse> {
+		let request = self
+			.client
+			.post(self.make_url("management/v1/orgs/me/members")?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&V1AddOrgMemberRequest::new().with_user_id(user_id).with_roles(roles))
+			.build()
+			.context("Error building add_organization_member request")?;
+
+		self.send_request(request).await
+	}
+
+	/// List Organization Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-org-members)
+	pub fn list_organization_members(
+		&self,
+		org_id: Option<String>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
+	) -> Result<impl Stream<Item = V1Member>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, queries),
+			self.make_url("management/v1/orgs/me/members/_search")?,
+			org_id,
+		))
+	}
+
+	/// List Project Grant Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-grant-members)
+	pub fn list_project_grant_members(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		grant_id: &str,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
+	) -> Result<impl Stream<Item = V1Member>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, queries),
+			self.make_url(&format!(
+				"management/v1/projects/{project_id}/grants/{grant_id}/members/_search"
+			))?,
+			org_id,
+		))
+	}
+
+	/// Add Project Grant Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-grant-member)
+	pub async fn add_project_grant_member(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		project_grant_id: &str,
+		user_id: String,
+		roles: Vec<String>,
+	) -> Result<V1AddProjectGrantMemberResponse> {
+		//
+		type ReqBody = ManagementServiceAddProjectGrantMemberBody;
+		let request = self
+			.client
+			.post(self.make_url(&format!(
+				"management/v1/projects/{project_id}/grants/{project_grant_id}/members"
+			))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ReqBody::new(user_id).with_roles(roles))
+			.build()
+			.context("Error building radd_project_grant_member equest")?;
+
+		self.send_request(request).await
+	}
+
+	/// Add User Grant [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-user-grant)
+	pub async fn add_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		project_id: String,
+		project_grant_id: Option<String>,
+		role_keys: Option<Vec<String>>,
+	) -> Result<V1AddUserGrantResponse> {
+		type ReqBody = ManagementServiceAddUserGrantBody;
+		let request = self
+			.client
+			.post(self.make_url(&format!("management/v1/users/{user_id}/grants"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(
+				&ReqBody::new(project_id)
+					.chain_opt(project_grant_id, ReqBody::with_project_grant_id)
+					.chain_opt(role_keys, ReqBody::with_role_keys),
+			)
+			.build()
+			.context("Error building add_user_grant request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Search User Grants [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
+	pub fn search_user_grants(
+		&self,
+		org_id: Option<String>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<V1UserGrantQuery>>,
+	) -> Result<impl Stream<Item = Zitadeluserv1UserGrant>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, queries),
+			self.make_url("management/v1/users/grants/_search")?,
+			org_id,
+		))
+	}
+
+	/// Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
+	pub async fn add_project_role(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		role_key: String,
+		display_name: String,
+		group: Option<String>,
+	) -> Result<V1AddProjectRoleResponse> {
+		type ReqBody = ManagementServiceAddProjectRoleBody;
+		let request = self
+			.client
+			.post(self.make_url(&format!("management/v1/projects/{project_id}/roles"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ReqBody::new(role_key, display_name).chain_opt(group, ReqBody::with_group))
+			.build()
+			.context("Error building add_user_grant request")?;
+
+		self.send_request(request).await
+	}
 }
 
 /// Pagination-supporting project search
@@ -265,15 +461,6 @@ impl ListProjectsRequest {
 			pub fn reset_queries(&mut self);
 		}
 	}
-}
-
-/// Response for search without pagination
-#[derive(Clone, Debug, Deserialize)]
-pub struct SearchWithoutPaginationResponse<T> {
-	/// The result of the search
-	pub result: Option<Vec<T>>,
-	/// The details of the search
-	pub details: Option<V1ListDetails>,
 }
 
 impl PaginationRequest for ListProjectsRequest {

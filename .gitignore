@@ -1,5 +1,6 @@
 .env
 /target
 /cargo_home
+/tests/environment/zitadel/service-user.json
 
 .DS_Store

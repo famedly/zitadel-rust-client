@@ -4,12 +4,11 @@ use std::{future::Future, pin::Pin, task::Poll};
 use anyhow::{Context, Result};
 use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
-use reqwest::header::HeaderValue;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
 use super::HEADER_ZITADEL_ORGANIZATION_ID;
-use crate::v2::Zitadel;
+use crate::v2::{users::ListQuery, Zitadel};
 
 /// A paginated response
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
@@ -28,7 +27,7 @@ where
 }
 
 pub(crate) trait PaginationRequest {
-	type Item: Serialize + 'static;
+	type Item: Serialize;
 	fn to_paginated_request(&self, page: usize) -> Self::Item;
 	fn page_size(&self) -> usize;
 }
@@ -86,7 +85,6 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 	endpoint: Url,
 	org_id: Option<String>,
 ) -> Result<Vec<T>> {
-	let org_id = org_id.as_deref().map(HeaderValue::from_str).transpose()?;
 	let request = zitadel
 		.client
 		.post(endpoint)
@@ -149,5 +147,86 @@ where
 			}
 		}
 		Poll::Ready(self.buffer.pop())
+	}
+}
+
+/// Generic parameters for paginated requests
+#[allow(missing_docs)]
+#[derive(Debug, Clone)]
+pub struct PaginationParams {
+	pub page_size: usize,
+	pub asc: bool,
+}
+
+#[allow(missing_docs)]
+impl PaginationParams {
+	#[must_use]
+	pub fn with_page_size(mut self, x: usize) -> Self {
+		self.page_size = x;
+		self
+	}
+
+	#[must_use]
+	pub fn with_asc(mut self, x: bool) -> Self {
+		self.asc = x;
+		self
+	}
+}
+
+impl Default for PaginationParams {
+	fn default() -> Self {
+		Self::DEFAULT
+	}
+}
+
+impl PaginationParams {
+	#[allow(missing_docs)]
+	pub const DEFAULT: Self = Self { page_size: 1000, asc: true };
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub(crate) struct NoSorting;
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(rename = "camel_case")]
+pub(crate) struct GenericListRequestBody<Query, Sorting> {
+	query: Option<ListQuery>,
+	#[serde(skip_serializing_if = "Option::is_none")]
+	sorting_column: Option<Sorting>,
+	queries: Option<Vec<Query>>,
+}
+
+fn mk_list_query(page: usize, params: &PaginationParams) -> ListQuery {
+	ListQuery::new()
+		.with_limit(params.page_size)
+		.with_offset((page * params.page_size).to_string())
+		.with_asc(params.asc)
+}
+
+impl<Q: Clone + Serialize> PaginationRequest for (Option<PaginationParams>, Option<Vec<Q>>) {
+	type Item = GenericListRequestBody<Q, NoSorting>;
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		let params = self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT);
+		let page = mk_list_query(page, params);
+		Self::Item { query: Some(page), sorting_column: None, queries: self.1.clone() }
+	}
+
+	fn page_size(&self) -> usize {
+		self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT).page_size
+	}
+}
+
+impl<Q: Clone + Serialize, S: Clone + Serialize> PaginationRequest
+	for (Option<PaginationParams>, Option<S>, Option<Vec<Q>>)
+{
+	type Item = GenericListRequestBody<Q, S>;
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		let params = self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT);
+		let page = mk_list_query(page, params);
+		Self::Item { query: Some(page), sorting_column: self.1.clone(), queries: self.2.clone() }
+	}
+
+	fn page_size(&self) -> usize {
+		self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT).page_size
 	}
 }
