@@ -108,7 +108,7 @@ impl Token {
 	/// Renew the token
 	pub async fn renew(&mut self) -> Result<()> {
 		self.claims.iat = OffsetDateTime::now_utc().unix_timestamp();
-		self.expiry = OffsetDateTime::now_utc() + time::Duration::minutes(59);
+		self.expiry = OffsetDateTime::now_utc() + time::Duration::minutes(1);
 		self.claims.exp = self.expiry.unix_timestamp();
 
 		let jwt = encode(&self.header, &self.claims, &self.key)?;
