@@ -107,13 +107,30 @@ impl Token {
 
 	/// Renew the token
 	pub async fn renew(&mut self) -> Result<()> {
+		tracing::info!("Renewing the token");
+		tracing::info!("Current expiry: {:?}", self.expiry);
+		tracing::info!("Current iat: {:?}", self.claims.iat);
+		tracing::info!("Current exp: {:?}", self.claims.exp);
+
 		self.claims.iat = OffsetDateTime::now_utc().unix_timestamp();
 		self.expiry = OffsetDateTime::now_utc() + time::Duration::minutes(1);
 		self.claims.exp = self.expiry.unix_timestamp();
 
+		tracing::info!("New expiry: {:?}", self.expiry);
+		tracing::info!("New iat: {:?}", self.claims.iat);
+		tracing::info!("New exp: {:?}", self.claims.exp);
+
 		let jwt = encode(&self.header, &self.claims, &self.key)?;
 		let mut scope = self.scope.clone().unwrap_or_default();
 		scope.append(&mut MIN_SCOPE.iter().copied().map(String::from).collect());
+
+		tracing::info!("Scope: {:?}", scope);
+		tracing::info!("JWT: {:?}", jwt);
+		tracing::info!("Header: {:?}", self.header);
+		tracing::info!("Claims: {:?}", self.claims);
+		tracing::info!("Client: {:?}", self.client);
+
+		tracing::info!("Sending request to {}", format!("{}/oauth/v2/token", &self.claims.aud));
 
 		let resp = self
 			.client
@@ -127,6 +144,8 @@ impl Token {
 			.send()
 			.await
 			.context("Error renewing the token")?;
+
+		tracing::info!("Response from renewing the token: {:?}", resp);
 
 		let status = resp.status();
 		let body = resp.text().await?;
