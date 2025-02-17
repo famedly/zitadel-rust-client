@@ -11,24 +11,15 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
-
-use crate::v2::management::models;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1UserState {}
-
-impl V1UserState {
-	pub fn new() -> V1UserState {
-		V1UserState {}
-	}
+#[allow(non_camel_case_types)]
+pub enum V1UserState {
+	USER_STATE_UNSPECIFIED,
+	USER_STATE_ACTIVE,
+	USER_STATE_INACTIVE,
+	USER_STATE_DELETED,
+	USER_STATE_LOCKED,
+	USER_STATE_SUSPEND,
+	USER_STATE_INITIAL,
 }
-
-// TODO enum
-// List of v1UserState
-//const (
-//
-//
-//
-//)

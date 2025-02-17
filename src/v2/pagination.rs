@@ -4,7 +4,6 @@ use std::{future::Future, pin::Pin, task::Poll};
 use anyhow::{Context, Result};
 use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
-use reqwest::header::HeaderValue;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use url::Url;
 
@@ -86,7 +85,6 @@ async fn get_more_data<T: DeserializeOwned + 'static>(
 	endpoint: Url,
 	org_id: Option<String>,
 ) -> Result<Vec<T>> {
-	let org_id = org_id.as_deref().map(HeaderValue::from_str).transpose()?;
 	let request = zitadel
 		.client
 		.post(endpoint)

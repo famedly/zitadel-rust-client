@@ -70,19 +70,3 @@ impl ManagementServiceListProjectGrantMembersBody {
 		self.queries = None;
 	}
 }
-
-impl crate::v2::pagination::PaginationRequest for Option<Vec<models::Zitadelmemberv1SearchQuery>> {
-	type Item = ManagementServiceListProjectGrantMembersBody;
-	#[allow(clippy::cast_possible_wrap)]
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
-		let page = models::V1ListQuery::new()
-			.with_limit(self.page_size() as i64)
-			.with_offset((page * self.page_size()).to_string());
-		// .with_asc(self.asc.unwrap_or_default());
-		Self::Item::new().with_query(page).chain_opt(self.clone(), Self::Item::with_queries)
-	}
-
-	fn page_size(&self) -> usize {
-		1000
-	}
-}
