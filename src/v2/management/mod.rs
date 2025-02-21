@@ -7,10 +7,10 @@ use famedly_rust_utils::GenericCombinators;
 use futures::Stream;
 pub use models::*;
 use reqwest::header::HeaderValue;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use super::{
-	pagination::{PaginationHandler, PaginationRequest},
+	pagination::{PaginationHandler, PaginationParams, PaginationRequest},
 	Zitadel, HEADER_ZITADEL_ORGANIZATION_ID,
 };
 
@@ -226,11 +226,12 @@ impl Zitadel {
 		&self,
 		org_id: Option<String>,
 		project_id: &str,
-		queries: Vec<Zitadelmemberv1SearchQuery>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
 	) -> Result<impl Stream<Item = V1Member>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			Some(queries),
+			(params, queries),
 			self.make_url(&format!("management/v1/projects/{project_id}/members/_search"))?,
 			org_id,
 		))
@@ -301,11 +302,12 @@ impl Zitadel {
 	pub fn list_organization_members(
 		&self,
 		org_id: Option<String>,
-		queries: Vec<Zitadelmemberv1SearchQuery>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
 	) -> Result<impl Stream<Item = V1Member>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			Some(queries),
+			(params, queries),
 			self.make_url("management/v1/orgs/me/members/_search")?,
 			org_id,
 		))
@@ -317,11 +319,12 @@ impl Zitadel {
 		org_id: Option<String>,
 		project_id: &str,
 		grant_id: &str,
-		queries: Vec<Zitadelmemberv1SearchQuery>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
 	) -> Result<impl Stream<Item = V1Member>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			Some(queries),
+			(params, queries),
 			self.make_url(&format!(
 				"management/v1/projects/{project_id}/grants/{grant_id}/members/_search"
 			))?,
@@ -382,11 +385,12 @@ impl Zitadel {
 	pub fn search_user_grants(
 		&self,
 		org_id: Option<String>,
+		params: Option<PaginationParams>,
 		queries: Option<Vec<V1UserGrantQuery>>,
 	) -> Result<impl Stream<Item = Zitadeluserv1UserGrant>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			queries,
+			(params, queries),
 			self.make_url("management/v1/users/grants/_search")?,
 			org_id,
 		))
@@ -457,15 +461,6 @@ impl ListProjectsRequest {
 			pub fn reset_queries(&mut self);
 		}
 	}
-}
-
-/// Response for search without pagination
-#[derive(Clone, Debug, Deserialize)]
-pub struct SearchWithoutPaginationResponse<T> {
-	/// The result of the search
-	pub result: Option<Vec<T>>,
-	/// The details of the search
-	pub details: Option<V1ListDetails>,
 }
 
 impl PaginationRequest for ListProjectsRequest {
@@ -617,21 +612,5 @@ impl PaginationRequest for ListActionsRequest {
 			// Realistically, page sizes should never be large enough
 			// to hit the platform MAX_INT, but hey, I guess we can still avoid crashing.
 			.unwrap_or(1000)
-	}
-}
-
-impl PaginationRequest for Option<Vec<Zitadelmemberv1SearchQuery>> {
-	type Item = ManagementServiceListProjectGrantMembersBody;
-	#[allow(clippy::cast_possible_wrap)]
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
-		let page = V1ListQuery::new()
-			.with_limit(self.page_size() as i64)
-			.with_offset((page * self.page_size()).to_string());
-		// .with_asc(self.asc.unwrap_or_default());
-		Self::Item::new().with_query(page).chain_opt(self.clone(), Self::Item::with_queries)
-	}
-
-	fn page_size(&self) -> usize {
-		1000
 	}
 }

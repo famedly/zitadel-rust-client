@@ -300,7 +300,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_organization_members(Some(org1.clone()), Vec::new())?
+			.list_organization_members(Some(org1.clone()), None, Some(Vec::new()))?
 			.map(|x| x.user_id().unwrap().clone())
 			.collect::<Vec<_>>()
 			.await,
@@ -310,7 +310,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_organization_members(Some(org2.clone()), Vec::new())?
+			.list_organization_members(Some(org2.clone()), None, Some(Vec::new()))?
 			.map(|x| x.user_id().unwrap().clone())
 			.collect::<Vec<_>>()
 			.await,
@@ -320,7 +320,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_project_members(Some(org1.clone()), &project11, Vec::new(),)?
+			.list_project_members(Some(org1.clone()), &project11, None, Some(Vec::new()))?
 			.map(|x| x.user_id().unwrap().clone())
 			.collect::<Vec<_>>()
 			.await,
@@ -334,7 +334,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				Some(org2.clone()),
 				&project12,
 				&project_grant_id,
-				Vec::new()
+				None,
+				Some(Vec::new())
 			)?
 			.map(|x| x.user_id().unwrap().clone())
 			.collect::<Vec<_>>()
@@ -349,7 +350,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				Some(org1.clone()),
 				&project12,
 				&project_grant_id,
-				Vec::new()
+				None,
+				Some(Vec::new())
 			)?
 			.map(|x| x.user_id().unwrap().clone())
 			.collect::<Vec<_>>()
@@ -362,6 +364,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		zitadel
 			.search_user_grants(
 				Some(org1.clone()),
+				None,
 				Some(vec![
 					V1UserGrantQuery::ProjectId {
 						project_id_query: V1UserGrantProjectIdQuery::new()
@@ -384,6 +387,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		zitadel
 			.search_user_grants(
 				Some(org2.clone()),
+				None,
 				Some(vec![V1UserGrantQuery::ProjectId {
 					project_id_query: (V1UserGrantProjectIdQuery::new()
 						.with_project_id(project12.clone()))
@@ -400,6 +404,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		zitadel
 			.search_user_grants(
 				Some(org2.clone()),
+				None,
 				Some(vec![V1UserGrantQuery::ProjectGrantId {
 					project_grant_id_query: (V1UserGrantProjectGrantIdQuery::new()
 						.with_project_grant_id(project_grant_id.clone()))
@@ -415,6 +420,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		all_users,
 		zitadel
 			.search_user_grants(
+				None,
 				None,
 				Some(vec![V1UserGrantQuery::ProjectId {
 					project_id_query: (V1UserGrantProjectIdQuery::new()
