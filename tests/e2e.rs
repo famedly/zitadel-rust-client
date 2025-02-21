@@ -11,8 +11,10 @@
 use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Result};
+use famedly_rust_utils::GenericCombinators;
 use futures::StreamExt;
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
+use rand::distr::{Alphanumeric, SampleString};
 use test_log::{self, test};
 use time::{Duration, OffsetDateTime};
 use url::Url;
@@ -35,6 +37,30 @@ async fn create_user(zitadel: &Zitadel, first_name: &str, last_name: &str) -> Re
 	let ret = zitadel.create_human_user(user).await?;
 
 	Ok(ret.user_id().expect("Couldn't get the user id from response").clone())
+}
+
+#[tracing::instrument(skip_all)]
+async fn create_random_user(zitadel: &Zitadel, org_id: Option<String>) -> Result<String> {
+	let req = mk_add_human_user_request().chain_opt(org_id, |r, org_id| {
+		r.with_organization(Organization::new().with_org_id(org_id))
+	});
+
+	let user_id = zitadel
+		.create_human_user(req.clone())
+		.await
+		.inspect(|u| tracing::info!("User created:\n{u:?}"))?
+		.user_id()
+		.unwrap()
+		.clone();
+	tracing::info!(user = ?req, user_id);
+	Ok(user_id)
+}
+
+fn mk_add_human_user_request() -> AddHumanUserRequest {
+	let first_name = Alphanumeric.sample_string(&mut rand::rng(), 12);
+	let last_name = Alphanumeric.sample_string(&mut rand::rng(), 12);
+	let email = format!("{}.{last_name}@domain.example", first_name.as_bytes()[0] as char);
+	AddHumanUserRequest::new(SetHumanProfile::new(first_name, last_name), SetHumanEmail::new(email))
 }
 
 async fn tear_down(zitadel: &Zitadel) {
@@ -90,12 +116,323 @@ async fn tear_down(zitadel: &Zitadel) {
 	}
 }
 
+/// Helper macro to check the results of paginated requests.
+/// ```
+/// let all_users = ["u1", "u2", "u3"];
+/// // Asserts that result has expected u1 and nothing else from all_users
+/// assert_list!(all_users, &["u1", "u_extra"], &["u1"]);
+/// ```
+/// ```should_panic
+/// let all_users = ["u1", "u2", "u3"];
+/// // Panics because the result doesn't have u2
+/// assert_list!(all_users, &["u1", "u_extra"], &["u1", "u2"]);
+/// ```
+/// ```should_panic
+/// let all_users = ["u1", "u2", "u3"];
+/// // Panics because the result has unexpected u2
+/// assert_list!(all_users, &["u1", "u2"], &["u1"]);
+/// ```
+macro_rules! assert_list {
+	($all_items:expr, $items:expr, $items_must_be:expr) => {
+		let items = $items;
+		let items_must_be = $items_must_be;
+		items_must_be.iter().for_each(|item| {
+			assert!(
+				items.iter().find(|u| item == u).is_some(),
+				"{}\n=\n{items:?}\nmust contain {:?}",
+				stringify!($items),
+				item
+			)
+		});
+		let items_must_not_be = $all_items
+			.iter()
+			.filter(|item| items.iter().find(|u| &u == item).is_none())
+			.collect::<Vec<_>>();
+		items_must_not_be.iter().for_each(|item| {
+			assert!(
+				items.iter().find(|u| item == &u).is_none(),
+				"{}\n=\n{items:?}\nmust not contain {:?}",
+				stringify!($items),
+				item
+			)
+		});
+	};
+}
+
 #[tokio::test]
 async fn test_e2e_create_token() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
 
 	assert!(Zitadel::new(url, service_account_file.to_path_buf()).await.is_ok());
+	Ok(())
+}
+
+async fn mk_zitadel_client() -> Result<Zitadel> {
+	let service_account_file = Path::new(USER_SERVICE_PATH);
+	let url = Url::parse("http://localhost:8080")?;
+	Zitadel::new(url, service_account_file.to_path_buf()).await
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+#[allow(trivial_casts)]
+async fn test_e2e_role_and_membership_methods() -> Result<()> {
+	let zitadel = mk_zitadel_client().await?;
+	let admin = create_random_user(&zitadel, None).await?;
+
+	let admins = vec![AddOrganizationRequestAdmin::new().with_user_id(admin)];
+
+	let roles = |role: &str| vec![role.to_owned()];
+
+	// Create org1 with 2 projects in it
+	let query = V2AddOrganizationRequest::new("A".to_owned()).with_admins(admins.clone());
+	let org1 =
+		zitadel.create_organization_with_admin(query).await?.organization_id().unwrap().clone();
+
+	let query = V1AddProjectRequest::new("A1".to_owned());
+	let project11 = zitadel.create_project(query, Some(org1.clone())).await?.id().unwrap().clone();
+	zitadel
+		.add_project_role(Some(org1.clone()), &project11, "User".into(), "A user".into(), None)
+		.await?;
+
+	let query = V1AddProjectRequest::new("A2".to_owned());
+	let project12 = zitadel.create_project(query, Some(org1.clone())).await?.id().unwrap().clone();
+	zitadel
+		.add_project_role(Some(org1.clone()), &project12, "User".into(), "A user".into(), None)
+		.await?;
+
+	// A user member of the org
+	let user11 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org1.clone()), user11.clone(), roles("ORG_OWNER")).await?;
+
+	// A user member of the org and project11
+	let user12 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org1.clone()), user12.clone(), roles("ORG_OWNER")).await?;
+	zitadel
+		.add_project_member(Some(org1.clone()), &project11, user12.clone(), roles("PROJECT_OWNER"))
+		.await?;
+
+	// A user member of the org and is granted project12
+	let user13 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org1.clone()), user13.clone(), roles("ORG_OWNER")).await?;
+
+	// A user who is member but not "member" of the org
+	let user14 = create_random_user(&zitadel, Some(org1.clone())).await?;
+
+	let _user13_project12_grant = zitadel
+		.add_user_grant(
+			Some(org1.clone()),
+			&user13,
+			project12.clone(),
+			None,
+			Some(vec!["User".into()]),
+		)
+		.await?
+		.user_grant_id()
+		.unwrap()
+		.clone();
+
+	// Create org2, add project12 (from org1) grant
+	let query = V2AddOrganizationRequest::new("B".to_owned()).with_admins(admins);
+	let org2 =
+		zitadel.create_organization_with_admin(query).await?.organization_id().unwrap().clone();
+
+	let project_grant_id = zitadel
+		.add_project_grant(None, &project12, org2.clone(), None)
+		.await?
+		.grant_id()
+		.unwrap()
+		.clone();
+
+	// User member of the org
+	let user21 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org2.clone()), user21.clone(), roles("ORG_OWNER")).await?;
+
+	// User member of the org and is granted project12 via user grant
+	let user22 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org2.clone()), user22.clone(), roles("ORG_OWNER")).await?;
+
+	let _user22_project12_grant = zitadel
+		.add_user_grant(
+			Some(org2.clone()),
+			&user22.clone(),
+			project12.clone(),
+			Some(project_grant_id.clone()),
+			None,
+		)
+		.await?;
+
+	// Use member of the org, member of the project grant
+	let user23 = create_random_user(&zitadel, None).await?;
+	zitadel.add_organization_member(Some(org2.clone()), user23.clone(), roles("ORG_OWNER")).await?;
+
+	zitadel
+		.add_project_grant_member(
+			Some(org2.clone()),
+			&project12,
+			&project_grant_id,
+			user23.clone(),
+			roles("PROJECT_GRANT_OWNER"),
+		)
+		.await?;
+
+	// A user who is member but not "member" of the org and is granted project12 via
+	// user grant
+	let user24 = create_random_user(&zitadel, Some(org2.clone())).await?;
+
+	let _user24_project12_grant = zitadel
+		.add_user_grant(
+			Some(org2.clone()),
+			&user24.clone(),
+			project12.clone(),
+			Some(project_grant_id.clone()),
+			None,
+		)
+		.await?;
+
+	// Asserts
+
+	tracing::info!(user11, user12, user13, user14, user21, user22, user23, user24);
+
+	let all_users = [&user11, &user12, &user13, &user14, &user21, &user22, &user23, &user24];
+
+	assert_list!(
+		all_users,
+		zitadel
+			.list_organization_members(Some(org1.clone()), None, Some(Vec::new()))?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user11, &user12, &user13]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.list_organization_members(Some(org2.clone()), None, Some(Vec::new()))?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user21, &user22, &user23]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.list_project_members(Some(org1.clone()), &project11, None, Some(Vec::new()))?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user12]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.list_project_grant_members(
+				Some(org2.clone()),
+				&project12,
+				&project_grant_id,
+				None,
+				Some(Vec::new())
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user23]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.list_project_grant_members(
+				Some(org1.clone()),
+				&project12,
+				&project_grant_id,
+				None,
+				Some(Vec::new())
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[] as &[&str]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.search_user_grants(
+				Some(org1.clone()),
+				None,
+				Some(vec![
+					V1UserGrantQuery::ProjectId {
+						project_id_query: V1UserGrantProjectIdQuery::new()
+							.with_project_id(project12.clone())
+					},
+					V1UserGrantQuery::UserType {
+						user_type_query: V1UserGrantUserTypeQuery::new()
+							.with__type(Userv1Type::Human)
+					}
+				])
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user13]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.search_user_grants(
+				Some(org2.clone()),
+				None,
+				Some(vec![V1UserGrantQuery::ProjectId {
+					project_id_query: (V1UserGrantProjectIdQuery::new()
+						.with_project_id(project12.clone()))
+				}])
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user22, &user24]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.search_user_grants(
+				Some(org2.clone()),
+				None,
+				Some(vec![V1UserGrantQuery::ProjectGrantId {
+					project_grant_id_query: (V1UserGrantProjectGrantIdQuery::new()
+						.with_project_grant_id(project_grant_id.clone()))
+				}])
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[&user22, &user24]
+	);
+
+	assert_list!(
+		all_users,
+		zitadel
+			.search_user_grants(
+				None,
+				None,
+				Some(vec![V1UserGrantQuery::ProjectId {
+					project_id_query: (V1UserGrantProjectIdQuery::new()
+						.with_project_id(project12.clone()))
+				}])
+			)?
+			.map(|x| x.user_id().unwrap().clone())
+			.collect::<Vec<_>>()
+			.await,
+		&[] as &[&str]
+	);
+
 	Ok(())
 }
 

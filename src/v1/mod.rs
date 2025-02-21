@@ -59,7 +59,7 @@ use zitadel::{
 
 /// Metadata/Header for Zitadel organization ID, used to set/get metadata for
 /// organizations.
-const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
+pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
 /// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 

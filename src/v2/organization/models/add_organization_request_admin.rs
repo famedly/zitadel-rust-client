@@ -14,7 +14,7 @@ use serde_json::Value;
 
 use crate::v2::{organization::models, users::AddHumanUserRequest};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddOrganizationRequestAdmin {
 	#[serde(rename = "userId")]
 	user_id: Option<String>,
