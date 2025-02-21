@@ -23,7 +23,8 @@ use wiremock::{
 	Mock, MockServer, ResponseTemplate,
 };
 use zitadel_rust_client::v2::{
-	authentication::Token, management::*, organization::*, token, users::*, Zitadel,
+	authentication::Token, management::*, organization::*, pagination::PaginationParams, token,
+	users::*, Zitadel,
 };
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
@@ -64,12 +65,11 @@ fn mk_add_human_user_request() -> AddHumanUserRequest {
 }
 
 async fn tear_down(zitadel: &Zitadel) {
-	let query = ListUsersRequest::new(vec![
-		SearchQuery::new().with_type_query(TypeQuery::new(Userv2Type::Human))
-	]);
+	let queries = Some(vec![SearchQuery::new().with_type_query(TypeQuery::new(Userv2Type::Human))]);
 
-	let mut stream =
-		zitadel.list_users(query).expect("Error getting the list of users for tear down");
+	let mut stream = zitadel
+		.list_users(None, None, queries)
+		.expect("Error getting the list of users for tear down");
 
 	while let Some(user) = stream.next().await {
 		let id = user.user_id().expect("Couldn't get user id during tear down.");
@@ -77,7 +77,7 @@ async fn tear_down(zitadel: &Zitadel) {
 	}
 
 	let mut stream = zitadel
-		.list_actions(ListActionsRequest::new(vec![]), None)
+		.list_actions(None, None, Some(vec![]))
 		.expect("Error getting the list of actions to tear down");
 
 	while let Some(action) = stream.next().await {
@@ -86,7 +86,7 @@ async fn tear_down(zitadel: &Zitadel) {
 	}
 
 	let mut stream = zitadel
-		.list_projects(ListProjectsRequest::new(vec![]), None)
+		.list_projects(None, None, Some(vec![]))
 		.expect("Error getting the list of projects to tear down");
 
 	while let Some(project) = stream.next().await {
@@ -95,7 +95,7 @@ async fn tear_down(zitadel: &Zitadel) {
 		let id = project.id().expect("Couldn't get project id during tear down.");
 
 		let mut stream = zitadel
-			.list_applications(id.clone(), ListApplicationsRequest::new(vec![]), None)
+			.list_applications(id.clone(), None, None, Some(vec![]))
 			.expect("Error getting the list of applications to tear down");
 
 		while let Some(application) = stream.next().await {
@@ -460,9 +460,12 @@ async fn test_e2e_create_organization() -> Result<()> {
 	// Ensure the admin user was actually created
 	assert_eq!(
 		zitadel
-			.list_users(ListUsersRequest::new(vec![
-				SearchQuery::new().with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))
-			]))?
+			.list_users(
+				None,
+				None,
+				Some(vec![SearchQuery::new()
+					.with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))])
+			)?
 			.count()
 			.await,
 		1
@@ -493,11 +496,7 @@ async fn test_e2e_create_application() -> Result<()> {
 		)
 		.await?;
 
-	let stream = zitadel.list_applications(
-		project_id.to_owned(),
-		ListApplicationsRequest::new(vec![]),
-		None,
-	)?;
+	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
 
 	let apps: Vec<String> =
 		stream.map(|app| app.name().expect("App name must be set").clone()).collect().await;
@@ -530,11 +529,7 @@ async fn test_e2e_list_applications() -> Result<()> {
 		assert!(zitadel.create_application(project_id.to_owned(), application, None).await.is_ok());
 	}
 
-	let stream = zitadel.list_applications(
-		project_id.to_owned(),
-		ListApplicationsRequest::new(vec![]),
-		None,
-	)?;
+	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
 
 	let found_application_names: Vec<String> =
 		stream.map(|app| app.name().expect("No name found for action").clone()).collect().await;
@@ -565,9 +560,10 @@ async fn test_e2e_create_action() -> Result<()> {
 	assert!(res.is_ok());
 
 	let stream = zitadel.list_actions(
-		ListActionsRequest::new(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 		None,
+		None,
+		Some(vec![V1ActionQuery::new()
+			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 	)?;
 
 	let actions: Vec<String> = stream
@@ -600,7 +596,7 @@ async fn test_e2e_list_actions() -> Result<()> {
 		assert!(zitadel.create_action(action, None).await.is_ok());
 	}
 
-	let stream = zitadel.list_actions(ListActionsRequest::new(vec![]), None)?;
+	let stream = zitadel.list_actions(None, None, None)?;
 
 	let found_action_names: Vec<String> = stream
 		.map(|action| action.name().expect("No name found for action").clone())
@@ -644,9 +640,10 @@ async fn test_e2e_update_action() -> Result<()> {
 		.await?;
 
 	let mut stream = zitadel.list_actions(
-		ListActionsRequest::new(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 		None,
+		None,
+		Some(vec![V1ActionQuery::new()
+			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 	)?;
 
 	let action = stream.next().await.expect("Action must exist");
@@ -678,9 +675,10 @@ async fn test_e2e_delete_action() -> Result<()> {
 	zitadel.delete_action(action_id.to_owned(), None).await?;
 
 	let stream = zitadel.list_actions(
-		ListActionsRequest::new(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 		None,
+		None,
+		Some(vec![V1ActionQuery::new()
+			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 	)?;
 
 	assert_eq!(stream.count().await, 0);
@@ -765,13 +763,11 @@ async fn test_e2e_list_human_users() -> Result<()> {
 		assert!(zitadel.create_human_user(user).await.is_ok());
 	}
 
-	let query = ListUsersRequest::new(vec![
-		SearchQuery::new().with_last_name_query(LastNameQuery::new("Doe".to_owned()))
-	])
-	.with_asc(true)
-	.with_page_size(5);
+	let queries =
+		Some(vec![SearchQuery::new().with_last_name_query(LastNameQuery::new("Doe".to_owned()))]);
+	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true).with_page_size(5));
 
-	let stream = zitadel.list_users(query)?;
+	let stream = zitadel.list_users(pagination_params, None, queries)?;
 
 	let res_user_emails: Vec<_> = stream
 		.map(|user| user.preferred_login_name().expect("Login of queried user not found").clone())
@@ -802,9 +798,9 @@ async fn test_e2e_list_idp_links() -> Result<()> {
 
 	let ret = zitadel.create_human_user(user).await?;
 	let id = ret.user_id().expect("Couldn't get the user id from response");
-	let query = UserServiceListIdpLinksBody::new().with_asc(true);
+	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
-	let stream = zitadel.list_idp_links(id, query)?;
+	let stream = zitadel.list_idp_links(id, pagination_params)?;
 
 	assert_eq!(stream.count().await, idp_links.len());
 
@@ -906,17 +902,20 @@ async fn test_e2e_delete_user() -> Result<()> {
 
 	create_user(&zitadel, "John_2", user_last_name).await?;
 
-	let query = ListUsersRequest::new(vec![
+	let queries = Some(vec![
 		SearchQuery::new().with_last_name_query(LastNameQuery::new(user_last_name.to_owned()))
-	])
-	.with_asc(true);
+	]);
+	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
-	assert_eq!(zitadel.list_users(query.clone())?.count().await, 2);
+	assert_eq!(
+		zitadel.list_users(pagination_params.clone(), None, queries.clone())?.count().await,
+		2
+	);
 
 	zitadel.delete_user(&id).await?;
 
 	let user_count = zitadel
-		.list_users(query.clone())?
+		.list_users(pagination_params, None, queries)?
 		.inspect(|user| {
 			let user_name = user
 				.human()
@@ -1015,9 +1014,8 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 
 	let stream = zitadel.list_user_metadata(
 		&id,
-		ListUserMetadataRequest::new(vec![
-			KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)
-		]),
+		None,
+		Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 	)?;
 
 	let res_metadata: Vec<_> = stream
@@ -1051,9 +1049,8 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 		zitadel
 			.list_user_metadata(
 				&id,
-				ListUserMetadataRequest::new(vec![
-					KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)
-				]),
+				None,
+				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 			)?
 			.count()
 			.await == 0
@@ -1240,12 +1237,12 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let project_id = project.id().expect("Project ID should be present in response").to_owned();
 
 	// Verify project exists in the correct organization
-	let project_request = ListProjectsRequest::new(vec![V1ProjectQuery::new()
-		.with_name_query(V1ProjectNameQuery::new().with_name("OrgScopedProject".to_owned()))]);
+	let project_request = vec![V1ProjectQuery::new()
+		.with_name_query(V1ProjectNameQuery::new().with_name("OrgScopedProject".to_owned()))];
 
 	// Should find no projects in default org
 	let projects_default_org = zitadel
-		.list_projects(project_request.clone(), None)
+		.list_projects(None, None, Some(project_request.clone()))
 		.expect("Failed to list projects in default organization")
 		.collect::<Vec<_>>()
 		.await;
@@ -1253,7 +1250,7 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 
 	// Should find one project in specified org
 	let projects_specified_org = zitadel
-		.list_projects(project_request, Some(org_id.clone()))
+		.list_projects(Some(org_id.clone()), None, Some(project_request))
 		.expect("Failed to list projects in specified organization")
 		.collect::<Vec<_>>()
 		.await;
@@ -1273,10 +1270,10 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	// Verify application exists in the correct project/organization
 	// NOTE: Maybe a Zitadel bug -> request uses the project ID to search
 	// for applications and disregards the org_id
-	let app_request = ListApplicationsRequest::new(vec![V1AppQuery::new()
-		.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned()))]);
+	let app_request = vec![V1AppQuery::new()
+		.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned()))];
 	let apps = zitadel
-		.list_applications(project_id.clone(), app_request, Some(org_id.clone()))
+		.list_applications(project_id.clone(), Some(org_id.clone()), None, Some(app_request))
 		.expect("Failed to list applications")
 		.collect::<Vec<_>>()
 		.await;
@@ -1296,14 +1293,13 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let action_id = action.id().expect("Action ID should be present in response").to_owned();
 
 	// Verify we can find the action when searching with org_id
-	let actions_request = ListActionsRequest::new(vec![V1ActionQuery::new()
-		.with_action_name_query(
-			V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
-		)]);
+	let actions_request = vec![V1ActionQuery::new().with_action_name_query(
+		V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
+	)];
 
 	// Should find no actions in default org
 	let actions_default_org = zitadel
-		.list_actions(actions_request.clone(), None)
+		.list_actions(None, None, Some(actions_request.clone()))
 		.expect("Failed to list actions in default organization")
 		.collect::<Vec<_>>()
 		.await;
@@ -1311,7 +1307,7 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 
 	// Should find one action in specified org
 	let actions_specified_org = zitadel
-		.list_actions(actions_request, Some(org_id.clone()))
+		.list_actions(Some(org_id.clone()), None, Some(actions_request))
 		.expect("Failed to list actions in specified organization")
 		.collect::<Vec<_>>()
 		.await;
@@ -1344,12 +1340,11 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 		.expect("Failed to update action");
 
 	// Verify the action was updated with the correct content
-	let actions_request = ListActionsRequest::new(vec![V1ActionQuery::new()
-		.with_action_name_query(
-			V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
-		)]);
+	let actions_request = vec![V1ActionQuery::new().with_action_name_query(
+		V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
+	)];
 	let updated_actions = zitadel
-		.list_actions(actions_request, Some(org_id.clone()))
+		.list_actions(Some(org_id.clone()), None, Some(actions_request))
 		.expect("Failed to list actions")
 		.collect::<Vec<_>>()
 		.await;

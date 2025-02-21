@@ -7,7 +7,10 @@ use futures::Stream;
 pub use models::*;
 use serde_json::json;
 
-use super::{pagination::PaginationHandler, Zitadel};
+use super::{
+	pagination::{PaginationHandler, PaginationParams},
+	Zitadel,
+};
 
 impl Zitadel {
 	/// Crates a new human user. [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-add-human-user)
@@ -145,11 +148,11 @@ impl Zitadel {
 	pub fn list_idp_links(
 		&self,
 		user_id: &str,
-		body: UserServiceListIdpLinksBody,
+		params: Option<PaginationParams>,
 	) -> Result<impl Stream<Item = IdpLink> + Send + Sync> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			body,
+			params,
 			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
 			None, // Endpoint does not support org_id
 		))
@@ -176,9 +179,16 @@ impl Zitadel {
 	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-users)
 	pub fn list_users(
 		&self,
-		body: ListUsersRequest,
+		params: Option<PaginationParams>,
+		sorting: Option<UserFieldName>,
+		queries: Option<Vec<SearchQuery>>,
 	) -> Result<impl Stream<Item = User> + Send + Sync> {
-		Ok(PaginationHandler::new(self.clone(), body, self.make_url("/v2/users")?, None))
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, sorting, queries),
+			self.make_url("/v2/users")?,
+			None,
+		))
 	}
 
 	/// Lock user
@@ -674,11 +684,12 @@ impl Zitadel {
 	pub fn list_user_metadata(
 		&self,
 		user_id: &str,
-		body: ListUserMetadataRequest,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<KeyQuery>>,
 	) -> Result<impl Stream<Item = UserMetadataResponse> + Send + Sync> {
 		Ok(PaginationHandler::new(
 			self.clone(),
-			body,
+			(params, queries),
 			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
 			None, // TODO: Breaking change -> possibility to add org_id to function args
 		))
