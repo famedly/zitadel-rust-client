@@ -71,7 +71,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<V1ActionQuery>>,
-	) -> Result<impl Stream<Item = V1Action> + Send + Sync> {
+	) -> Result<impl Stream<Item = Result<V1Action>> + Send + Sync> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -165,7 +165,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<V1AppQuery>>,
-	) -> Result<impl Stream<Item = V1App>> {
+	) -> Result<impl Stream<Item = Result<V1App>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -213,7 +213,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<V1ProjectQuery>>,
-	) -> Result<impl Stream<Item = V1Project>> {
+	) -> Result<impl Stream<Item = Result<V1Project>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -229,7 +229,7 @@ impl Zitadel {
 		project_id: &str,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
-	) -> Result<impl Stream<Item = V1Member>> {
+	) -> Result<impl Stream<Item = Result<V1Member>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -305,7 +305,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
-	) -> Result<impl Stream<Item = V1Member>> {
+	) -> Result<impl Stream<Item = Result<V1Member>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -322,7 +322,7 @@ impl Zitadel {
 		grant_id: &str,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<Zitadelmemberv1SearchQuery>>,
-	) -> Result<impl Stream<Item = V1Member>> {
+	) -> Result<impl Stream<Item = Result<V1Member>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
@@ -388,7 +388,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<V1UserGrantQuery>>,
-	) -> Result<impl Stream<Item = Zitadeluserv1UserGrant>> {
+	) -> Result<impl Stream<Item = Result<Zitadeluserv1UserGrant>>> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
