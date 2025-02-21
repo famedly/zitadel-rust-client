@@ -188,11 +188,15 @@ impl PaginationParams {
 pub(crate) struct NoSorting;
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
+pub(crate) struct NoQueries;
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename = "camel_case")]
 pub(crate) struct GenericListRequestBody<Query, Sorting> {
 	query: Option<ListQuery>,
 	#[serde(skip_serializing_if = "Option::is_none")]
 	sorting_column: Option<Sorting>,
+	#[serde(skip_serializing_if = "Option::is_none")]
 	queries: Option<Vec<Query>>,
 }
 
@@ -201,6 +205,19 @@ fn mk_list_query(page: usize, params: &PaginationParams) -> ListQuery {
 		.with_limit(params.page_size)
 		.with_offset((page * params.page_size).to_string())
 		.with_asc(params.asc)
+}
+
+impl PaginationRequest for Option<PaginationParams> {
+	type Item = GenericListRequestBody<NoQueries, NoSorting>;
+	fn to_paginated_request(&self, page: usize) -> Self::Item {
+		let params = self.as_ref().unwrap_or(&PaginationParams::DEFAULT);
+		let page = mk_list_query(page, params);
+		Self::Item { query: Some(page), sorting_column: None, queries: None }
+	}
+
+	fn page_size(&self) -> usize {
+		self.as_ref().unwrap_or(&PaginationParams::DEFAULT).page_size
+	}
 }
 
 impl<Q: Clone + Serialize> PaginationRequest for (Option<PaginationParams>, Option<Vec<Q>>) {
