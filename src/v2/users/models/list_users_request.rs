@@ -10,10 +10,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::v2::{pagination::PaginationRequest, users::models};
+use crate::v2::users::models;
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub(crate) struct ListUsersRequestOuter {
+pub struct ListUsersRequest {
 	#[serde(rename = "query")]
 	query: Option<models::ListQuery>,
 	#[serde(rename = "sortingColumn")]
@@ -22,20 +22,12 @@ pub(crate) struct ListUsersRequestOuter {
 	queries: Option<Vec<models::SearchQuery>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ListUsersRequest {
-	asc: Option<bool>,
-	sorting_column: Option<models::UserFieldName>,
-	queries: Vec<models::SearchQuery>,
-	page_size: usize,
-}
-
-impl ListUsersRequestOuter {
-	pub fn new() -> ListUsersRequestOuter {
-		ListUsersRequestOuter { query: None, sorting_column: None, queries: None }
+impl ListUsersRequest {
+	pub fn new() -> Self {
+		ListUsersRequest { query: None, sorting_column: None, queries: None }
 	}
 
-	pub fn with_query(mut self, query: models::ListQuery) -> ListUsersRequestOuter {
+	pub fn with_query(mut self, query: models::ListQuery) -> ListUsersRequest {
 		self.query = Some(query);
 		self
 	}
@@ -44,90 +36,8 @@ impl ListUsersRequestOuter {
 		self.sorting_column = Some(sorting_column);
 	}
 
-	pub fn with_queries(mut self, queries: Vec<models::SearchQuery>) -> ListUsersRequestOuter {
+	pub fn with_queries(mut self, queries: Vec<models::SearchQuery>) -> ListUsersRequest {
 		self.queries = Some(queries);
 		self
-	}
-}
-
-impl ListUsersRequest {
-	pub fn new(queries: Vec<models::SearchQuery>) -> ListUsersRequest {
-		ListUsersRequest { asc: None, sorting_column: None, queries, page_size: 100 }
-	}
-
-	pub fn set_asc(&mut self, asc: bool) {
-		self.asc = Some(asc);
-	}
-
-	pub fn with_asc(mut self, asc: bool) -> Self {
-		self.asc = Some(asc);
-		self
-	}
-
-	pub fn asc(&self) -> Option<&bool> {
-		self.asc.as_ref()
-	}
-
-	pub fn reset_asc(&mut self) {
-		self.asc = None;
-	}
-
-	pub fn set_sorting_column(&mut self, sorting_column: models::UserFieldName) {
-		self.sorting_column = Some(sorting_column);
-	}
-
-	pub fn with_sorting_column(mut self, sorting_column: models::UserFieldName) -> Self {
-		self.sorting_column = Some(sorting_column);
-		self
-	}
-
-	pub fn sorting_column(&self) -> Option<&models::UserFieldName> {
-		self.sorting_column.as_ref()
-	}
-
-	pub fn reset_sorting_column(&mut self) {
-		self.sorting_column = None;
-	}
-
-	pub fn set_queries(&mut self, queries: Vec<models::SearchQuery>) {
-		self.queries = queries;
-	}
-
-	pub fn with_queries(mut self, queries: Vec<models::SearchQuery>) -> Self {
-		self.queries = queries;
-		self
-	}
-
-	pub fn queries(&self) -> &Vec<models::SearchQuery> {
-		&self.queries
-	}
-
-	pub fn set_page_size(&mut self, page_size: usize) {
-		self.page_size = page_size;
-	}
-
-	pub fn with_page_size(mut self, page_size: usize) -> Self {
-		self.page_size = page_size;
-		self
-	}
-}
-
-impl PaginationRequest for ListUsersRequest {
-	type Item = ListUsersRequestOuter;
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
-		let page = models::ListQuery::new()
-			.with_limit(self.page_size())
-			.with_offset((page * self.page_size()).to_string())
-			.with_asc(self.asc.unwrap_or_default());
-		let mut query =
-			ListUsersRequestOuter::new().with_query(page).with_queries(self.queries.clone());
-		if let Some(sorting_column) = self.sorting_column {
-			query.set_sorting_column(sorting_column);
-		}
-		query
-	}
-
-	fn page_size(&self) -> usize {
-		self.page_size
 	}
 }
