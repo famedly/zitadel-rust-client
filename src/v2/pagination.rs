@@ -1,5 +1,5 @@
 //! Module to transparently handle response pagination
-use std::{future::Future, pin::Pin, task::Poll};
+use std::{collections::VecDeque, future::Future, pin::Pin, task::Poll};
 
 use anyhow::{Context, Result};
 use famedly_rust_utils::GenericCombinators;
@@ -51,7 +51,7 @@ where
 	query: R,
 	endpoint: Url,
 	page: usize,
-	buffer: Vec<T>,
+	buffer: VecDeque<T>,
 	done: bool,
 	data_fut: Pin<Box<DataFuture<T>>>,
 	org_id: Option<String>,
@@ -71,7 +71,7 @@ where
 			query,
 			endpoint: endpoint.clone(),
 			page,
-			buffer: Vec::new(),
+			buffer: VecDeque::new(),
 			done: false,
 			data_fut: Box::pin(get_more_data::<T>(zitadel, req_query, endpoint, org_id.clone())),
 			org_id,
@@ -111,7 +111,7 @@ where
 	T: DeserializeOwned + 'static,
 	R: PaginationRequest<Item = Q> + Send + Sync,
 {
-	type Item = T;
+	type Item = Result<T>;
 	fn poll_next(
 		mut self: Pin<&mut Self>,
 		cx: &mut std::task::Context<'_>,
@@ -125,10 +125,7 @@ where
 				Poll::Pending => return Poll::Pending,
 				Poll::Ready(result) => match result {
 					Ok(data) => {
-						self.buffer = data;
-
-						// We need to reverse to get te right order since we pop
-						self.buffer.reverse();
+						self.buffer = data.into();
 
 						self.page += 1;
 						self.done = self.buffer.len() < self.query.page_size();
@@ -140,13 +137,13 @@ where
 						));
 					}
 					Err(e) => {
-						tracing::error!("Error getting a new page. Err: {e}");
-						return Poll::Ready(None);
+						self.done = true;
+						return Poll::Ready(Some(Err(e)));
 					}
 				},
 			}
 		}
-		Poll::Ready(self.buffer.pop())
+		Poll::Ready(self.buffer.pop_front().map(Ok))
 	}
 }
 

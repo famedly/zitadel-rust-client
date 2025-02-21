@@ -12,7 +12,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{bail, Result};
 use famedly_rust_utils::GenericCombinators;
-use futures::StreamExt;
+use futures::{future, StreamExt, TryStreamExt};
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
 use rand::distr::{Alphanumeric, SampleString};
 use test_log::{self, test};
@@ -67,53 +67,61 @@ fn mk_add_human_user_request() -> AddHumanUserRequest {
 async fn tear_down(zitadel: &Zitadel) {
 	let queries = Some(vec![SearchQuery::new().with_type_query(TypeQuery::new(Userv2Type::Human))]);
 
-	let mut stream = zitadel
+	zitadel
 		.list_users(None, None, queries)
-		.expect("Error getting the list of users for tear down");
+		.expect("Error getting the list of users for tear down")
+		.try_for_each(|user| async move {
+			let id = user.user_id().expect("Couldn't get user id during tear down.");
+			zitadel.delete_user(id).await.expect("Error deleting user");
+			Ok(())
+		})
+		.await
+		.unwrap();
 
-	while let Some(user) = stream.next().await {
-		let id = user.user_id().expect("Couldn't get user id during tear down.");
-		zitadel.delete_user(id).await.expect("Error deleting user");
-	}
-
-	let mut stream = zitadel
+	zitadel
 		.list_actions(None, None, Some(vec![]))
-		.expect("Error getting the list of actions to tear down");
+		.expect("Error getting the list of actions to tear down")
+		.try_for_each(|action| async move {
+			let id = action.id().expect("Couldn't get action id during tear down.");
+			zitadel.delete_action(id.clone(), None).await.expect("Error deleting action");
+			Ok(())
+		})
+		.await
+		.unwrap();
 
-	while let Some(action) = stream.next().await {
-		let id = action.id().expect("Couldn't get action id during tear down.");
-		zitadel.delete_action(id.clone(), None).await.expect("Error deleting action");
-	}
-
-	let mut stream = zitadel
+	zitadel
 		.list_projects(None, None, Some(vec![]))
-		.expect("Error getting the list of projects to tear down");
+		.expect("Error getting the list of projects to tear down")
+		.try_for_each(|project| async move {
+			tracing::debug!("{:?}", project);
 
-	while let Some(project) = stream.next().await {
-		tracing::debug!("{:?}", project);
+			let id = project.id().expect("Couldn't get project id during tear down.");
 
-		let id = project.id().expect("Couldn't get project id during tear down.");
-
-		let mut stream = zitadel
-			.list_applications(id.clone(), None, None, Some(vec![]))
-			.expect("Error getting the list of applications to tear down");
-
-		while let Some(application) = stream.next().await {
 			zitadel
-				.remove_application(
-					id.clone(),
-					application
-						.id()
-						.expect("Couldn't get application id during tear down.")
-						.clone(),
-					None,
-				)
+				.list_applications(id.clone(), None, None, Some(vec![]))
+				.expect("Error getting the list of applications to tear down")
+				.try_for_each(|application| async move {
+					zitadel
+						.remove_application(
+							id.clone(),
+							application
+								.id()
+								.expect("Couldn't get application id during tear down.")
+								.clone(),
+							None,
+						)
+						.await
+						.expect("Failed to remove application during teardown");
+					Ok(())
+				})
 				.await
-				.expect("Failed to remove application during teardown");
-		}
+				.unwrap();
 
-		zitadel.remove_project(id.clone(), None).await.expect("Error deleting project");
-	}
+			zitadel.remove_project(id.clone(), None).await.expect("Error deleting project");
+			Ok(())
+		})
+		.await
+		.unwrap();
 }
 
 /// Helper macro to check the results of paginated requests.
@@ -301,9 +309,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		all_users,
 		zitadel
 			.list_organization_members(Some(org1.clone()), None, Some(Vec::new()))?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user11, &user12, &user13]
 	);
 
@@ -311,9 +320,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		all_users,
 		zitadel
 			.list_organization_members(Some(org2.clone()), None, Some(Vec::new()))?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user21, &user22, &user23]
 	);
 
@@ -321,9 +331,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		all_users,
 		zitadel
 			.list_project_members(Some(org1.clone()), &project11, None, Some(Vec::new()))?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user12]
 	);
 
@@ -337,9 +348,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				None,
 				Some(Vec::new())
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user23]
 	);
 
@@ -353,9 +365,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				None,
 				Some(Vec::new())
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[] as &[&str]
 	);
 
@@ -376,9 +389,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 					}
 				])
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user13]
 	);
 
@@ -393,9 +407,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 						.with_project_id(project12.clone()))
 				}])
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user22, &user24]
 	);
 
@@ -410,9 +425,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 						.with_project_grant_id(project_grant_id.clone()))
 				}])
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[&user22, &user24]
 	);
 
@@ -427,9 +443,10 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 						.with_project_id(project12.clone()))
 				}])
 			)?
-			.map(|x| x.user_id().unwrap().clone())
-			.collect::<Vec<_>>()
-			.await,
+			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap(),
 		&[] as &[&str]
 	);
 
@@ -498,8 +515,11 @@ async fn test_e2e_create_application() -> Result<()> {
 
 	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
 
-	let apps: Vec<String> =
-		stream.map(|app| app.name().expect("App name must be set").clone()).collect().await;
+	let apps: Vec<String> = stream
+		.and_then(|app| future::ok(app.name().expect("App name must be set").clone()))
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
 	assert_eq!(apps, ["TestApp"]);
 
 	tear_down(&zitadel).await;
@@ -531,8 +551,11 @@ async fn test_e2e_list_applications() -> Result<()> {
 
 	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
 
-	let found_application_names: Vec<String> =
-		stream.map(|app| app.name().expect("No name found for action").clone()).collect().await;
+	let found_application_names: Vec<String> = stream
+		.and_then(|app| future::ok(app.name().expect("No name found for action").clone()))
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
 	assert_eq!(found_application_names, application_names);
 
 	tear_down(&zitadel).await;
@@ -566,10 +589,11 @@ async fn test_e2e_create_action() -> Result<()> {
 			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 	)?;
 
-	let actions: Vec<String> = stream
-		.map(|action| action.name().expect("No name found for action").clone())
-		.collect()
-		.await;
+	let actions = stream
+		.and_then(|action| future::ok(action.name().expect("No name found for action").clone()))
+		.try_collect::<Vec<String>>()
+		.await
+		.unwrap();
 	assert_eq!(actions, vec!["test-action"]);
 
 	tear_down(&zitadel).await;
@@ -598,10 +622,11 @@ async fn test_e2e_list_actions() -> Result<()> {
 
 	let stream = zitadel.list_actions(None, None, None)?;
 
-	let found_action_names: Vec<String> = stream
-		.map(|action| action.name().expect("No name found for action").clone())
-		.collect()
-		.await;
+	let found_action_names = stream
+		.and_then(|action| future::ok(action.name().expect("No name found for action").clone()))
+		.try_collect::<Vec<String>>()
+		.await
+		.unwrap();
 	assert_eq!(found_action_names, action_names);
 
 	tear_down(&zitadel).await;
@@ -646,7 +671,7 @@ async fn test_e2e_update_action() -> Result<()> {
 			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
 	)?;
 
-	let action = stream.next().await.expect("Action must exist");
+	let action = stream.next().await.expect("Action must exist").unwrap();
 
 	assert_eq!(action.name(), Some(&"test-action".to_owned()));
 	assert_eq!(action.script(), Some(&"console.log('test-action-update')".to_owned()));
@@ -770,9 +795,14 @@ async fn test_e2e_list_human_users() -> Result<()> {
 	let stream = zitadel.list_users(pagination_params, None, queries)?;
 
 	let res_user_emails: Vec<_> = stream
-		.map(|user| user.preferred_login_name().expect("Login of queried user not found").clone())
-		.collect()
-		.await;
+		.and_then(|user| {
+			future::ok(
+				user.preferred_login_name().expect("Login of queried user not found").clone(),
+			)
+		})
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
 	let user_emails: Vec<_> = users.into_iter().map(|user| user.email().email().clone()).collect();
 	assert_eq!(res_user_emails, user_emails);
 
@@ -916,7 +946,7 @@ async fn test_e2e_delete_user() -> Result<()> {
 
 	let user_count = zitadel
 		.list_users(pagination_params, None, queries)?
-		.inspect(|user| {
+		.inspect_ok(|user| {
 			let user_name = user
 				.human()
 				.and_then(|u| u.profile())
@@ -924,9 +954,10 @@ async fn test_e2e_delete_user() -> Result<()> {
 				.expect("Couldn't get user's given name");
 			assert_ne!(user_name, deleted_user_name);
 		})
-		.count()
-		.await;
-	assert_eq!(user_count, 1);
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
+	assert_eq!(user_count.len(), 1);
 
 	tear_down(&zitadel).await;
 
@@ -1019,14 +1050,15 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 	)?;
 
 	let res_metadata: Vec<_> = stream
-		.map(|metadata| {
+		.map_ok(|metadata| {
 			(
 				metadata.key().cloned().expect("Unable to get key from list_user_metadata"),
 				metadata.value().expect("Unable to get value from list_user_metadata"),
 			)
 		})
-		.collect()
-		.await;
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
 	let expected_metadata: Vec<_> = metadata
 		.iter()
 		.map(|metadata| {
@@ -1346,8 +1378,9 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let updated_actions = zitadel
 		.list_actions(Some(org_id.clone()), None, Some(actions_request))
 		.expect("Failed to list actions")
-		.collect::<Vec<_>>()
-		.await;
+		.try_collect::<Vec<_>>()
+		.await
+		.unwrap();
 	assert_eq!(updated_actions.len(), 1);
 	assert_eq!(updated_actions[0].script(), Some(&"console.log('updated-org-scoped')".to_owned()));
 
