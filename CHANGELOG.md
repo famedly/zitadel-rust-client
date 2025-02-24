@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-02-24
+
+### Features
+
+- Add more v1 methods to v2 client
+
+### Bug Fixes
+
+- [**breaking**] Fail if pagination request fails
+
+### Refactor
+
+- Unbox PaginationHandler::query
+- [**breaking**] Simplify pagination requests boilerplate
+
 ## [0.2.0] - 2025-01-28
 
 ### Features
