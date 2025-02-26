@@ -413,7 +413,53 @@ impl Zitadel {
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ReqBody::new(role_key, display_name).chain_opt(group, ReqBody::with_group))
 			.build()
-			.context("Error building add_user_grant request")?;
+			.context("Error building add_project_role request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Bulk Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-add-project-roles)
+	pub async fn bulk_add_project_role(
+		&self,
+		org_id: Option<String>,
+		project_id: &str,
+		roles: Option<Vec<V1BulkAddProjectRolesRequestRole>>,
+	) -> Result<V1AddProjectRoleResponse> {
+		type ReqBody = ManagementServiceBulkAddProjectRolesBody;
+		let request = self
+			.client
+			.post(self.make_url(&format!("management/v1/projects/{project_id}/roles/_bulk"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ReqBody::new().chain_opt(roles, ReqBody::with_roles))
+			.build()
+			.context("Error building bulk_add_project_role request")?;
+
+		self.send_request(request).await
+	}
+
+	/// Bulk Set Organization Metadata [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-set-org-metadata)
+	pub async fn bulk_set_organization_metadata(
+		&self,
+		org_id: Option<String>,
+		metadata: impl Iterator<Item = (String, impl AsRef<[u8]> + Send)> + Send,
+	) -> Result<V1BulkSetOrgMetadataResponse> {
+		use base64::{engine::general_purpose::STANDARD, Engine};
+		let req = V1BulkSetOrgMetadataRequest::new().with_metadata(
+			metadata
+				.map(|(k, v)| {
+					V1BulkSetOrgMetadataRequestMetadata::new()
+						.with_key(k)
+						.with_value(STANDARD.encode(v))
+				})
+				.collect(),
+		);
+		let request = self
+			.client
+			.post(self.make_url("management/v1/metadata/_bulk")?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&req)
+			.build()
+			.context("Error building bulk_set_organization_metadata request")?;
 
 		self.send_request(request).await
 	}

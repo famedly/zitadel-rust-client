@@ -18,7 +18,8 @@ use serde::de::DeserializeOwned;
 use tokio::sync::RwLock;
 use url::Url;
 
-pub use crate::v1::HEADER_ZITADEL_ORGANIZATION_ID;
+/// Header for Zitadel organization ID
+pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
 
 /// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
