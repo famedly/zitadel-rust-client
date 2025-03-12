@@ -1,7 +1,8 @@
 //! Implementation of the client for the zitadel user's v2 api
 mod models;
 
-use anyhow::{Context, Result};
+use anyhow_ext::Result;
+use anyhow_trace::anyhow_trace;
 use base64::prelude::{Engine, BASE64_STANDARD};
 use futures::Stream;
 pub use models::*;
@@ -14,20 +15,17 @@ use super::{
 
 impl Zitadel {
 	/// Crates a new human user. [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-add-human-user)
+	#[anyhow_trace]
 	pub async fn create_human_user(
 		&self,
 		body: AddHumanUserRequest,
 	) -> Result<AddHumanUserResponse> {
-		let request = self
-			.client
-			.post(self.make_url("v2/users/human")?)
-			.json(&body)
-			.build()
-			.context("Error building create_human_user request")?;
+		let request = self.client.post(self.make_url("v2/users/human")?).json(&body).build()?;
 
 		self.send_request(request).await
 	}
 	/// Add link to an identity provider to an user
+	#[anyhow_trace]
 	pub async fn add_idp_link(
 		&self,
 		user_id: &str,
@@ -37,8 +35,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/links"))?)
 			.json(&body)
-			.build()
-			.context("Error building add_idp_link request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -46,13 +43,13 @@ impl Zitadel {
 	/// Add a new One-Time-Password (OTP) Email factor to the authenticated
 	/// user. OTP Email will enable the user to verify a OTP with the latest
 	/// verified email. The email has to be verified to add the second factor.
+	#[anyhow_trace]
 	pub async fn add_otp_email(&self, user_id: &str) -> Result<AddOtpEmailResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building add_otp_email request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -61,19 +58,20 @@ impl Zitadel {
 	/// OTP SMS will enable the user to verify a OTP with the latest verified
 	/// phone number. The phone number has to be verified to add the second
 	/// factor.
+	#[anyhow_trace]
 	pub async fn add_otpsms(&self, user_id: &str) -> Result<AddOtpsmsResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building add_otpsms request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Create a passkey registration link for a user
 	/// Create a passkey registration link which includes a code and either
 	/// return it or send it to the user.
+	#[anyhow_trace]
 	pub async fn create_passkey_registration_link(
 		&self,
 		user_id: &str,
@@ -83,8 +81,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/registration_link"))?)
 			.json(&body)
-			.build()
-			.context("Error building create_passkey_registration_link request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -94,13 +91,13 @@ impl Zitadel {
 	/// is already in the state 'deactivated'. Use deactivate user when the user
 	/// should not be able to use the account anymore, but you still need access
 	/// to the user data.
+	#[anyhow_trace]
 	pub async fn deactivate_user(&self, user_id: &str) -> Result<DeactivateUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/deactivate"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building deactivate_user request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -108,29 +105,25 @@ impl Zitadel {
 	/// The state of the user will be changed to 'deleted'. The user will not be
 	/// able to log in anymore. Endpoints requesting this user will return an
 	/// error 'User not found.
+	#[anyhow_trace]
 	pub async fn delete_user(&self, user_id: &str) -> Result<DeleteUserResponse> {
-		let request = self
-			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}"))?)
-			.build()
-			.context("Error building delete_user request")?;
+		let request =
+			self.client.delete(self.make_url(&format!("/v2/users/{user_id}"))?).build()?;
 
 		self.send_request(request).await
 	}
 	/// User by ID
 	/// Returns the full user object (human or machine) including the profile,
 	/// email, etc.
+	#[anyhow_trace]
 	pub async fn get_user_by_id(&self, user_id: &str) -> Result<GetUserByIdResponse> {
-		let request = self
-			.client
-			.get(self.make_url(&format!("/v2/users/{user_id}"))?)
-			.build()
-			.context("Error building get_user_by_id request")?;
+		let request = self.client.get(self.make_url(&format!("/v2/users/{user_id}"))?).build()?;
 
 		self.send_request(request).await
 	}
 	/// List all possible authentication methods of a user like password,
 	/// passwordless, (T)OTP and more.
+	#[anyhow_trace]
 	pub async fn list_authentication_method_types(
 		&self,
 		user_id: &str,
@@ -138,13 +131,13 @@ impl Zitadel {
 		let request = self
 			.client
 			.get(self.make_url(&format!("/v2/users/{user_id}/authentication_methods"))?)
-			.build()
-			.context("Error building list_authentication_method_types request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// List links to an identity provider of an user
 	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-idp-links)
+	#[anyhow_trace]
 	pub fn list_idp_links(
 		&self,
 		user_id: &str,
@@ -158,6 +151,7 @@ impl Zitadel {
 		))
 	}
 	/// List passkeys of an user
+	#[anyhow_trace]
 	pub async fn list_passkeys(
 		&self,
 		user_id: &str,
@@ -167,8 +161,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/_search"))?)
 			.json(&body)
-			.build()
-			.context("Error building list_passkeys request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -177,6 +170,7 @@ impl Zitadel {
 	/// Search for users. By default, we will return users of your organization.
 	/// Make sure to include a limit and sorting for pagination.
 	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-users)
+	#[anyhow_trace]
 	pub fn list_users(
 		&self,
 		params: Option<PaginationParams>,
@@ -197,17 +191,18 @@ impl Zitadel {
 	/// already in the state 'locked'. Use this endpoint if the user should not
 	/// be able to log in temporarily because of an event that happened (wrong
 	/// password, etc.).
+	#[anyhow_trace]
 	pub async fn lock_user(&self, user_id: &str) -> Result<LockUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/lock"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building lock_user request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Request a code to reset a password
+	#[anyhow_trace]
 	pub async fn password_reset(
 		&self,
 		user_id: &str,
@@ -217,8 +212,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/password_reset"))?)
 			.json(&body)
-			.build()
-			.context("Error building password_reset request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -226,13 +220,13 @@ impl Zitadel {
 	/// Reactivate a user with the state 'deactivated'. The user will be able to
 	/// log in again afterward. The endpoint returns an error if the user is not
 	/// in the state 'deactivated'.
+	#[anyhow_trace]
 	pub async fn reactivate_user(&self, user_id: &str) -> Result<ReactivateUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/reactivate"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building reactivate_user request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -240,6 +234,7 @@ impl Zitadel {
 	/// Start the registration of a passkey for a user, as a response the public
 	/// key credential creation options are returned, which are used to verify
 	/// the passkey.
+	#[anyhow_trace]
 	pub async fn register_passkey(
 		&self,
 		user_id: &str,
@@ -249,21 +244,20 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys"))?)
 			.json(&body)
-			.build()
-			.context("Error building register_passkey request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Start the registration of a TOTP generator for a user
 	/// Start the registration of a TOTP generator for a user, as a response a
 	/// secret returned, which is used to initialize a TOTP app or device.
+	#[anyhow_trace]
 	pub async fn register_totp(&self, user_id: &str) -> Result<RegisterTotpResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/totp"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building register_totp request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -271,6 +265,7 @@ impl Zitadel {
 	/// Start the registration of a u2f token for a user, as a response the
 	/// public key credential creation options are returned, which are used to
 	/// verify the u2f token.
+	#[anyhow_trace]
 	pub async fn register_u2_f(
 		&self,
 		user_id: &str,
@@ -280,12 +275,12 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/u2f"))?)
 			.json(&body)
-			.build()
-			.context("Error building register_u2_f request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Remove link of an identity provider to an user
+	#[anyhow_trace]
 	pub async fn remove_idp_link(
 		&self,
 		user_id: &str,
@@ -296,8 +291,7 @@ impl Zitadel {
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/links/{idp_id}/{linked_user_id}"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building remove_idp_link request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -305,12 +299,12 @@ impl Zitadel {
 	/// Remove the configured One-Time-Password (OTP) Email factor of a user. As
 	/// only one OTP Email per user is allowed, the user will not have OTP Email
 	/// as a second-factor afterward.
+	#[anyhow_trace]
 	pub async fn remove_otp_email(&self, user_id: &str) -> Result<RemoveOtpEmailResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
-			.build()
-			.context("Error building remove_otp_email request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -318,16 +312,15 @@ impl Zitadel {
 	/// Remove the configured One-Time-Password (OTP) SMS factor of a user. As
 	/// only one OTP SMS per user is allowed, the user will not have OTP SMS as
 	/// a second-factor afterward.
+	#[anyhow_trace]
 	pub async fn remove_otpsms(&self, user_id: &str) -> Result<RemoveOtpsmsResponse> {
-		let request = self
-			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?)
-			.build()
-			.context("Error building remove_otpsms request")?;
+		let request =
+			self.client.delete(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?).build()?;
 
 		self.send_request(request).await
 	}
 	/// Remove passkey from a user
+	#[anyhow_trace]
 	pub async fn remove_passkey(
 		&self,
 		user_id: &str,
@@ -336,19 +329,18 @@ impl Zitadel {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/passkeys/{passkey_id}"))?)
-			.build()
-			.context("Error building remove_passkey request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Delete the user phone
+	#[anyhow_trace]
 	pub async fn remove_phone(&self, user_id: &str) -> Result<RemovePhoneResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/phone"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building remove_phone request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -356,26 +348,25 @@ impl Zitadel {
 	/// Remove the configured TOTP generator of a user. As only one TOTP
 	/// generator per user is allowed, the user will not have TOTP as a
 	/// second-factor afterward.
+	#[anyhow_trace]
 	pub async fn remove_totp(&self, user_id: &str) -> Result<RemoveTotpResponse> {
-		let request = self
-			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/totp"))?)
-			.build()
-			.context("Error building remove_totp request")?;
+		let request =
+			self.client.delete(self.make_url(&format!("/v2/users/{user_id}/totp"))?).build()?;
 
 		self.send_request(request).await
 	}
 	/// Remove u2f token from a user
+	#[anyhow_trace]
 	pub async fn remove_u2_f(&self, user_id: &str, u2f_id: &str) -> Result<RemoveU2FResponse> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/v2/users/{user_id}/u2f/{u2f_id}"))?)
-			.build()
-			.context("Error building remove_u2_f request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Resend code to verify user email
+	#[anyhow_trace]
 	pub async fn resend_email_code(
 		&self,
 		user_id: &str,
@@ -385,12 +376,12 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/email/resend"))?)
 			.json(&body)
-			.build()
-			.context("Error building resend_email_code request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Resend code to verify user phone
+	#[anyhow_trace]
 	pub async fn resend_phone_code(
 		&self,
 		user_id: &str,
@@ -400,14 +391,14 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/phone/resend"))?)
 			.json(&body)
-			.build()
-			.context("Error building resend_phone_code request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Retrieve the information returned by the identity provider
 	/// Retrieve the information returned by the identity provider for
 	/// registration or updating an existing user with new information.
+	#[anyhow_trace]
 	pub async fn retrieve_identity_provider_intent(
 		&self,
 		idp_intent_id: &str,
@@ -417,8 +408,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/idp_intents/{idp_intent_id}"))?)
 			.json(&body)
-			.build()
-			.context("Error building retrieve_identity_provider_intent request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -426,6 +416,7 @@ impl Zitadel {
 	/// Change the email address of a user. If the state is set to not verified,
 	/// a verification code will be generated, which can be either returned or
 	/// sent to the user by email.
+	#[anyhow_trace]
 	pub async fn set_email(
 		&self,
 		user_id: &str,
@@ -435,14 +426,14 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/email"))?)
 			.json(&body)
-			.build()
-			.context("Error building set_email request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Change password
 	/// Change the password of a user with either a verification code or the
 	/// current password.
+	#[anyhow_trace]
 	pub async fn set_password(
 		&self,
 		user_id: &str,
@@ -452,8 +443,7 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/password"))?)
 			.json(&body)
-			.build()
-			.context("Error building set_password request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
@@ -461,6 +451,7 @@ impl Zitadel {
 	/// Set the phone number of a user. If the state is set to not verified, a
 	/// verification code will be generated, which can be either returned or
 	/// sent to the user by sms.
+	#[anyhow_trace]
 	pub async fn set_phone(
 		&self,
 		user_id: &str,
@@ -470,24 +461,19 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/phone"))?)
 			.json(&body)
-			.build()
-			.context("Error building set_phone request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Start flow with an identity provider
 	/// Start a flow with an identity provider, for external login, registration
 	/// or linking.
+	#[anyhow_trace]
 	pub async fn start_identity_provider_intent(
 		&self,
 		body: StartIdentityProviderIntentRequest,
 	) -> Result<StartIdentityProviderIntentResponse> {
-		let request = self
-			.client
-			.post(self.make_url("/v2/idp_intents")?)
-			.json(&body)
-			.build()
-			.context("Error building start_identity_provider_intent request")?;
+		let request = self.client.post(self.make_url("/v2/idp_intents")?).json(&body).build()?;
 
 		self.send_request(request).await
 	}
@@ -497,19 +483,20 @@ impl Zitadel {
 	/// already in the state 'locked'. Use this endpoint if the user should not
 	/// be able to log in temporarily because of an event that happened (wrong
 	/// password, etc.).
+	#[anyhow_trace]
 	pub async fn unlock_user(&self, user_id: &str) -> Result<UnlockUserResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/unlock"))?)
 			.json(&json!({}))
-			.build()
-			.context("Error building unlock_user request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Update User
 	/// Update all information from a user.
+	#[anyhow_trace]
 	pub async fn update_human_user(
 		&self,
 		user_id: &str,
@@ -519,14 +506,14 @@ impl Zitadel {
 			.client
 			.put(self.make_url(&format!("/v2/users/human/{user_id}"))?)
 			.json(&body)
-			.build()
-			.context("Error building update_human_user request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Verify the email
 	/// Verify the email with the generated code.
+	#[anyhow_trace]
 	pub async fn verify_email(
 		&self,
 		user_id: &str,
@@ -536,13 +523,13 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/email/verify"))?)
 			.json(&body)
-			.build()
-			.context("Error building verify_email request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Verify a passkey for a user
 	/// Verify the passkey registration with the public key credential.
+	#[anyhow_trace]
 	pub async fn verify_passkey_registration(
 		&self,
 		user_id: &str,
@@ -553,13 +540,13 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/{passkey_id}"))?)
 			.json(&body)
-			.build()
-			.context("Error building verify_passkey_registration request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Verify the phone
 	/// Verify the phone with the generated code.
+	#[anyhow_trace]
 	pub async fn verify_phone(
 		&self,
 		user_id: &str,
@@ -569,13 +556,13 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/phone/verify"))?)
 			.json(&body)
-			.build()
-			.context("Error building verify_phone request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Verify a TOTP generator for a user
 	/// Verify the TOTP registration with a generated code.
+	#[anyhow_trace]
 	pub async fn verify_totp_registration(
 		&self,
 		user_id: &str,
@@ -585,13 +572,13 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/totp/verify"))?)
 			.json(&body)
-			.build()
-			.context("Error building verify_totp_registration request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Verify a u2f token for a user
 	/// Verify the u2f token registration with the public key credential.
+	#[anyhow_trace]
 	pub async fn verify_u2_f_registration(
 		&self,
 		user_id: &str,
@@ -602,12 +589,12 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/v2/users/{user_id}/u2f/{u2f_id}"))?)
 			.json(&body)
-			.build()
-			.context("Error building verify_u2_f_registration request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Get a metadata object from a user by a specific key
+	#[anyhow_trace]
 	pub async fn get_user_metadata(
 		&self,
 		user_id: &str,
@@ -616,23 +603,23 @@ impl Zitadel {
 		let request = self
 			.client
 			.get(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
-			.build()
-			.context("Error building get_user_metadata request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Remove a metadata object from a user with a specific key
+	#[anyhow_trace]
 	pub async fn delete_user_metadata(&self, user_id: &str, key: &str) -> Result<Details> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
-			.build()
-			.context("Error building delete_user_metadata request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Set a metadata object for a user
 	/// This method either adds or updates a metadata value for the requested
+	#[anyhow_trace]
 	pub async fn set_user_metadata(
 		&self,
 		user_id: &str,
@@ -643,13 +630,13 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
 			.json(&serde_json::json!({"value": BASE64_STANDARD.encode(value)}))
-			.build()
-			.context("Error building set_user_metadata request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Set a metadata object for a user in a bulk
 	/// Add or update multiple metadata values for a user
+	#[anyhow_trace]
 	pub async fn set_user_metadata_bulk(
 		&self,
 		user_id: &str,
@@ -659,12 +646,12 @@ impl Zitadel {
 			.client
 			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
 			.json(&serde_json::json!({"metadata": body}))
-			.build()
-			.context("Error building set_user_metadata_bulk request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Remove a list of metadata objects from a user with a list of keys
+	#[anyhow_trace]
 	pub async fn delete_user_metadata_bulk(
 		&self,
 		user_id: &str,
@@ -674,13 +661,13 @@ impl Zitadel {
 			.client
 			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
 			.json(&serde_json::json!({"keys": body}))
-			.build()
-			.context("Error building delete_user_metadata_bulk request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 	/// Get the metadata of a user filtered by your query
 	/// [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-metadata)
+	#[anyhow_trace]
 	pub fn list_user_metadata(
 		&self,
 		user_id: &str,
