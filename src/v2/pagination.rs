@@ -1,7 +1,8 @@
 //! Module to transparently handle response pagination
 use std::{collections::VecDeque, future::Future, pin::Pin, task::Poll};
 
-use anyhow::{Context, Result};
+use anyhow_ext::{Context, Result};
+use anyhow_trace::anyhow_trace;
 use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -79,6 +80,7 @@ where
 	}
 }
 
+#[anyhow_trace]
 async fn get_more_data<T: DeserializeOwned + 'static>(
 	zitadel: Zitadel,
 	query: impl Serialize + Send + Sync,

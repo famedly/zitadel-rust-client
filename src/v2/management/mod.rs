@@ -1,7 +1,8 @@
 //! Implementation of the client for the Zitadel Management api
 mod models;
 
-use anyhow::{Context, Result};
+use anyhow_ext::Result;
+use anyhow_trace::anyhow_trace;
 use famedly_rust_utils::GenericCombinators;
 use futures::Stream;
 pub use models::*;
@@ -14,6 +15,7 @@ use super::{
 
 impl Zitadel {
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
+	#[anyhow_trace]
 	pub async fn create_action(
 		&self,
 		body: V1CreateActionRequest,
@@ -24,13 +26,13 @@ impl Zitadel {
 			.post(self.make_url("management/v1/actions")?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
-			.build()
-			.context("Error building create_action request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Update action. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-action)
+	#[anyhow_trace]
 	pub async fn update_action(
 		&self,
 		action_id: String,
@@ -42,13 +44,13 @@ impl Zitadel {
 			.put(self.make_url(&format!("management/v1/actions/{action_id}"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
-			.build()
-			.context("Error building update_action request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Delete action. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-delete-action)
+	#[anyhow_trace]
 	pub async fn delete_action(
 		&self,
 		action_id: String,
@@ -59,13 +61,13 @@ impl Zitadel {
 			.delete(self.make_url(&format!("management/v1/actions/{action_id}"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ManagementServiceDeleteActionBody::new())
-			.build()
-			.context("Error building delete_action request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Search for actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-actions)
+	#[anyhow_trace]
 	pub fn list_actions(
 		&self,
 		org_id: Option<String>,
@@ -81,6 +83,7 @@ impl Zitadel {
 	}
 
 	/// Get a flow. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-flow)
+	#[anyhow_trace]
 	pub async fn get_flow(
 		&self,
 		flow_type: u32,
@@ -90,13 +93,13 @@ impl Zitadel {
 			.client
 			.get(self.make_url(&format!("management/v1/flows/{flow_type}"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
-			.build()
-			.context("Error building get_flow request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Set trigger actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-set-trigger-actions)
+	#[anyhow_trace]
 	pub async fn set_trigger_actions(
 		&self,
 		// TODO: Should we provide enums for these?
@@ -112,13 +115,13 @@ impl Zitadel {
 			)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
-			.build()
-			.context("Error building set_trigger_actions request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Create application. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-api-app)
+	#[anyhow_trace]
 	pub async fn create_application(
 		&self,
 		project_id: String,
@@ -130,13 +133,13 @@ impl Zitadel {
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/apps/api"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
-			.build()
-			.context("Error building create_application request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Remove application. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-app)
+	#[anyhow_trace]
 	pub async fn remove_application(
 		&self,
 		project_id: String,
@@ -152,13 +155,13 @@ impl Zitadel {
 					HEADER_ZITADEL_ORGANIZATION_ID,
 					HeaderValue::from_str(&org_id.unwrap_or_default())?,
 				)
-				.build()
-				.context("Error building remove_application request")?;
+				.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Search for applications [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-apps)
+	#[anyhow_trace]
 	pub fn list_applications(
 		&self,
 		project_id: String,
@@ -175,6 +178,7 @@ impl Zitadel {
 	}
 
 	/// Create project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project)
+	#[anyhow_trace]
 	pub async fn create_project(
 		&self,
 		body: V1AddProjectRequest,
@@ -185,13 +189,13 @@ impl Zitadel {
 			.post(self.make_url("management/v1/projects")?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&body)
-			.build()
-			.context("Error building create_project request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Remove project. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-project)
+	#[anyhow_trace]
 	pub async fn remove_project(
 		&self,
 		project_id: String,
@@ -201,13 +205,13 @@ impl Zitadel {
 			.client
 			.delete(self.make_url(&format!("management/v1/projects/{project_id}"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
-			.build()
-			.context("Error building delete_project request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Search for projects [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-projects)
+	#[anyhow_trace]
 	pub fn list_projects(
 		&self,
 		org_id: Option<String>,
@@ -223,6 +227,7 @@ impl Zitadel {
 	}
 
 	/// List Project Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-members
+	#[anyhow_trace]
 	pub fn list_project_members(
 		&self,
 		org_id: Option<String>,
@@ -239,6 +244,7 @@ impl Zitadel {
 	}
 
 	/// Add Project Grant [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-grant)
+	#[anyhow_trace]
 	pub async fn add_project_grant(
 		&self,
 		org_id: Option<String>,
@@ -255,13 +261,13 @@ impl Zitadel {
 					.with_granted_org_id(granted_org_id)
 					.chain_opt(role_keys, ManagementServiceAddProjectGrantBody::with_role_keys),
 			)
-			.build()
-			.context("Error building add_project_grant request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Add Project Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-member)
+	#[anyhow_trace]
 	pub async fn add_project_member(
 		&self,
 		org_id: Option<String>,
@@ -275,13 +281,13 @@ impl Zitadel {
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/members"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ReqBody::new().with_user_id(user_id).with_roles(roles))
-			.build()
-			.context("Error building add_project_member request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Add Organization Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-org-member)
+	#[anyhow_trace]
 	pub async fn add_organization_member(
 		&self,
 		org_id: Option<String>,
@@ -293,13 +299,13 @@ impl Zitadel {
 			.post(self.make_url("management/v1/orgs/me/members")?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&V1AddOrgMemberRequest::new().with_user_id(user_id).with_roles(roles))
-			.build()
-			.context("Error building add_organization_member request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// List Organization Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-org-members)
+	#[anyhow_trace]
 	pub fn list_organization_members(
 		&self,
 		org_id: Option<String>,
@@ -315,6 +321,7 @@ impl Zitadel {
 	}
 
 	/// List Project Grant Members [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-project-grant-members)
+	#[anyhow_trace]
 	pub fn list_project_grant_members(
 		&self,
 		org_id: Option<String>,
@@ -334,6 +341,7 @@ impl Zitadel {
 	}
 
 	/// Add Project Grant Member [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-grant-member)
+	#[anyhow_trace]
 	pub async fn add_project_grant_member(
 		&self,
 		org_id: Option<String>,
@@ -351,13 +359,13 @@ impl Zitadel {
 			))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ReqBody::new(user_id).with_roles(roles))
-			.build()
-			.context("Error building radd_project_grant_member equest")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Add User Grant [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-user-grant)
+	#[anyhow_trace]
 	pub async fn add_user_grant(
 		&self,
 		org_id: Option<String>,
@@ -376,13 +384,13 @@ impl Zitadel {
 					.chain_opt(project_grant_id, ReqBody::with_project_grant_id)
 					.chain_opt(role_keys, ReqBody::with_role_keys),
 			)
-			.build()
-			.context("Error building add_user_grant request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Search User Grants [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-user-grants)
+	#[anyhow_trace]
 	pub fn search_user_grants(
 		&self,
 		org_id: Option<String>,
@@ -398,6 +406,7 @@ impl Zitadel {
 	}
 
 	/// Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
+	#[anyhow_trace]
 	pub async fn add_project_role(
 		&self,
 		org_id: Option<String>,
@@ -412,13 +421,13 @@ impl Zitadel {
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/roles"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ReqBody::new(role_key, display_name).chain_opt(group, ReqBody::with_group))
-			.build()
-			.context("Error building add_project_role request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Bulk Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-add-project-roles)
+	#[anyhow_trace]
 	pub async fn bulk_add_project_role(
 		&self,
 		org_id: Option<String>,
@@ -431,13 +440,13 @@ impl Zitadel {
 			.post(self.make_url(&format!("management/v1/projects/{project_id}/roles/_bulk"))?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&ReqBody::new().chain_opt(roles, ReqBody::with_roles))
-			.build()
-			.context("Error building bulk_add_project_role request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
 
 	/// Bulk Set Organization Metadata [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-bulk-set-org-metadata)
+	#[anyhow_trace]
 	pub async fn bulk_set_organization_metadata(
 		&self,
 		org_id: Option<String>,
@@ -458,8 +467,7 @@ impl Zitadel {
 			.post(self.make_url("management/v1/metadata/_bulk")?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&req)
-			.build()
-			.context("Error building bulk_set_organization_metadata request")?;
+			.build()?;
 
 		self.send_request(request).await
 	}
