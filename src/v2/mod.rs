@@ -11,8 +11,10 @@ pub mod token;
 pub mod users;
 use std::{path::PathBuf, sync::Arc};
 
-use anyhow::{bail, Context, Result};
+use anyhow_ext::{bail, Context, Result};
+use anyhow_trace::anyhow_trace;
 use authentication::Token;
+use headers::{Authorization, HeaderMapExt};
 use reqwest::{Client, Request};
 use serde::de::DeserializeOwned;
 use tokio::sync::RwLock;
@@ -40,6 +42,7 @@ impl Zitadel {
 	/// - `url` should point to the Zitadel instance the client is for
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
+	#[anyhow_trace]
 	pub async fn new(url: Url, service_account_file: PathBuf) -> Result<Self> {
 		let client = Client::new();
 		let token = Token::new(&url, &service_account_file, client.clone(), None).await?;
@@ -49,14 +52,18 @@ impl Zitadel {
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
+	#[anyhow_trace]
+	#[allow(clippy::needless_question_mark)] // anyhow_trace triggers this lint
 	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
 		if self.token.read().await.is_expired() {
-			self.token.write().await.renew().await?;
+			self.token.write().await.renew().await.dot()?;
 		}
 
 		let headers = request.headers_mut();
-		headers
-			.append("Authorization", format!("Bearer {}", self.token.read().await.token).parse()?);
+		HeaderMapExt::typed_insert(
+			headers,
+			Authorization::bearer(&self.token.read().await.token).dot()?,
+		);
 		headers.append("Content-Type", "application/json".parse()?);
 		headers.append("Accept", "application/json".parse()?);
 
@@ -66,10 +73,9 @@ impl Zitadel {
 
 		let response = self.client.execute(request).await?;
 		let status_code = response.status();
-		let body = response
-			.text()
-			.await
-			.context(format!("Error retrieving the body. Response status code: {status_code}"))?;
+		let body = response.text().await.with_context(|| {
+			format!("Error retrieving the body. Response status code: {status_code}")
+		})?;
 
 		if !status_code.is_success() {
 			bail!("The request resulted in error. Response: {status_code}. Body: {body}")
@@ -81,6 +87,7 @@ impl Zitadel {
 	}
 
 	/// Crates the full url using the provided endpoint path
+	#[anyhow_trace]
 	fn make_url(&self, endpoint: &str) -> Result<Url> {
 		self.domain.join(endpoint).context("Invalid relative path for the url")
 	}
@@ -106,7 +113,7 @@ mod tests {
 
 	use std::path::Path;
 
-	use anyhow::Result;
+	use anyhow_ext::Result;
 	use time::OffsetDateTime;
 	use wiremock::{
 		matchers::{self, method, path},

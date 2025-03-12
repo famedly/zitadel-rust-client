@@ -128,14 +128,16 @@ fn make_proxy(
 }
 
 /// Extract basic auth from a [url::Url] and return a
-/// [headers::authorization::Basic] if credentials are present.
+/// [headers_old::authorization::Basic] if credentials are present.
 ///
 /// Note: Using [url::Url] because [hyper::Uri] does not support getting
 /// username and password
-fn get_authorization(url: &Url) -> Option<headers::Authorization<headers::authorization::Basic>> {
+fn get_authorization(
+	url: &Url,
+) -> Option<headers_old::Authorization<headers_old::authorization::Basic>> {
 	url.password().and_then(|password| {
 		(!url.username().is_empty())
-			.then_some(headers::Authorization::basic(url.username(), password))
+			.then_some(headers_old::Authorization::basic(url.username(), password))
 	})
 }
 

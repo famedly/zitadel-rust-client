@@ -97,6 +97,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b964d184e89d9b6b67dd2715bc8e74cf3107fb2b529990c90cf517326150bf4"
 
 [[package]]
+name = "anyhow_ext"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a135cb522bf5b2254ed712979bc242f60c13f7906c1e4585d5fef36ae9017528"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
+name = "anyhow_trace"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77926521dc14a80c6b1ea34703b5b4f30fb173010ab50c8c05ff3f42b4da2cdf"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "assert-json-diff"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -920,8 +940,23 @@ checksum = "06683b93020a07e3dbcf5f8c0f6d40080d725bea7936fc01ad345c01b97dc270"
 dependencies = [
  "base64 0.21.7",
  "bytes",
- "headers-core",
+ "headers-core 0.2.0",
  "http 0.2.12",
+ "httpdate",
+ "mime",
+ "sha1",
+]
+
+[[package]]
+name = "headers"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "322106e6bd0cba2d5ead589ddb8150a13d7c4217cf80d7c4f682ca994ccc6aa9"
+dependencies = [
+ "base64 0.21.7",
+ "bytes",
+ "headers-core 0.3.0",
+ "http 1.1.0",
  "httpdate",
  "mime",
  "sha1",
@@ -934,6 +969,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7f66481bfee273957b1f20485a4ff3362987f85b2c236580d81b4eb7a326429"
 dependencies = [
  "http 0.2.12",
+]
+
+[[package]]
+name = "headers-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54b4a22553d4242c49fddb9ba998a99962b5cc6f22cb5a3482bec22522403ce4"
+dependencies = [
+ "http 1.1.0",
 ]
 
 [[package]]
@@ -1099,7 +1143,7 @@ checksum = "ca815a891b24fdfb243fa3239c86154392b0953ee584aa1a2a1f66d20cbe75cc"
 dependencies = [
  "bytes",
  "futures",
- "headers",
+ "headers 0.3.9",
  "http 0.2.12",
  "hyper 0.14.31",
  "hyper-rustls 0.22.1",
@@ -3815,11 +3859,14 @@ name = "zitadel-rust-client"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "anyhow_ext",
+ "anyhow_trace",
  "base64 0.22.1",
  "cache_control",
  "famedly_rust_utils",
  "futures",
- "headers",
+ "headers 0.3.9",
+ "headers 0.4.0",
  "hyper 0.14.31",
  "hyper-proxy",
  "josekit",

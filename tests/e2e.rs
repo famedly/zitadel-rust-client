@@ -10,7 +10,7 @@
 
 use std::{collections::HashMap, path::Path};
 
-use anyhow::{bail, Result};
+use anyhow_ext::{bail, Result};
 use famedly_rust_utils::GenericCombinators;
 use futures::{future, StreamExt, TryStreamExt};
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
