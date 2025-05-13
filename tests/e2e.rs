@@ -1233,7 +1233,7 @@ async fn test_e2e_token_verification_positive() -> Result<()> {
 	let url = Url::parse(&mock.uri())?;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
 	let verification_result = token_verifier.verify(jwt).await;
-	println!("verification_result: {:?}", verification_result);
+	println!("verification_result: {verification_result:?}");
 	assert!(verification_result.is_ok());
 
 	Ok(())

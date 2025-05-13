@@ -33,7 +33,7 @@ impl Zitadel {
 	) -> Result<AddIdpLinkResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/links"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/links"))?)
 			.json(&body)
 			.build()?;
 
@@ -47,7 +47,7 @@ impl Zitadel {
 	pub async fn add_otp_email(&self, user_id: &str) -> Result<AddOtpEmailResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/otp_email"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -62,7 +62,7 @@ impl Zitadel {
 	pub async fn add_otpsms(&self, user_id: &str) -> Result<AddOtpsmsResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/otp_sms"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -79,7 +79,7 @@ impl Zitadel {
 	) -> Result<CreatePasskeyRegistrationLinkResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/registration_link"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/passkeys/registration_link"))?)
 			.json(&body)
 			.build()?;
 
@@ -95,7 +95,7 @@ impl Zitadel {
 	pub async fn deactivate_user(&self, user_id: &str) -> Result<DeactivateUserResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/deactivate"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/deactivate"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -107,8 +107,7 @@ impl Zitadel {
 	/// error 'User not found.
 	#[anyhow_trace]
 	pub async fn delete_user(&self, user_id: &str) -> Result<DeleteUserResponse> {
-		let request =
-			self.client.delete(self.make_url(&format!("/v2/users/{user_id}"))?).build()?;
+		let request = self.client.delete(self.make_url(&format!("v2/users/{user_id}"))?).build()?;
 
 		self.send_request(request).await
 	}
@@ -117,7 +116,7 @@ impl Zitadel {
 	/// email, etc.
 	#[anyhow_trace]
 	pub async fn get_user_by_id(&self, user_id: &str) -> Result<GetUserByIdResponse> {
-		let request = self.client.get(self.make_url(&format!("/v2/users/{user_id}"))?).build()?;
+		let request = self.client.get(self.make_url(&format!("v2/users/{user_id}"))?).build()?;
 
 		self.send_request(request).await
 	}
@@ -130,7 +129,7 @@ impl Zitadel {
 	) -> Result<ListAuthenticationMethodTypesResponse> {
 		let request = self
 			.client
-			.get(self.make_url(&format!("/v2/users/{user_id}/authentication_methods"))?)
+			.get(self.make_url(&format!("v2/users/{user_id}/authentication_methods"))?)
 			.build()?;
 
 		self.send_request(request).await
@@ -146,7 +145,7 @@ impl Zitadel {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			params,
-			self.make_url(&format!("/v2/users/{user_id}/links/_search"))?,
+			self.make_url(&format!("v2/users/{user_id}/links/_search"))?,
 			None, // Endpoint does not support org_id
 		))
 	}
@@ -159,7 +158,7 @@ impl Zitadel {
 	) -> Result<ListPasskeysResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/_search"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/passkeys/_search"))?)
 			.json(&body)
 			.build()?;
 
@@ -180,7 +179,7 @@ impl Zitadel {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, sorting, queries),
-			self.make_url("/v2/users")?,
+			self.make_url("v2/users")?,
 			None,
 		))
 	}
@@ -195,7 +194,7 @@ impl Zitadel {
 	pub async fn lock_user(&self, user_id: &str) -> Result<LockUserResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/lock"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/lock"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -210,7 +209,7 @@ impl Zitadel {
 	) -> Result<PasswordResetResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/password_reset"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/password_reset"))?)
 			.json(&body)
 			.build()?;
 
@@ -224,7 +223,7 @@ impl Zitadel {
 	pub async fn reactivate_user(&self, user_id: &str) -> Result<ReactivateUserResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/reactivate"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/reactivate"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -242,7 +241,7 @@ impl Zitadel {
 	) -> Result<RegisterPasskeyResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/passkeys"))?)
 			.json(&body)
 			.build()?;
 
@@ -255,7 +254,7 @@ impl Zitadel {
 	pub async fn register_totp(&self, user_id: &str) -> Result<RegisterTotpResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/totp"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/totp"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -273,7 +272,7 @@ impl Zitadel {
 	) -> Result<RegisterU2FResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/u2f"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/u2f"))?)
 			.json(&body)
 			.build()?;
 
@@ -289,7 +288,7 @@ impl Zitadel {
 	) -> Result<RemoveIdpLinkResponse> {
 		let request = self
 			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/links/{idp_id}/{linked_user_id}"))?)
+			.delete(self.make_url(&format!("v2/users/{user_id}/links/{idp_id}/{linked_user_id}"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -301,10 +300,8 @@ impl Zitadel {
 	/// as a second-factor afterward.
 	#[anyhow_trace]
 	pub async fn remove_otp_email(&self, user_id: &str) -> Result<RemoveOtpEmailResponse> {
-		let request = self
-			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/otp_email"))?)
-			.build()?;
+		let request =
+			self.client.delete(self.make_url(&format!("v2/users/{user_id}/otp_email"))?).build()?;
 
 		self.send_request(request).await
 	}
@@ -315,7 +312,7 @@ impl Zitadel {
 	#[anyhow_trace]
 	pub async fn remove_otpsms(&self, user_id: &str) -> Result<RemoveOtpsmsResponse> {
 		let request =
-			self.client.delete(self.make_url(&format!("/v2/users/{user_id}/otp_sms"))?).build()?;
+			self.client.delete(self.make_url(&format!("v2/users/{user_id}/otp_sms"))?).build()?;
 
 		self.send_request(request).await
 	}
@@ -328,7 +325,7 @@ impl Zitadel {
 	) -> Result<RemovePasskeyResponse> {
 		let request = self
 			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/passkeys/{passkey_id}"))?)
+			.delete(self.make_url(&format!("v2/users/{user_id}/passkeys/{passkey_id}"))?)
 			.build()?;
 
 		self.send_request(request).await
@@ -338,7 +335,7 @@ impl Zitadel {
 	pub async fn remove_phone(&self, user_id: &str) -> Result<RemovePhoneResponse> {
 		let request = self
 			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/phone"))?)
+			.delete(self.make_url(&format!("v2/users/{user_id}/phone"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -351,7 +348,7 @@ impl Zitadel {
 	#[anyhow_trace]
 	pub async fn remove_totp(&self, user_id: &str) -> Result<RemoveTotpResponse> {
 		let request =
-			self.client.delete(self.make_url(&format!("/v2/users/{user_id}/totp"))?).build()?;
+			self.client.delete(self.make_url(&format!("v2/users/{user_id}/totp"))?).build()?;
 
 		self.send_request(request).await
 	}
@@ -360,7 +357,7 @@ impl Zitadel {
 	pub async fn remove_u2_f(&self, user_id: &str, u2f_id: &str) -> Result<RemoveU2FResponse> {
 		let request = self
 			.client
-			.delete(self.make_url(&format!("/v2/users/{user_id}/u2f/{u2f_id}"))?)
+			.delete(self.make_url(&format!("v2/users/{user_id}/u2f/{u2f_id}"))?)
 			.build()?;
 
 		self.send_request(request).await
@@ -374,7 +371,7 @@ impl Zitadel {
 	) -> Result<ResendEmailCodeResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/email/resend"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/email/resend"))?)
 			.json(&body)
 			.build()?;
 
@@ -389,7 +386,7 @@ impl Zitadel {
 	) -> Result<ResendPhoneCodeResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/phone/resend"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/phone/resend"))?)
 			.json(&body)
 			.build()?;
 
@@ -406,7 +403,7 @@ impl Zitadel {
 	) -> Result<RetrieveIdentityProviderIntentResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/idp_intents/{idp_intent_id}"))?)
+			.post(self.make_url(&format!("v2/idp_intents/{idp_intent_id}"))?)
 			.json(&body)
 			.build()?;
 
@@ -424,7 +421,7 @@ impl Zitadel {
 	) -> Result<SetEmailResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/email"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/email"))?)
 			.json(&body)
 			.build()?;
 
@@ -441,7 +438,7 @@ impl Zitadel {
 	) -> Result<SetPasswordResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/password"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/password"))?)
 			.json(&body)
 			.build()?;
 
@@ -459,7 +456,7 @@ impl Zitadel {
 	) -> Result<SetPhoneResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/phone"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/phone"))?)
 			.json(&body)
 			.build()?;
 
@@ -473,7 +470,7 @@ impl Zitadel {
 		&self,
 		body: StartIdentityProviderIntentRequest,
 	) -> Result<StartIdentityProviderIntentResponse> {
-		let request = self.client.post(self.make_url("/v2/idp_intents")?).json(&body).build()?;
+		let request = self.client.post(self.make_url("v2/idp_intents")?).json(&body).build()?;
 
 		self.send_request(request).await
 	}
@@ -487,7 +484,7 @@ impl Zitadel {
 	pub async fn unlock_user(&self, user_id: &str) -> Result<UnlockUserResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/unlock"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/unlock"))?)
 			.json(&json!({}))
 			.build()?;
 
@@ -495,7 +492,7 @@ impl Zitadel {
 	}
 
 	/// Update User
-	/// Update all information from a user.
+	/// Update all information for a user.
 	#[anyhow_trace]
 	pub async fn update_human_user(
 		&self,
@@ -504,7 +501,7 @@ impl Zitadel {
 	) -> Result<UpdateHumanUserResponse> {
 		let request = self
 			.client
-			.put(self.make_url(&format!("/v2/users/human/{user_id}"))?)
+			.put(self.make_url(&format!("v2/users/human/{user_id}"))?)
 			.json(&body)
 			.build()?;
 
@@ -521,7 +518,7 @@ impl Zitadel {
 	) -> Result<VerifyEmailResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/email/verify"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/email/verify"))?)
 			.json(&body)
 			.build()?;
 
@@ -538,7 +535,7 @@ impl Zitadel {
 	) -> Result<VerifyPasskeyRegistrationResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/passkeys/{passkey_id}"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/passkeys/{passkey_id}"))?)
 			.json(&body)
 			.build()?;
 
@@ -554,7 +551,7 @@ impl Zitadel {
 	) -> Result<VerifyPhoneResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/phone/verify"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/phone/verify"))?)
 			.json(&body)
 			.build()?;
 
@@ -570,7 +567,7 @@ impl Zitadel {
 	) -> Result<VerifyTotpRegistrationResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/totp/verify"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/totp/verify"))?)
 			.json(&body)
 			.build()?;
 
@@ -587,7 +584,7 @@ impl Zitadel {
 	) -> Result<VerifyU2FRegistrationResponse> {
 		let request = self
 			.client
-			.post(self.make_url(&format!("/v2/users/{user_id}/u2f/{u2f_id}"))?)
+			.post(self.make_url(&format!("v2/users/{user_id}/u2f/{u2f_id}"))?)
 			.json(&body)
 			.build()?;
 
@@ -602,7 +599,7 @@ impl Zitadel {
 	) -> Result<GetUserMetadataResponse> {
 		let request = self
 			.client
-			.get(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.get(self.make_url(&format!("management/v1/users/{user_id}/metadata/{key}"))?)
 			.build()?;
 
 		self.send_request(request).await

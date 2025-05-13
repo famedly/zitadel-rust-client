@@ -3,6 +3,7 @@
 
 /// Service user authentication
 pub mod authentication;
+pub mod events;
 pub mod management;
 pub mod organization;
 pub mod pagination;

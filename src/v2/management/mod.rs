@@ -14,6 +14,16 @@ use super::{
 };
 
 impl Zitadel {
+	/// [Get My Organization](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-my-org)
+	pub async fn get_my_organization(&self, org_id: Option<String>) -> Result<V1GetMyOrgResponse> {
+		let request = self
+			.client
+			.get(self.make_url("management/v1/orgs/me")?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.build()?;
+		self.send_request(request).await
+	}
+
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
 	#[anyhow_trace]
 	pub async fn create_action(
@@ -403,6 +413,42 @@ impl Zitadel {
 			self.make_url("management/v1/users/grants/_search")?,
 			org_id,
 		))
+	}
+
+	/// [Update User Grants](https://zitadel.com/docs/apis/resources/mgmt/management-service-update-user-grant)
+	#[anyhow_trace]
+	pub async fn update_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		grant_id: &str,
+		role_keys: Vec<String>,
+	) -> Result<V1UpdateUserGrantResponse> {
+		type ReqBody = ManagementServiceUpdateUserGrantBody;
+		let request = self
+			.client
+			.put(self.make_url(&format!("management/v1/users/{user_id}/grants/{grant_id}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ReqBody::new().with_role_keys(role_keys))
+			.build()?;
+
+		self.send_request(request).await
+	}
+
+	/// [Remove User Grant](https://zitadel.com/docs/apis/resources/mgmt/management-service-remove-user-grant)
+	#[anyhow_trace]
+	pub async fn remove_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		grant_id: &str,
+	) -> Result<V1RemoveUserGrantResponse> {
+		let request = self
+			.client
+			.delete(self.make_url(&format!("management/v1/users/{user_id}/grants/{grant_id}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.build()?;
+		self.send_request(request).await
 	}
 
 	/// Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)

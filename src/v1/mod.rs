@@ -1,3 +1,4 @@
+#![allow(clippy::result_large_err)]
 //! Communication with Zitadel
 
 /// A module with error type and related code
@@ -179,9 +180,9 @@ fn wrap_intercept_with_no_proxy(
 	(move |scheme: Option<&str>, host: Option<&str>, port: Option<u16>| {
 		let uri_string = format!(
 			"{}{}{}",
-			scheme.map(|s| format!("{}://", s)).unwrap_or_default(),
+			scheme.map(|s| format!("{s}://")).unwrap_or_default(),
 			host.unwrap_or_default(),
-			port.map(|p| format!(":{}", p)).unwrap_or_default()
+			port.map(|p| format!(":{p}")).unwrap_or_default()
 		);
 		let uri: hyper::Uri = match uri_string.parse() {
 			Ok(uri) => uri,
@@ -1129,6 +1130,6 @@ fn check_token_not_expired_then_set_authorization(
 
 #[doc(hidden)]
 fn insert_auth_token(token: &str, meta: &mut tonic::metadata::MetadataMap) -> Result<()> {
-	meta.insert("authorization", format!("Bearer {}", token).parse()?);
+	meta.insert("authorization", format!("Bearer {token}").parse()?);
 	Ok(())
 }

@@ -11,24 +11,12 @@
  */
 
 use serde::{Deserialize, Serialize};
-#[allow(unused_imports)]
-use serde_json::Value;
 
-use crate::v2::management::models;
-
+#[allow(non_camel_case_types)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct V1OrgState {}
-
-impl V1OrgState {
-	pub fn new() -> V1OrgState {
-		V1OrgState {}
-	}
+pub enum V1OrgState {
+	ORG_STATE_UNSPECIFIED,
+	ORG_STATE_ACTIVE,
+	ORG_STATE_INACTIVE,
+	ORG_STATE_REMOVED,
 }
-
-// TODO enum
-// List of v1OrgState
-//const (
-//
-//
-//
-//)
