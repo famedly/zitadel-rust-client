@@ -7,9 +7,9 @@ use time::OffsetDateTime;
 
 use super::Zitadel;
 
+#[anyhow_trace]
 impl Zitadel {
 	/// [Search Events](https://zitadel.com/docs/apis/resources/admin/admin-service-list-events)
-	#[anyhow_trace]
 	pub async fn list_events(&self, req: &V1ListEventsRequest) -> Result<Vec<V1Event>> {
 		let request =
 			self.client.post(self.make_url("admin/v1/events/_search")?).json(req).build()?;

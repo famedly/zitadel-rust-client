@@ -54,6 +54,7 @@ pub struct Token {
 	scope: Option<Vec<String>>,
 }
 
+#[anyhow_trace]
 impl Token {
 	/// Create a new token
 	///
@@ -68,7 +69,6 @@ impl Token {
 	/// * `service_account_file` - Path to the service account json file
 	/// * `client` - Reqwest client to be used
 	/// * `scope` - Additional scopes for the requested token
-	#[anyhow_trace]
 	pub async fn new(
 		url: &Url,
 		service_account_file: &PathBuf,
@@ -108,7 +108,6 @@ impl Token {
 	}
 
 	/// Renew the token
-	#[anyhow_trace]
 	pub async fn renew(&mut self) -> Result<()> {
 		self.claims.iat = OffsetDateTime::now_utc().unix_timestamp();
 		self.expiry = OffsetDateTime::now_utc() + time::Duration::minutes(59);

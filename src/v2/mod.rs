@@ -1,4 +1,5 @@
 #![allow(clippy::missing_docs_in_private_items)]
+#![allow(clippy::needless_question_mark)] // need it for anyhow_trace messages on a last expression in functions
 //! Communication with Zitadel using http [v2 API](https://zitadel.com/docs/apis/v2)
 
 /// Service user authentication
@@ -38,12 +39,12 @@ pub struct Zitadel {
 	client: Client,
 }
 
+#[anyhow_trace]
 impl Zitadel {
 	/// Builds a new Zitadel instance.
 	/// - `url` should point to the Zitadel instance the client is for
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
-	#[anyhow_trace]
 	pub async fn new(url: Url, service_account_file: PathBuf) -> Result<Self> {
 		let client = Client::new();
 		let token = Token::new(&url, &service_account_file, client.clone(), None).await?;
@@ -53,8 +54,6 @@ impl Zitadel {
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
-	#[anyhow_trace]
-	#[allow(clippy::needless_question_mark)] // anyhow_trace triggers this lint
 	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
 		if self.token.read().await.is_expired() {
 			self.token.write().await.renew().await.dot()?;
@@ -88,7 +87,6 @@ impl Zitadel {
 	}
 
 	/// Crates the full url using the provided endpoint path
-	#[anyhow_trace]
 	fn make_url(&self, endpoint: &str) -> Result<Url> {
 		self.domain.join(endpoint).context("Invalid relative path for the url")
 	}
