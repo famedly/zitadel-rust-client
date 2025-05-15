@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-05-15
+
+### Features
+
+- Add couple methods, feature gate v1
+- Add backtraces to errors
+- Add `list_events` to v2
+
+### Bug Fixes
+
+- Fix `anyhow_trace` messages
+
+### Miscellaneous Tasks
+
+- Add project automation
+- Add maintainers to codeowners file
+
 ## [0.3.0] - 2025-02-24
 
 ### Features
