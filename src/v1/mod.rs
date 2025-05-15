@@ -224,7 +224,7 @@ impl Zitadel {
 			wait_for_successful_response(format!("{}/debug/ready", config.zitadel.url).as_ref()).await?;
 		*/
 		let service_account = ServiceAccount::load_from_json(
-			std::fs::read_to_string(&service_account_file)?.as_ref(),
+			tokio::fs::read_to_string(&service_account_file).await?.as_ref(),
 		)?;
 		let auth_options = AuthenticationOptions { api_access: true, ..Default::default() };
 

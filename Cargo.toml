@@ -9,9 +9,10 @@ publish = ["famedly"]
 [dependencies]
 time = { version = "0.3.36", features = ["serde"] }
 tokio = { version = "1.35.1", features = [
-    "macros",
-    "rt-multi-thread",
-    "time",
+  "macros",
+  "rt-multi-thread",
+  "time",
+  "fs",
 ] }
 tracing = "0.1.40"
 thiserror = "1.0.61"

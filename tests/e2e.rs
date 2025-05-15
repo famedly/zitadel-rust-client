@@ -1103,7 +1103,7 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 	// TODO: Remove it once we have the zitadel bootstrap in place
 	let mut put_url = url.clone();
 	let service_account: HashMap<String, serde_json::Value> =
-		serde_json::from_str(std::fs::read_to_string(&service_account_file)?.as_ref())?;
+		serde_json::from_str(tokio::fs::read_to_string(&service_account_file).await?.as_ref())?;
 	put_url.set_path(&format!(
 		"management/v1/users/{}/machine",
 		service_account.get("userId").and_then(|v| v.as_str()).unwrap()

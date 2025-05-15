@@ -76,7 +76,7 @@ impl Token {
 		scope: Option<Vec<String>>,
 	) -> Result<Self> {
 		let service_account: ServiceAccount =
-			serde_json::from_str(std::fs::read_to_string(service_account_file)?.as_ref())?;
+			serde_json::from_str(tokio::fs::read_to_string(service_account_file).await?.as_ref())?;
 
 		let mut header = Header::new(Algorithm::RS256);
 		header.kid = Some(service_account.key_id.clone());
