@@ -19,7 +19,6 @@ use authentication::Token;
 use headers::{Authorization, HeaderMapExt};
 use reqwest::{Client, Request};
 use serde::de::DeserializeOwned;
-use tokio::sync::RwLock;
 use url::Url;
 
 /// Header for Zitadel organization ID
@@ -32,7 +31,7 @@ const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 #[derive(Debug, Clone)]
 pub struct Zitadel {
 	/// Token for performing the requests as a service account
-	token: Arc<RwLock<Token>>,
+	token: Arc<Token>,
 	/// Zitadel domain
 	domain: Url,
 	/// Client for performing the requests
@@ -49,20 +48,16 @@ impl Zitadel {
 		let client = Client::new();
 		let token = Token::new(&url, &service_account_file, client.clone(), None).await?;
 
-		Ok(Self { token: Arc::new(RwLock::new(token)), domain: url, client })
+		Ok(Self { token: Arc::new(token), domain: url, client })
 	}
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
 	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
-		if self.token.read().await.is_expired() {
-			self.token.write().await.renew().await.dot()?;
-		}
-
 		let headers = request.headers_mut();
 		HeaderMapExt::typed_insert(
 			headers,
-			Authorization::bearer(&self.token.read().await.token).dot()?,
+			Authorization::bearer(&self.token.token().await?).dot()?,
 		);
 		headers.append("Content-Type", "application/json".parse()?);
 		headers.append("Accept", "application/json".parse()?);
@@ -105,58 +100,4 @@ fn format_request_for_log(request: &Request) -> String {
 			.filter(|(name, _)| name.as_str().to_lowercase() != "authorization")
 			.collect::<Vec<_>>()
 	)
-}
-
-#[cfg(test)]
-mod tests {
-
-	use std::path::Path;
-
-	use anyhow_ext::Result;
-	use time::OffsetDateTime;
-	use wiremock::{
-		matchers::{self, method, path},
-		Mock, MockServer, ResponseTemplate,
-	};
-
-	use super::*;
-
-	const SERVICE_USER_KEY_PATH: &str = "tests/environment/zitadel/service-user.json";
-
-	#[tokio::test]
-	async fn test_renew_token() -> Result<()> {
-		let mock_server = MockServer::start().await;
-
-		let auth_resp = authentication::AuthResponse {
-			access_token: "my_token".to_owned(),
-			token_type: "token_type".to_owned(),
-			expires_in: -1,
-		};
-
-		Mock::given(method("POST"))
-			.and(path("/oauth/v2/token"))
-			.respond_with(ResponseTemplate::new(200).set_body_json(auth_resp))
-			.expect(2)
-			.mount(&mock_server)
-			.await;
-
-		Mock::given(method("POST"))
-			.and(matchers::path_regex(r"/v2/users/.*"))
-			.respond_with(ResponseTemplate::new(200))
-			.mount(&mock_server)
-			.await;
-
-		let service_account_file = Path::new(SERVICE_USER_KEY_PATH);
-		let url = Url::parse(&mock_server.uri())?;
-		let zitadel = Zitadel::new(url, service_account_file.to_path_buf()).await?;
-
-		zitadel.token.write().await.expiry =
-			OffsetDateTime::now_utc() - time::Duration::minutes(10);
-
-		let _ = zitadel.get_user_by_id("user_id").await;
-
-		assert!(zitadel.token.read().await.expiry > OffsetDateTime::now_utc());
-
-		Ok(())
-	}
 }
