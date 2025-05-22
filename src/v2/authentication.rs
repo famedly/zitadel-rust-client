@@ -78,7 +78,7 @@ impl Token {
 	/// * `service_account_file` - Path to the service account json file
 	/// * `client` - Reqwest client to be used
 	/// * `scope` - Additional scopes for the requested token
-	/// * `aud` - Cursom aud claim (`url` is used if unset)
+	/// * `aud` - Custom `aud` claim (`url` is used if unset)
 	pub async fn new(
 		url: Url,
 		service_account_file: &PathBuf,

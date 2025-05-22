@@ -44,6 +44,7 @@ impl Zitadel {
 	/// - `url` should point to the Zitadel instance the client is for
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
+	/// - `aud` - Custom `aud` claim to use for auth (`url` is used if unset)
 	pub async fn new(url: Url, service_account_file: PathBuf, aud: Option<String>) -> Result<Self> {
 		let client = Client::new();
 		let token =
