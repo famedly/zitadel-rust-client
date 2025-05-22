@@ -44,9 +44,10 @@ impl Zitadel {
 	/// - `url` should point to the Zitadel instance the client is for
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
-	pub async fn new(url: Url, service_account_file: PathBuf) -> Result<Self> {
+	pub async fn new(url: Url, service_account_file: PathBuf, aud: Option<String>) -> Result<Self> {
 		let client = Client::new();
-		let token = Token::new(&url, &service_account_file, client.clone(), None).await?;
+		let token =
+			Token::new(url.clone(), &service_account_file, client.clone(), None, aud).await?;
 
 		Ok(Self { token: Arc::new(token), domain: url, client })
 	}
