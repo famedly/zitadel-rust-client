@@ -60,6 +60,7 @@ struct InnerToken {
 	key: EncodingKey,
 	client: reqwest::Client,
 	scope: Option<Vec<String>>,
+	url: Url,
 }
 
 #[anyhow_trace]
@@ -77,11 +78,13 @@ impl Token {
 	/// * `service_account_file` - Path to the service account json file
 	/// * `client` - Reqwest client to be used
 	/// * `scope` - Additional scopes for the requested token
+	/// * `aud` - Cursom aud claim (`url` is used if unset)
 	pub async fn new(
-		url: &Url,
+		url: Url,
 		service_account_file: &PathBuf,
 		client: reqwest::Client,
 		scope: Option<Vec<String>>,
+		aud: Option<String>,
 	) -> Result<Self> {
 		let service_account: ServiceAccount =
 			serde_json::from_str(tokio::fs::read_to_string(service_account_file).await?.as_ref())?;
@@ -93,7 +96,7 @@ impl Token {
 		let claims = Claims {
 			iss: service_account.user_id.clone(),
 			sub: service_account.user_id.clone(),
-			aud: url.as_str().trim_end_matches('/').to_owned(),
+			aud: aud.unwrap_or_else(|| url.as_str().trim_end_matches('/').to_owned()),
 			iat: 0,
 			exp: 0,
 		};
@@ -108,6 +111,7 @@ impl Token {
 			key,
 			client,
 			scope,
+			url,
 		};
 
 		inner.renew().await.context("Error getting the token for the first time")?;
@@ -139,7 +143,7 @@ impl InnerToken {
 
 		let resp = self
 			.client
-			.post(format!("{}/oauth/v2/token", &self.claims.aud))
+			.post(self.url.clone().join("oauth/v2/token")?)
 			.header("Content-Type", "application/x-www-form-urlencoded")
 			.form(&[
 				("grant_type".to_owned(), "urn:ietf:params:oauth:grant-type:jwt-bearer".to_owned()),
@@ -230,7 +234,8 @@ mod tests {
 			.await;
 
 		let url = Url::parse(&mock_server.uri())?;
-		let token = Token::new(&url, &service_account_file, reqwest::Client::new(), None).await?;
+		let token =
+			Token::new(url, &service_account_file, reqwest::Client::new(), None, None).await?;
 
 		assert_eq!(token.token().await?, zitadel_token);
 		// A second call shouldn't trigger a renew
