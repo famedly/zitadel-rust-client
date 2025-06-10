@@ -2,23 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.5.0] - 2025-05-22
+## [0.6.0] - 2025-06-10
 
 ### Features
 
-- [**breaking**] Make `aud` configurable for v2 client and `Token`
+- Add v2 get_user_grant and search_org_metadata
 
-## [0.4.0] - 2025-05-16
+## [0.5.0] - 2025-05-26
+
+### Features
+
+- [**breaking**] Make aud configurable for v2 client and Token
+
+### Release
+
+- V0.5.0
+
+## [0.4.0] - 2025-05-19
 
 ### Features
 
 - Add couple methods, feature gate v1
 - Add backtraces to errors
-- Add `list_events` to v2
+- Add list_events to v2
 
 ### Bug Fixes
 
-- Fix `anyhow_trace` messages
+- Fix anyhow_trace messages
 
 ### Refactor
 
@@ -33,6 +43,7 @@ All notable changes to this project will be documented in this file.
 ### Release
 
 - V0.3.1
+- V0.4.0
 
 ## [0.3.0] - 2025-02-24
 
