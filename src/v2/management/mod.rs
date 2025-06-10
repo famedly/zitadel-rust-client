@@ -429,6 +429,21 @@ impl Zitadel {
 		Ok(self.send_request(request).await?)
 	}
 
+	/// [Get User Grant](https://zitadel.com/docs/apis/resources/mgmt/management-service-get-user-grant-by-id)
+	pub async fn get_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		grant_id: &str,
+	) -> Result<V1GetUserGrantByIdResponse> {
+		let request = self
+			.client
+			.get(self.make_url(&format!("management/v1/users/{user_id}/grants/{grant_id}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.build()?;
+		Ok(self.send_request(request).await?)
+	}
+
 	/// Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
 	pub async fn add_project_role(
 		&self,
@@ -491,5 +506,20 @@ impl Zitadel {
 			.build()?;
 
 		Ok(self.send_request(request).await?)
+	}
+
+	/// Search User Grants [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-list-org-metadata)
+	pub fn search_organization_metadata(
+		&self,
+		org_id: Option<String>,
+		params: Option<PaginationParams>,
+		queries: Option<Vec<V1MetadataQuery>>,
+	) -> Result<impl Stream<Item = Result<Metadatav1Metadata>>> {
+		Ok(PaginationHandler::new(
+			self.clone(),
+			(params, queries),
+			self.make_url("management/v1/metadata/_search")?,
+			org_id,
+		))
 	}
 }
