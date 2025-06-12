@@ -1,5 +1,5 @@
 //! Module to transparently handle response pagination
-use std::{collections::VecDeque, future::Future, pin::Pin, task::Poll};
+use std::{collections::VecDeque, future::Future, marker::PhantomData, pin::Pin, task::Poll};
 
 use anyhow_ext::{Context, Result};
 use anyhow_trace::anyhow_trace;
@@ -27,9 +27,8 @@ where
 	}
 }
 
-pub(crate) trait PaginationRequest {
-	type Item: Serialize;
-	fn to_paginated_request(&self, page: usize) -> Self::Item;
+pub(crate) trait PaginationRequest<Item> {
+	fn to_paginated_request(&self, page: usize) -> Item;
 	fn page_size(&self) -> usize;
 }
 
@@ -46,7 +45,7 @@ pub(crate) struct PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync,
 	T: DeserializeOwned + 'static,
-	R: PaginationRequest<Item = Q> + Send + Sync,
+	R: PaginationRequest<Q> + Send + Sync,
 {
 	zitadel: Zitadel,
 	query: R,
@@ -56,13 +55,14 @@ where
 	done: bool,
 	data_fut: Pin<Box<DataFuture<T>>>,
 	org_id: Option<String>,
+	q: PhantomData<Q>,
 }
 
 impl<Q, T, R> PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
-	R: PaginationRequest<Item = Q> + Send + Sync,
+	R: PaginationRequest<Q> + Send + Sync,
 {
 	pub(crate) fn new(zitadel: Zitadel, query: R, endpoint: Url, org_id: Option<String>) -> Self {
 		let page = 0;
@@ -76,6 +76,7 @@ where
 			done: false,
 			data_fut: Box::pin(get_more_data::<T>(zitadel, req_query, endpoint, org_id.clone())),
 			org_id,
+			q: PhantomData,
 		}
 	}
 }
@@ -103,7 +104,7 @@ impl<Q, T, R> Unpin for PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
-	R: PaginationRequest<Item = Q> + Send + Sync,
+	R: PaginationRequest<Q> + Send + Sync,
 {
 }
 
@@ -111,7 +112,7 @@ impl<Q, T, R> Stream for PaginationHandler<Q, T, R>
 where
 	Q: Serialize + Send + Sync + 'static,
 	T: DeserializeOwned + 'static,
-	R: PaginationRequest<Item = Q> + Send + Sync,
+	R: PaginationRequest<Q> + Send + Sync,
 {
 	type Item = Result<T>;
 	fn poll_next(
@@ -206,12 +207,11 @@ fn mk_list_query(page: usize, params: &PaginationParams) -> ListQuery {
 		.with_asc(params.asc)
 }
 
-impl PaginationRequest for Option<PaginationParams> {
-	type Item = GenericListRequestBody<NoQueries, NoSorting>;
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
+impl PaginationRequest<GenericListRequestBody<NoQueries, NoSorting>> for Option<PaginationParams> {
+	fn to_paginated_request(&self, page: usize) -> GenericListRequestBody<NoQueries, NoSorting> {
 		let params = self.as_ref().unwrap_or(&PaginationParams::DEFAULT);
 		let page = mk_list_query(page, params);
-		Self::Item { query: Some(page), sorting_column: None, queries: None }
+		GenericListRequestBody { query: Some(page), sorting_column: None, queries: None }
 	}
 
 	fn page_size(&self) -> usize {
@@ -219,12 +219,13 @@ impl PaginationRequest for Option<PaginationParams> {
 	}
 }
 
-impl<Q: Clone + Serialize> PaginationRequest for (Option<PaginationParams>, Option<Vec<Q>>) {
-	type Item = GenericListRequestBody<Q, NoSorting>;
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
+impl<Q: Clone + Serialize> PaginationRequest<GenericListRequestBody<Q, NoSorting>>
+	for (Option<PaginationParams>, Option<Vec<Q>>)
+{
+	fn to_paginated_request(&self, page: usize) -> GenericListRequestBody<Q, NoSorting> {
 		let params = self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT);
 		let page = mk_list_query(page, params);
-		Self::Item { query: Some(page), sorting_column: None, queries: self.1.clone() }
+		GenericListRequestBody { query: Some(page), sorting_column: None, queries: self.1.clone() }
 	}
 
 	fn page_size(&self) -> usize {
@@ -232,14 +233,17 @@ impl<Q: Clone + Serialize> PaginationRequest for (Option<PaginationParams>, Opti
 	}
 }
 
-impl<Q: Clone + Serialize, S: Clone + Serialize> PaginationRequest
+impl<Q: Clone + Serialize, S: Clone + Serialize> PaginationRequest<GenericListRequestBody<Q, S>>
 	for (Option<PaginationParams>, Option<S>, Option<Vec<Q>>)
 {
-	type Item = GenericListRequestBody<Q, S>;
-	fn to_paginated_request(&self, page: usize) -> Self::Item {
+	fn to_paginated_request(&self, page: usize) -> GenericListRequestBody<Q, S> {
 		let params = self.0.as_ref().unwrap_or(&PaginationParams::DEFAULT);
 		let page = mk_list_query(page, params);
-		Self::Item { query: Some(page), sorting_column: self.1.clone(), queries: self.2.clone() }
+		GenericListRequestBody {
+			query: Some(page),
+			sorting_column: self.1.clone(),
+			queries: self.2.clone(),
+		}
 	}
 
 	fn page_size(&self) -> usize {
