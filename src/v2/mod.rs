@@ -2,6 +2,7 @@
 #![allow(clippy::needless_question_mark)] // need it for anyhow_trace messages on a last expression in functions
 //! Communication with Zitadel using http [v2 API](https://zitadel.com/docs/apis/v2)
 
+pub mod actions;
 /// Service user authentication
 pub mod authentication;
 pub mod events;
