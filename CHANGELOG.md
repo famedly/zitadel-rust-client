@@ -2,11 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.1] - 2025-06-16
+
+### Features
+
+- Add v2 actions api
+
 ## [0.6.0] - 2025-06-10
 
 ### Features
 
-- Add v2 get_user_grant and search_org_metadata
+- Add v2 `get_user_grant` and `search_org_metadata`
 
 ## [0.5.0] - 2025-05-26
 
@@ -24,11 +30,11 @@ All notable changes to this project will be documented in this file.
 
 - Add couple methods, feature gate v1
 - Add backtraces to errors
-- Add list_events to v2
+- Add `list_events` to v2
 
 ### Bug Fixes
 
-- Fix anyhow_trace messages
+- Fix `anyhow_trace` messages
 
 ### Refactor
 
@@ -85,7 +91,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-- Get_user_by_id failing on user not found
+- `Get_user_by_id` failing on user not found
 - Don't require mutable references to Zitadel for requests
 
 ### Refactor
