@@ -989,7 +989,7 @@ async fn test_e2e_user_metadata() -> Result<()> {
 	zitadel.set_user_metadata(&id, metadata[1].0, metadata[1].1).await?;
 
 	for (query_key, expected_value) in &metadata {
-		let ret = zitadel.get_user_metadata(&id, query_key).await?;
+		let ret = zitadel.get_user_metadata(&id, query_key, None).await?;
 		let key =
 			ret.metadata().key().expect("Unable to get key from response of get_user_metadata");
 		let value =
@@ -999,12 +999,12 @@ async fn test_e2e_user_metadata() -> Result<()> {
 	}
 
 	zitadel.delete_user_metadata(&id, metadata[1].0).await?;
-	assert!(zitadel.get_user_metadata(&id, metadata[1].0).await.is_err());
+	assert!(zitadel.get_user_metadata(&id, metadata[1].0, None).await.is_err());
 
 	let updated_value = "new_value";
 	zitadel.set_user_metadata(&id, metadata[0].0, updated_value).await?;
 
-	let ret = zitadel.get_user_metadata(&id, metadata[0].0).await?;
+	let ret = zitadel.get_user_metadata(&id, metadata[0].0, None).await?;
 	let value = ret
 		.metadata()
 		.value()

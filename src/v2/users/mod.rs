@@ -4,6 +4,7 @@ mod models;
 use anyhow_ext::Result;
 use anyhow_trace::anyhow_trace;
 use base64::prelude::{Engine, BASE64_STANDARD};
+use famedly_rust_utils::GenericCombinators as _;
 use futures::Stream;
 pub use models::*;
 use serde_json::json;
@@ -12,6 +13,7 @@ use super::{
 	pagination::{PaginationHandler, PaginationParams},
 	Zitadel,
 };
+use crate::v2::HEADER_ZITADEL_ORGANIZATION_ID;
 
 #[anyhow_trace]
 impl Zitadel {
@@ -557,10 +559,12 @@ impl Zitadel {
 		&self,
 		user_id: &str,
 		key: &str,
+		org_id: Option<String>,
 	) -> Result<GetUserMetadataResponse> {
 		let request = self
 			.client
 			.get(self.make_url(&format!("management/v1/users/{user_id}/metadata/{key}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.build()?;
 
 		Ok(self.send_request(request).await?)
