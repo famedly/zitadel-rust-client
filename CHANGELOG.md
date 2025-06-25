@@ -2,17 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2025-06-26
+
+### Features
+
+- [**breaking**] Add org id to `get_user_metadata`
+- Add project endpoints to v2 client
+
+### Release
+
+- V0.7.0
+
 ## [0.6.1] - 2025-06-16
 
 ### Features
 
 - Add v2 actions api
 
+### Release
+
+- V0.6.1
+
 ## [0.6.0] - 2025-06-10
 
 ### Features
 
 - Add v2 `get_user_grant` and `search_org_metadata`
+
+### Release
+
+- V0.6.0
 
 ## [0.5.0] - 2025-05-26
 
