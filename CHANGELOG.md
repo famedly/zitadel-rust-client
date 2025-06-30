@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.1] - 2025-06-30
+
+### Features
+
+- Add (d/r)eactivate user grant methods
+
 ## [0.7.0] - 2025-06-26
 
 ### Features
