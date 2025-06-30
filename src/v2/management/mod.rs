@@ -444,6 +444,42 @@ impl Zitadel {
 		Ok(self.send_request(request).await?)
 	}
 
+	/// [Deactivate User Grant](https://zitadel.com/docs/apis/resources/mgmt/management-service-deactivate-user-grant)
+	pub async fn deactivate_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		grant_id: &str,
+	) -> Result<V1DeactivateUserGrantResponse> {
+		let request = self
+			.client
+			.post(self.make_url(&format!(
+				"management/v1/users/{user_id}/grants/{grant_id}/_deactivate"
+			))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ManagementServiceDeactivateUserGrantBody::new())
+			.build()?;
+		Ok(self.send_request(request).await?)
+	}
+
+	/// [Reactivate User Grant](https://zitadel.com/docs/apis/resources/mgmt/management-service-reactivate-user-grant)
+	pub async fn reactivate_user_grant(
+		&self,
+		org_id: Option<String>,
+		user_id: &str,
+		grant_id: &str,
+	) -> Result<V1ReactivateUserGrantResponse> {
+		let request = self
+			.client
+			.post(self.make_url(&format!(
+				"management/v1/users/{user_id}/grants/{grant_id}/_reactivate"
+			))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&ManagementServiceReactivateUserGrantBody::new())
+			.build()?;
+		Ok(self.send_request(request).await?)
+	}
+
 	/// Add Project Role [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-project-role)
 	pub async fn add_project_role(
 		&self,
