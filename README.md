@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Zitadel Rust Client
+# Famedly Zitadel Rust Client
 
 [![rust workflow status][badge-rust-workflow-img]][badge-rust-workflow-url]
 [![docker workflow status][badge-docker-workflow-img]][badge-docker-workflow-url]
@@ -17,7 +17,7 @@ SPDX-License-Identifier: Apache-2.0
 [badge-docs-main-img]: https://img.shields.io/badge/docs-main-blue
 [badge-docs-main-url]: https://famedly.github.io/rust-library-template/project_name/index.html
 
-A zitadel client written in rust
+A zitadel client written in rust.
 
 ## Zitadel Version
 
@@ -100,4 +100,4 @@ the express prior written consent of Famedly GmbH.
 
 For more
 information take a look at [Famedly.com](https://famedly.com) or contact
-us by [info@famedly.com](mailto:info@famedly.com?subject=[GitLab]%20More%20Information%20)
+us by [info@famedly.com](mailto:info@famedly.com?subject=[GitHub]%20More%20Information%20)

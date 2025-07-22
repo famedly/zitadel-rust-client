@@ -661,6 +661,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "famedly-zitadel-rust-client"
+version = "0.8.0"
+dependencies = [
+ "anyhow",
+ "anyhow_ext",
+ "anyhow_trace",
+ "base64 0.22.1",
+ "cache_control",
+ "famedly_rust_utils",
+ "futures",
+ "headers 0.3.9",
+ "headers 0.4.0",
+ "hyper 0.14.31",
+ "hyper-proxy",
+ "josekit",
+ "jsonwebtoken",
+ "pbjson-types",
+ "proxyvars",
+ "rand 0.9.1",
+ "reqwest 0.12.9",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "test-log",
+ "thiserror",
+ "time",
+ "tokio",
+ "tonic",
+ "tracing",
+ "url",
+ "wiremock",
+ "zitadel",
+]
+
+[[package]]
 name = "famedly_rust_utils"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3830,39 +3865,4 @@ dependencies = [
  "tokio",
  "tonic",
  "tonic-types",
-]
-
-[[package]]
-name = "zitadel-rust-client"
-version = "0.7.2"
-dependencies = [
- "anyhow",
- "anyhow_ext",
- "anyhow_trace",
- "base64 0.22.1",
- "cache_control",
- "famedly_rust_utils",
- "futures",
- "headers 0.3.9",
- "headers 0.4.0",
- "hyper 0.14.31",
- "hyper-proxy",
- "josekit",
- "jsonwebtoken",
- "pbjson-types",
- "proxyvars",
- "rand 0.9.1",
- "reqwest 0.12.9",
- "serde",
- "serde_json",
- "tempfile",
- "test-log",
- "thiserror",
- "time",
- "tokio",
- "tonic",
- "tracing",
- "url",
- "wiremock",
- "zitadel",
 ]

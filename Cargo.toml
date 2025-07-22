@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "zitadel-rust-client"
-version = "0.7.2"
+name = "famedly-zitadel-rust-client"
+description = "HTTP client for Zitadel IdP built by Famedly"
+version = "0.8.0"
 authors = []
 edition = "2024"
 resolver = "2"

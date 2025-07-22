@@ -16,6 +16,10 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow_ext::{Result, bail};
 use famedly_rust_utils::GenericCombinators;
+use famedly_zitadel_rust_client::v2::{
+	Zitadel, authentication::Token, management::*, organization::*, pagination::PaginationParams,
+	token, users::*,
+};
 use futures::{StreamExt, TryStreamExt, future};
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
 use rand::distr::{Alphanumeric, SampleString};
@@ -25,10 +29,6 @@ use url::Url;
 use wiremock::{
 	Mock, MockServer, ResponseTemplate,
 	matchers::{method, path},
-};
-use zitadel_rust_client::v2::{
-	Zitadel, authentication::Token, management::*, organization::*, pagination::PaginationParams,
-	token, users::*,
 };
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";

@@ -8,6 +8,26 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2025-08-20
+
+### Features
+
+- [**breaking**] Update actions endpoint to work with zitadel v4
+- [**breaking**] Update `list_actions` to zitadel v4
+
+### Refactor
+
+- [**breaking**] Remove `v1` from default features
+
+### Testing
+
+- Fix test tear down function
+
+### Miscellaneous Tasks
+
+- Add publish to crates.io action
+- Relicense to Apache-2.0
+
 ## [0.7.2] - 2025-07-31
 
 ### Features

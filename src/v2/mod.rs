@@ -1,5 +1,6 @@
 #![allow(clippy::missing_docs_in_private_items)]
-#![allow(clippy::needless_question_mark)] // need it for anyhow_trace messages on a last expression in functions
+#![allow(clippy::needless_question_mark)]
+// need it for anyhow_trace messages on a last expression in functions
 
 // SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
 //
