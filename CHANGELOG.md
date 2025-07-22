@@ -8,6 +8,16 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2025-07-22
+
+### Refactor
+
+- [**breaking**] Remove v1 feature as default feature
+
+### Miscellaneous Tasks
+
+- Add publish to crates.io action
+
 ## [0.7.1] - 2025-06-30
 
 ### Features
