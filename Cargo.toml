@@ -4,7 +4,6 @@ version = "0.7.2"
 authors = []
 edition = "2024"
 resolver = "2"
-publish = ["famedly"]
 
 [dependencies]
 time = { version = "0.3.36", features = ["serde"] }
