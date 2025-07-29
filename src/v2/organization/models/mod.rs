@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 #![allow(missing_docs, unused_imports, non_snake_case, missing_debug_implementations)]
 #![allow(
 	clippy::must_use_candidate,

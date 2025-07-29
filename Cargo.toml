@@ -1,9 +1,16 @@
+# SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+#
+# SPDX-License-Identifier: Apache-2.0
+
 [package]
 name = "zitadel-rust-client"
 version = "0.7.2"
 authors = []
 edition = "2024"
 resolver = "2"
+repository = "https://github.com/famedly/zitadel-rust-client"
+documentation = "https://docs.rs/zitadel-rust-client/latest"
+license = "Apache-2.0"
 
 [dependencies]
 time = { version = "0.3.36", features = ["serde"] }
@@ -127,7 +134,6 @@ same_functions_in_if_condition = "warn"
 same_name_method = "warn"
 semicolon_if_nothing_returned = "warn"
 str_to_string = "warn"
-string_to_string = "warn"
 suboptimal_flops = "warn"
 suspicious_operation_groupings = "warn"
 too_many_lines = "warn"

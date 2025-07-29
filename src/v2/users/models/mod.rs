@@ -2,6 +2,10 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
 
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 mod user_service_add_idp_link_body;
 pub use self::user_service_add_idp_link_body::UserServiceAddIdpLinkBody;
 mod user_service_create_passkey_registration_link_body;

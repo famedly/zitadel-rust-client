@@ -1,5 +1,9 @@
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
 #![allow(clippy::result_large_err)]
 #![allow(clippy::collapsible_if)]
+
 //! Communication with Zitadel
 
 /// A module with error type and related code

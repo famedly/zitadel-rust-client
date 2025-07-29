@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 //! Handles the authentication of the service account on zitadel and the renew
 //! of the token
 use std::{fmt::Debug, path::PathBuf};

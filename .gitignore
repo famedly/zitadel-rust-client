@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+#
+# SPDX-License-Identifier: Apache-2.0
+
 .env
 /target
 /cargo_home
 /tests/environment/zitadel/service-user.json
 
 .DS_Store
-tests/environment/zitadel/service-user.json

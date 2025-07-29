@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 use thiserror::Error;
 pub use tonic::Code as TonicErrorCode;
 use zitadel::credentials::ServiceAccountError;

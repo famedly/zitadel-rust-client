@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 // Some fields are optional in the spec, but they should not be
 #![allow(missing_docs)]
 use anyhow::Result;
