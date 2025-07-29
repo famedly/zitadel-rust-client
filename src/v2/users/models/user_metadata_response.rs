@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
 use base64::prelude::{Engine, BASE64_STANDARD};
 use serde::{Deserialize, Serialize};
 

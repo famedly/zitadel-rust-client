@@ -1,6 +1,11 @@
 #![allow(missing_docs, unused_imports, non_snake_case, missing_debug_implementations)]
 #![allow(
-	clippy::must_use_candidate,
+
+// SPDX-FileCopyrightText: 2025 2025 Famedly GmbH (info@famedly.com)
+//
+// SPDX-License-Identifier: Apache-2.0
+
+clippy::must_use_candidate,
 	clippy::return_self_not_must_use,
 	clippy::redundant_field_names,
 	clippy::new_without_default,
