@@ -89,6 +89,12 @@ impl Zitadel {
 	fn make_url(&self, endpoint: &str) -> Result<Url> {
 		self.domain.join(endpoint).context("Invalid relative path for the url")
 	}
+
+	/// Gets the Zitadel domain used by the client
+	#[must_use]
+	pub fn domain(&self) -> &Url {
+		&self.domain
+	}
 }
 
 /// Format a request for logging purposes; this *must* omit any
