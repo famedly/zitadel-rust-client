@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.2] - 2025-07-31
+
+### Features
+
+- Add getter for domain used by client
+
+### Bug Fixes
+
+- Remove wrong Project from workflows
+
 ## [0.7.1] - 2025-06-30
 
 ### Features
