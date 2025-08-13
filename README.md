@@ -15,7 +15,7 @@ A zitadel client written in rust
 
 ## Zitadel Version
 
-The required and tested version of Zitadel is **v2.61.2**
+The required and tested version of Zitadel is **v4.0.1**
 
 ## Adding new endpoints
 

@@ -1124,7 +1124,12 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 		Token::new(url.clone(), &service_account_file, client, None, None).await?.token().await?;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
 
-	assert!(token_verifier.verify(token).await.is_ok());
+	let verified_token = token_verifier.verify(token.clone()).await;
+
+	assert!(
+		verified_token.is_ok(),
+		"The verification wasn't successful. token: {token}. {verified_token:?}"
+	);
 
 	Ok(())
 }

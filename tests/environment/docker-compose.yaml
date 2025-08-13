@@ -1,9 +1,11 @@
 services:
   zitadel:
-    image: ghcr.io/zitadel/zitadel:v2.61.2
+    image: ghcr.io/zitadel/zitadel:v4.0.1
     command: start-from-init --masterkey "MasterkeyNeedsToHave32Characters" --tlsMode disabled --config /zitadel-config/zitadel-config.yaml --steps /zitadel-config/zitadel-init.yaml
     ports:
       - 8080:8080
+    environment:
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: false
     volumes:
       - type: bind
         source: ./zitadel/

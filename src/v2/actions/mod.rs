@@ -56,7 +56,7 @@ impl Zitadel {
 		Ok(PaginationHandler::<V2betaListTargetsRequest, _, _>::new(
 			self.clone(),
 			(params, sort_by, filters),
-			self.make_url("v2beta/actions/targets/_search")?,
+			self.make_url("v2beta/actions/targets/search")?,
 			None,
 		))
 	}
@@ -82,7 +82,7 @@ impl Zitadel {
 				return Ok(Some((x, (page, buffered))));
 			}
 
-			let url = self.make_url("v2beta/actions/executions/_search")?;
+			let url = self.make_url("v2beta/actions/executions/search")?;
 			let params = params.as_ref().unwrap_or(&PaginationParams::DEFAULT);
 			let sort_by = format!(
 				"{:?}",

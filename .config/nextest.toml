@@ -9,7 +9,7 @@ experimental = ["setup-scripts"]
 e2e = { max-threads = 1 }
 
 [script.start-e2e-env]
-command =  "./.config/starte2e.sh"
+command = "./.config/starte2e.sh"
 
 [[profile.default.scripts]]
 filter = "test(e2e)"
@@ -18,6 +18,9 @@ setup = "start-e2e-env"
 [[profile.default.overrides]]
 filter = "test(e2e)"
 test-group = "e2e"
+
+[profile.default]
+fail-fast = false
 
 [profile.ci]
 fail-fast = false
