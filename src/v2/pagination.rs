@@ -5,11 +5,11 @@ use anyhow_ext::{Context, Result};
 use anyhow_trace::anyhow_trace;
 use famedly_rust_utils::GenericCombinators;
 use futures::{FutureExt, Stream};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use url::Url;
 
 use super::HEADER_ZITADEL_ORGANIZATION_ID;
-use crate::v2::{users::ListQuery, Zitadel};
+use crate::v2::{Zitadel, users::ListQuery};
 
 /// A paginated response
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]

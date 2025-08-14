@@ -23,8 +23,8 @@ pub struct Zitadelmanagementv1ResetCustomPasswordlessRegistrationMessageTextToDe
 }
 
 impl Zitadelmanagementv1ResetCustomPasswordlessRegistrationMessageTextToDefaultResponse {
-	pub fn new(
-	) -> Zitadelmanagementv1ResetCustomPasswordlessRegistrationMessageTextToDefaultResponse {
+	pub fn new()
+	-> Zitadelmanagementv1ResetCustomPasswordlessRegistrationMessageTextToDefaultResponse {
 		Zitadelmanagementv1ResetCustomPasswordlessRegistrationMessageTextToDefaultResponse {
 			details: None,
 		}

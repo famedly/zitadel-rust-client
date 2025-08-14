@@ -3,15 +3,15 @@ mod models;
 
 use anyhow_ext::Result;
 use anyhow_trace::anyhow_trace;
-use base64::prelude::{Engine, BASE64_STANDARD};
+use base64::prelude::{BASE64_STANDARD, Engine};
 use famedly_rust_utils::GenericCombinators as _;
 use futures::Stream;
 pub use models::*;
 use serde_json::json;
 
 use super::{
-	pagination::{PaginationHandler, PaginationParams},
 	Zitadel,
+	pagination::{PaginationHandler, PaginationParams},
 };
 use crate::v2::HEADER_ZITADEL_ORGANIZATION_ID;
 

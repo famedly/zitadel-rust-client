@@ -2,9 +2,9 @@
 //! of the token
 use std::{fmt::Debug, path::PathBuf};
 
-use anyhow_ext::{bail, Context, Result};
+use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
-use jsonwebtoken::{encode, Algorithm, EncodingKey, Header};
+use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
@@ -195,8 +195,8 @@ mod tests {
 	use time::OffsetDateTime;
 	use url::Url;
 	use wiremock::{
-		matchers::{method, path},
 		Mock, MockServer, ResponseTemplate,
+		matchers::{method, path},
 	};
 
 	use crate::v2::authentication::{self, ServiceAccount, Token};

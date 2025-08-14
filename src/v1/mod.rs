@@ -1,4 +1,5 @@
 #![allow(clippy::result_large_err)]
+#![allow(clippy::collapsible_if)]
 //! Communication with Zitadel
 
 /// A module with error type and related code
@@ -10,32 +11,30 @@ use std::{path::PathBuf, sync::Arc};
 use error::Result;
 use tokio::sync::RwLock;
 use tonic::{
+	Request,
 	metadata::AsciiMetadataValue,
 	transport::{Channel, Endpoint},
-	Request,
 };
 use url::Url;
 pub use zitadel::api::zitadel::{
 	management::v1::{
-		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
 		ImportHumanUserRequest,
+		import_human_user_request::{Email, HashedPassword, Idp, Phone, Profile},
 	},
-	user::v1::{user::Type as UserType, Gender},
+	user::v1::{Gender, user::Type as UserType},
 };
 use zitadel::{
 	api::zitadel::{
 		admin::v1::{
-			admin_service_client::AdminServiceClient, AddIamMemberRequest, AddLdapProviderRequest,
-			GetOrgByIdRequest, ListEventsRequest, ListOrgsRequest, ListOrgsResponse,
+			AddIamMemberRequest, AddLdapProviderRequest, GetOrgByIdRequest, ListEventsRequest,
+			ListOrgsRequest, ListOrgsResponse, admin_service_client::AdminServiceClient,
 		},
-		auth::v1::{auth_service_client::AuthServiceClient, GetMyUserRequest},
+		auth::v1::{GetMyUserRequest, auth_service_client::AuthServiceClient},
 		idp::v1::IdpUserLink,
 		management::v1::{
-			bulk_set_org_metadata_request::Metadata,
-			management_service_client::ManagementServiceClient, AddOrgRequest,
-			AddProjectMemberRequest, AddProjectRequest, AddProjectRoleRequest, AddUserGrantRequest,
-			BulkAddProjectRolesRequest, BulkAddProjectRolesResponse, BulkSetOrgMetadataRequest,
-			GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
+			AddOrgRequest, AddProjectMemberRequest, AddProjectRequest, AddProjectRoleRequest,
+			AddUserGrantRequest, BulkAddProjectRolesRequest, BulkAddProjectRolesResponse,
+			BulkSetOrgMetadataRequest, GetMyOrgRequest, GetOrgMetadataRequest, GetUserByIdRequest,
 			GetUserByLoginNameGlobalRequest, GetUserMetadataRequest, ListHumanLinkedIdPsRequest,
 			ListOrgMetadataRequest, ListOrgMetadataResponse, ListProjectRolesRequest,
 			ListProjectRolesResponse, ListUserGrantRequest, ListUserGrantResponse,
@@ -45,13 +44,15 @@ use zitadel::{
 			UpdateHumanEmailResponse, UpdateHumanPhoneRequest, UpdateHumanPhoneResponse,
 			UpdateHumanProfileRequest, UpdateHumanProfileResponse, UpdateProjectRequest,
 			UpdateUserGrantRequest, UpdateUserNameRequest, UpdateUserNameResponse,
+			bulk_set_org_metadata_request::Metadata,
+			management_service_client::ManagementServiceClient,
 		},
-		metadata::v1::{metadata_query::Query, MetadataKeyQuery, MetadataQuery},
+		metadata::v1::{MetadataKeyQuery, MetadataQuery, metadata_query::Query},
 		org::v1::{Org, OrgFieldName, OrgQuery},
 		project::v1::PrivateLabelingSetting,
 		user::v1::{
-			user_grant_query::Query as UserGrantQueryEnum, User, UserFieldName, UserGrantQuery,
-			UserGrantUserIdQuery,
+			User, UserFieldName, UserGrantQuery, UserGrantUserIdQuery,
+			user_grant_query::Query as UserGrantQueryEnum,
 		},
 		v1::{ListQuery, ListQueryMethod},
 	},
@@ -144,8 +145,8 @@ fn get_authorization(
 
 /// Create a [hyper_proxy::ProxyConnector] configured by the env
 /// variables `HTTP_PROXY,` `HTTPS_PROXY`, and `NO_PROXY`
-fn system_proxy_connector(
-) -> Result<Option<hyper_proxy::ProxyConnector<hyper::client::HttpConnector>>> {
+fn system_proxy_connector()
+-> Result<Option<hyper_proxy::ProxyConnector<hyper::client::HttpConnector>>> {
 	let http_proxy = proxyvars::http();
 	let https_proxy = proxyvars::https();
 	if let (None, None) = (&http_proxy, &https_proxy) {
@@ -483,7 +484,9 @@ impl Zitadel {
 		// found for the given key
 		if let Err(status) = &response {
 			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rph32") {
-				tracing::debug!("No organization metadata found for key '{key}'. Organization ID: {organization_id:?}");
+				tracing::debug!(
+					"No organization metadata found for key '{key}'. Organization ID: {organization_id:?}"
+				);
 				return Ok(None);
 			}
 		}
@@ -551,7 +554,9 @@ impl Zitadel {
 		// found for the given key
 		if let Err(status) = &response {
 			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rgh32") {
-				tracing::debug!("No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}");
+				tracing::debug!(
+					"No user '{user_id}' metadata found for key '{key}'. Organization ID: {organization_id:?}"
+				);
 				return Ok(None);
 			}
 		}

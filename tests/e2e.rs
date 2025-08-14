@@ -10,21 +10,21 @@
 
 use std::{collections::HashMap, path::Path};
 
-use anyhow_ext::{bail, Result};
+use anyhow_ext::{Result, bail};
 use famedly_rust_utils::GenericCombinators;
-use futures::{future, StreamExt, TryStreamExt};
+use futures::{StreamExt, TryStreamExt, future};
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
 use rand::distr::{Alphanumeric, SampleString};
 use test_log::{self, test};
 use time::{Duration, OffsetDateTime};
 use url::Url;
 use wiremock::{
-	matchers::{method, path},
 	Mock, MockServer, ResponseTemplate,
+	matchers::{method, path},
 };
 use zitadel_rust_client::v2::{
-	authentication::Token, management::*, organization::*, pagination::PaginationParams, token,
-	users::*, Zitadel,
+	Zitadel, authentication::Token, management::*, organization::*, pagination::PaginationParams,
+	token, users::*,
 };
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
@@ -71,6 +71,12 @@ async fn tear_down(zitadel: &Zitadel) {
 		.list_users(None, None, queries)
 		.expect("Error getting the list of users for tear down")
 		.try_for_each(|user| async move {
+			tracing::info!("user: {user:?}");
+			if let Some(username) = user.username()
+				&& username == "zitadel-admin@zitadel.localhost"
+			{
+				return Ok(());
+			}
 			let id = user.user_id().expect("Couldn't get user id during tear down.");
 			zitadel.delete_user(id).await.expect("Error deleting user");
 			Ok(())
@@ -94,6 +100,11 @@ async fn tear_down(zitadel: &Zitadel) {
 		.expect("Error getting the list of projects to tear down")
 		.try_for_each(|project| async move {
 			tracing::debug!("{:?}", project);
+			if let Some(name) = project.name()
+				&& name == "ZITADEL"
+			{
+				return Ok(());
+			}
 
 			let id = project.id().expect("Couldn't get project id during tear down.");
 
@@ -247,7 +258,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		zitadel.create_organization_with_admin(query).await?.organization_id().unwrap().clone();
 
 	let project_grant_id = zitadel
-		.add_project_grant(None, &project12, org2.clone(), None)
+		.add_project_grant(Some(org1.clone()), &project12, org2.clone(), None)
 		.await?
 		.grant_id()
 		.unwrap()
@@ -480,8 +491,10 @@ async fn test_e2e_create_organization() -> Result<()> {
 			.list_users(
 				None,
 				None,
-				Some(vec![SearchQuery::new()
-					.with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))])
+				Some(vec![
+					SearchQuery::new()
+						.with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))
+				])
 			)?
 			.count()
 			.await,
@@ -582,12 +595,14 @@ async fn test_e2e_create_action() -> Result<()> {
 
 	assert!(res.is_ok());
 
-	let stream = zitadel.list_actions(
-		None,
-		None,
-		Some(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
-	)?;
+	let stream =
+		zitadel.list_actions(
+			None,
+			None,
+			Some(vec![V1ActionQuery::new().with_action_name_query(
+				V1ActionNameQuery::new().with_name("test-action".to_owned()),
+			)]),
+		)?;
 
 	let actions = stream
 		.and_then(|action| future::ok(action.name().expect("No name found for action").clone()))
@@ -664,12 +679,14 @@ async fn test_e2e_update_action() -> Result<()> {
 		)
 		.await?;
 
-	let mut stream = zitadel.list_actions(
-		None,
-		None,
-		Some(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
-	)?;
+	let mut stream =
+		zitadel.list_actions(
+			None,
+			None,
+			Some(vec![V1ActionQuery::new().with_action_name_query(
+				V1ActionNameQuery::new().with_name("test-action".to_owned()),
+			)]),
+		)?;
 
 	let action = stream.next().await.expect("Action must exist").unwrap();
 
@@ -699,12 +716,14 @@ async fn test_e2e_delete_action() -> Result<()> {
 
 	zitadel.delete_action(action_id.to_owned(), None).await?;
 
-	let stream = zitadel.list_actions(
-		None,
-		None,
-		Some(vec![V1ActionQuery::new()
-			.with_action_name_query(V1ActionNameQuery::new().with_name("test-action".to_owned()))]),
-	)?;
+	let stream =
+		zitadel.list_actions(
+			None,
+			None,
+			Some(vec![V1ActionQuery::new().with_action_name_query(
+				V1ActionNameQuery::new().with_name("test-action".to_owned()),
+			)]),
+		)?;
 
 	assert_eq!(stream.count().await, 0);
 
@@ -933,7 +952,7 @@ async fn test_e2e_delete_user() -> Result<()> {
 	create_user(&zitadel, "John_2", user_last_name).await?;
 
 	let queries = Some(vec![
-		SearchQuery::new().with_last_name_query(LastNameQuery::new(user_last_name.to_owned()))
+		SearchQuery::new().with_last_name_query(LastNameQuery::new(user_last_name.to_owned())),
 	]);
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
@@ -1120,6 +1139,8 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 		.await?;
 	println!("body:\n{}", r.text().await?);
 
+	tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
 	let token =
 		Token::new(url.clone(), &service_account_file, client, None, None).await?.token().await?;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
@@ -1278,8 +1299,10 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let project_id = project.id().expect("Project ID should be present in response").to_owned();
 
 	// Verify project exists in the correct organization
-	let project_request = vec![V1ProjectQuery::new()
-		.with_name_query(V1ProjectNameQuery::new().with_name("OrgScopedProject".to_owned()))];
+	let project_request = vec![
+		V1ProjectQuery::new()
+			.with_name_query(V1ProjectNameQuery::new().with_name("OrgScopedProject".to_owned())),
+	];
 
 	// Should find no projects in default org
 	let projects_default_org = zitadel
@@ -1311,8 +1334,10 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	// Verify application exists in the correct project/organization
 	// NOTE: Maybe a Zitadel bug -> request uses the project ID to search
 	// for applications and disregards the org_id
-	let app_request = vec![V1AppQuery::new()
-		.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned()))];
+	let app_request = vec![
+		V1AppQuery::new()
+			.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned())),
+	];
 	let apps = zitadel
 		.list_applications(project_id.clone(), Some(org_id.clone()), None, Some(app_request))
 		.expect("Failed to list applications")

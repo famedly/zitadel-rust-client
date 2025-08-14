@@ -1,4 +1,4 @@
-use base64::prelude::{Engine, BASE64_STANDARD};
+use base64::prelude::{BASE64_STANDARD, Engine};
 use serde::{Deserialize, Serialize};
 
 use crate::v2::users::models;

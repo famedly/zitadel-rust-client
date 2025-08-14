@@ -9,8 +9,8 @@ use futures::Stream;
 pub use models::*;
 
 use super::{
-	pagination::{PaginationHandler, PaginationParams},
 	Zitadel,
+	pagination::{PaginationHandler, PaginationParams},
 };
 
 #[anyhow_trace::anyhow_trace]

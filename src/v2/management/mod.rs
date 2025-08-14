@@ -9,8 +9,8 @@ pub use models::*;
 use reqwest::header::HeaderValue;
 
 use super::{
+	HEADER_ZITADEL_ORGANIZATION_ID, Zitadel,
 	pagination::{PaginationHandler, PaginationParams},
-	Zitadel, HEADER_ZITADEL_ORGANIZATION_ID,
 };
 
 #[anyhow_trace]
@@ -524,7 +524,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		metadata: impl Iterator<Item = (String, impl AsRef<[u8]> + Send)> + Send,
 	) -> Result<V1BulkSetOrgMetadataResponse> {
-		use base64::{engine::general_purpose::STANDARD, Engine};
+		use base64::{Engine, engine::general_purpose::STANDARD};
 		let req = V1BulkSetOrgMetadataRequest::new().with_metadata(
 			metadata
 				.map(|(k, v)| {

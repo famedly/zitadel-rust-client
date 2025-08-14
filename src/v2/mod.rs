@@ -15,7 +15,7 @@ pub mod token;
 pub mod users;
 use std::{path::PathBuf, sync::Arc};
 
-use anyhow_ext::{bail, Context, Result};
+use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
 use authentication::Token;
 use headers::{Authorization, HeaderMapExt};

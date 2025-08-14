@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cache_control::CacheControl;
 use josekit::{jwk::JwkSet, jws::RS256, jwt, jwt::JwtPayload};
-use reqwest::{header, Client, Response};
+use reqwest::{Client, Response, header};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use url::Url;
