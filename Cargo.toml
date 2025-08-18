@@ -46,7 +46,6 @@ anyhow_trace = "0.1.3"
 anyhow_ext = "0.2.1"
 
 [features]
-default = ["v1"]
 v1 = [
   "dep:tonic",
   "dep:zitadel",
