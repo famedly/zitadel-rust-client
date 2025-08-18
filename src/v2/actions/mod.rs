@@ -8,10 +8,7 @@ use anyhow_ext::Result;
 use futures::Stream;
 pub use models::*;
 
-use super::{
-	Zitadel,
-	pagination::{PaginationHandler, PaginationParams},
-};
+use super::{Zitadel, pagination::PaginationParams};
 
 #[anyhow_trace::anyhow_trace]
 impl Zitadel {
@@ -47,18 +44,37 @@ impl Zitadel {
 	}
 
 	/// [List targets](https://zitadel.com/docs/apis/resources/action_service_v2/action-service-list-targets)
-	pub fn list_targets(
-		&self,
-		params: Option<PaginationParams>,
-		sort_by: Option<V2betaTargetFieldName>,
-		filters: Option<Vec<V2betaTargetSearchFilter>>,
-	) -> Result<impl Stream<Item = Result<V2betaTarget>> + Send + Sync> {
-		Ok(PaginationHandler::<V2betaListTargetsRequest, _, _>::new(
-			self.clone(),
-			(params, sort_by, filters),
-			self.make_url("v2beta/actions/targets/search")?,
-			None,
-		))
+	pub fn list_targets<'a>(
+		&'a self,
+		params: &'a Option<PaginationParams>,
+		sort_by: &'a Option<V2betaTargetFieldName>,
+		filters: &'a Option<Vec<V2betaTargetSearchFilter>>,
+	) -> impl Stream<Item = Result<V2betaTarget>> + Send + Sync {
+		// TODO: factor out pagination. This endpoint is an exception because all others
+		// return `result` field, but this one returns `targets`. So it's a quick fix.
+		use crate::v2::pagination::PaginationRequest;
+		#[derive(Debug, Clone, serde::Deserialize)]
+		struct Response {
+			#[serde(default)]
+			targets: Vec<V2betaTarget>,
+		}
+		futures::stream::try_unfold((0, VecDeque::new()), async move |(mut page, mut buffered)| {
+			if let Some(x) = buffered.pop_front() {
+				return Ok(Some((x, (page, buffered))));
+			}
+
+			let url = self.make_url("v2beta/actions/targets/search")?;
+			let body: V2betaListTargetsRequest =
+				(params.clone(), sort_by.clone(), filters.clone()).to_paginated_request(page);
+			let req = self.client.post(url.clone()).json(&body).build()?;
+			buffered = self.send_request::<Response>(req).await?.targets.into();
+			page += 1;
+
+			let Some(x) = buffered.pop_front() else {
+				return Ok(None);
+			};
+			Ok(Some((x, (page, buffered))))
+		})
 	}
 
 	/// [Set Execution | ZITADEL Docs](https://zitadel.com/docs/apis/resources/action_service_v2/action-service-set-execution)
@@ -77,6 +93,8 @@ impl Zitadel {
 		params: &'a Option<PaginationParams>,
 		sort_by: &'a Option<ListExecutionsSorting>,
 	) -> impl Stream<Item = Result<V2betaExecution>> + Send + Sync + use<'a> {
+		// TODO: factor out pagination. This endpoint is an exception because all others
+		// accepts pagination parameters in the json body, this one as query params
 		futures::stream::try_unfold((0, VecDeque::new()), async |(mut page, mut buffered)| {
 			if let Some(x) = buffered.pop_front() {
 				return Ok(Some((x, (page, buffered))));
