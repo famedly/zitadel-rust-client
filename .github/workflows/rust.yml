@@ -120,3 +120,13 @@ jobs:
       uses: codecov/test-results-action@v1
       with:
         token: ${{secrets.CODECOV_TOKEN}}
+
+  publish:
+    needs: [simple-checks, tests]
+    uses: famedly/backend-build-workflows/.github/workflows/publish-crate.yml@v2
+    with:
+      registry-name: "crates-io"
+      registry-index: "https://github.com/rust-lang/crates.io-index"
+    secrets:
+      CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+      registry-auth-token: ${{ secrets.CRATES_IO_TOKEN }}
