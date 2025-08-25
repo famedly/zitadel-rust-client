@@ -24,6 +24,7 @@ use std::{path::PathBuf, sync::Arc};
 use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
 use authentication::Token;
+use famedly_rust_utils::GenericCombinators;
 use headers::{Authorization, HeaderMapExt};
 use reqwest::{Client, Request};
 use serde::de::DeserializeOwned;
@@ -40,6 +41,8 @@ const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
 pub struct Zitadel {
 	/// Token for performing the requests as a service account
 	token: Arc<Token>,
+	/// Raw access token, without any renewals
+	raw_token: Option<String>,
 	/// Zitadel domain
 	domain: Url,
 	/// Client for performing the requests
@@ -58,17 +61,26 @@ impl Zitadel {
 		let token =
 			Token::new(url.clone(), &service_account_file, client.clone(), None, aud).await?;
 
-		Ok(Self { token: Arc::new(token), domain: url, client })
+		Ok(Self { token: Arc::new(token), raw_token: None, domain: url, client })
+	}
+
+	/// Sets raw token to create a temporary client copy to perform some request
+	/// with external (user supplied) token.
+	#[must_use]
+	pub fn with_raw_token(&self, token: String) -> Self {
+		self.clone().mutate(|x| x.raw_token = Some(token))
 	}
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
 	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
+		let token: &String = if let Some(raw_token) = self.raw_token.as_ref() {
+			raw_token
+		} else {
+			&self.token.token().await?
+		};
 		let headers = request.headers_mut();
-		HeaderMapExt::typed_insert(
-			headers,
-			Authorization::bearer(&self.token.token().await?).dot()?,
-		);
+		HeaderMapExt::typed_insert(headers, Authorization::bearer(token).dot()?);
 		headers.append("Content-Type", "application/json".parse()?);
 		headers.append("Accept", "application/json".parse()?);
 
