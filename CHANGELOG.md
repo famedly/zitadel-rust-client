@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2025-08-28
+
+### Refactor
+
+- Change the josekit dep to official version
+
 ## [0.8.0] - 2025-08-20
 
 ### Features
