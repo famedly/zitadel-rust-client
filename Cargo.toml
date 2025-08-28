@@ -46,7 +46,7 @@ headers_old = { package = "headers", version = "0.3", optional = true }
 headers = "0.4"
 futures = "0.3.30"
 pbjson-types = { version = "0.6.0", optional = true }
-josekit = { git = "https://github.com/famedly/josekit-rs.git", rev = "5941d0f39d034e9c6d96dc47f391926f5e3038fa" }
+josekit = "0.10.3"
 cache_control = "0.2.0"
 famedly_rust_utils = "0.2.0"
 anyhow_trace = "0.1.3"
