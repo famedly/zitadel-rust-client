@@ -56,6 +56,8 @@ mod v2beta_list_executions_response;
 pub use self::v2beta_list_executions_response::V2betaListExecutionsResponse;
 mod v2beta_list_targets_request;
 pub use self::v2beta_list_targets_request::V2betaListTargetsRequest;
+mod v2beta_list_executions_request;
+pub use self::v2beta_list_executions_request::V2betaListExecutionsRequest;
 mod v2beta_list_targets_response;
 pub use self::v2beta_list_targets_response::V2betaListTargetsResponse;
 mod v2beta_pagination_request;

@@ -95,37 +95,26 @@ impl Zitadel {
 	pub fn list_executions<'a>(
 		&'a self,
 		params: &'a Option<PaginationParams>,
-		sort_by: &'a Option<ListExecutionsSorting>,
+		sort_by: &'a Option<V2betaExecutionFieldName>,
+		filters: &'a Option<Vec<V2betaExecutionSearchFilter>>,
 	) -> impl Stream<Item = Result<V2betaExecution>> + Send + Sync + use<'a> {
 		// TODO: factor out pagination. This endpoint is an exception because all others
 		// accepts pagination parameters in the json body, this one as query params
-		futures::stream::try_unfold((0, VecDeque::new()), async |(mut page, mut buffered)| {
+		use crate::v2::pagination::PaginationRequest;
+
+		futures::stream::try_unfold((0, VecDeque::new()), async move |(mut page, mut buffered)| {
 			if let Some(x) = buffered.pop_front() {
 				return Ok(Some((x, (page, buffered))));
 			}
 
 			let url = self.make_url("v2beta/actions/executions/search")?;
-			let params = params.as_ref().unwrap_or(&PaginationParams::DEFAULT);
-			let sort_by = format!(
-				"{:?}",
-				sort_by
-					.as_ref()
-					.unwrap_or(&ListExecutionsSorting::EXECUTION_FIELD_NAME_UNSPECIFIED)
-			);
-			let req = self
-				.client
-				.post(url.clone())
-				.query(&[
-					("pagination.limit", params.page_size.to_string()),
-					("pagination.offset", (page * params.page_size).to_string()),
-					("pagination.asc", params.asc.to_string()),
-					("sortingColumn", sort_by),
-				])
-				.build()?;
+			let body: V2betaListExecutionsRequest =
+				(params.clone(), sort_by.clone(), filters.clone()).to_paginated_request(page);
+			let req = self.client.post(url.clone()).json(&body).build()?;
 			buffered = self
 				.send_request::<V2betaListExecutionsResponse>(req)
 				.await?
-				.result
+				.executions
 				.unwrap_or_default()
 				.into();
 			page += 1;

@@ -22,13 +22,13 @@ use serde_json::Value;
 pub struct V2betaListExecutionsResponse {
 	#[serde(rename = "pagination")]
 	pagination: Option<super::V2betaPaginationResponse>,
-	#[serde(rename = "result")]
-	pub result: Option<Vec<super::V2betaExecution>>,
+	#[serde(rename = "executions")]
+	pub executions: Option<Vec<super::V2betaExecution>>,
 }
 
 impl V2betaListExecutionsResponse {
 	pub fn new() -> V2betaListExecutionsResponse {
-		V2betaListExecutionsResponse { pagination: None, result: None }
+		V2betaListExecutionsResponse { pagination: None, executions: None }
 	}
 
 	pub fn set_pagination(&mut self, pagination: super::V2betaPaginationResponse) {
@@ -51,23 +51,23 @@ impl V2betaListExecutionsResponse {
 		self.pagination = None;
 	}
 
-	pub fn set_result(&mut self, result: Vec<super::V2betaExecution>) {
-		self.result = Some(result);
+	pub fn set_executions(&mut self, executions: Vec<super::V2betaExecution>) {
+		self.executions = Some(executions);
 	}
 
-	pub fn with_result(
+	pub fn with_executions(
 		mut self,
-		result: Vec<super::V2betaExecution>,
+		executions: Vec<super::V2betaExecution>,
 	) -> V2betaListExecutionsResponse {
-		self.result = Some(result);
+		self.executions = Some(executions);
 		self
 	}
 
-	pub fn result(&self) -> Option<&Vec<super::V2betaExecution>> {
-		self.result.as_ref()
+	pub fn executions(&self) -> Option<&Vec<super::V2betaExecution>> {
+		self.executions.as_ref()
 	}
 
-	pub fn reset_result(&mut self) {
-		self.result = None;
+	pub fn reset_executions(&mut self) {
+		self.executions = None;
 	}
 }
