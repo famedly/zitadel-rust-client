@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2025-09-04
+
+### Bug Fixes
+
+- [**breaking**] Update `list_executions` api call
+
 ## [0.8.1] - 2025-08-28
 
 ### Refactor
