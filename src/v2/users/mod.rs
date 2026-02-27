@@ -138,7 +138,7 @@ impl Zitadel {
 		&self,
 		user_id: &str,
 		params: Option<PaginationParams>,
-	) -> Result<impl Stream<Item = Result<IdpLink>> + Send + Sync> {
+	) -> Result<impl Stream<Item = Result<IdpLink>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			params,
@@ -170,7 +170,7 @@ impl Zitadel {
 		params: Option<PaginationParams>,
 		sorting: Option<UserFieldName>,
 		queries: Option<Vec<SearchQuery>>,
-	) -> Result<impl Stream<Item = Result<User>> + Send + Sync> {
+	) -> Result<impl Stream<Item = Result<User>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, sorting, queries),
@@ -634,7 +634,7 @@ impl Zitadel {
 		user_id: &str,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<KeyQuery>>,
-	) -> Result<impl Stream<Item = Result<UserMetadataResponse>> + Send + Sync> {
+	) -> Result<impl Stream<Item = Result<UserMetadataResponse>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),

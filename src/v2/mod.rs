@@ -25,7 +25,10 @@ use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
 use authentication::Token;
 use headers::{Authorization, HeaderMapExt};
-use reqwest::{Client, Request};
+use reqwest::Request;
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+#[cfg(feature = "telemetry")]
+use rust_telemetry::reqwest_middleware::OtelMiddleware;
 use serde::de::DeserializeOwned;
 use url::Url;
 
@@ -33,7 +36,7 @@ use url::Url;
 pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
 
 /// Default timeout value to be used in various places
-const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 /// Zitadel client for using the HTTP v2 api
 #[derive(Debug, Clone)]
@@ -43,7 +46,7 @@ pub struct Zitadel {
 	/// Zitadel domain
 	domain: Url,
 	/// Client for performing the requests
-	client: Client,
+	client: ClientWithMiddleware,
 }
 
 #[anyhow_trace]
@@ -54,7 +57,12 @@ impl Zitadel {
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
 	/// - `aud` - Custom `aud` claim to use for auth (`url` is used if unset)
 	pub async fn new(url: Url, service_account_file: PathBuf, aud: Option<String>) -> Result<Self> {
-		let client = Client::new();
+		let client_builder =
+			ClientBuilder::new(reqwest::Client::builder().timeout(DEFAULT_TIMEOUT).build()?);
+		#[cfg(feature = "telemetry")]
+		let client_builder = client_builder.with(OtelMiddleware);
+		let client = client_builder.build();
+
 		let token =
 			Token::new(url.clone(), &service_account_file, client.clone(), None, aud).await?;
 
@@ -63,6 +71,7 @@ impl Zitadel {
 
 	/// Send the request to zitadel server and returns the body of the request
 	/// in case of success
+	#[tracing::instrument(skip_all)]
 	async fn send_request<T: DeserializeOwned>(&self, mut request: Request) -> Result<T> {
 		let headers = request.headers_mut();
 		HeaderMapExt::typed_insert(
@@ -79,10 +88,12 @@ impl Zitadel {
 		let response = self.client.execute(request).await?;
 		let status_code = response.status();
 		let body = response.text().await.with_context(|| {
+			tracing::debug!("Error retrieving the body. Response status code: {status_code}");
 			format!("Error retrieving the body. Response status code: {status_code}")
 		})?;
 
 		if !status_code.is_success() {
+			tracing::debug!("The request resulted in error. Response: {status_code}. Body: {body}");
 			bail!("The request resulted in error. Response: {status_code}. Body: {body}")
 		}
 

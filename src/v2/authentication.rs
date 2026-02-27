@@ -9,6 +9,7 @@ use std::{fmt::Debug, path::PathBuf};
 use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
+use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
@@ -62,7 +63,7 @@ struct InnerToken {
 	header: Header,
 	claims: Claims,
 	key: EncodingKey,
-	client: reqwest::Client,
+	client: ClientWithMiddleware,
 	scope: Option<Vec<String>>,
 	url: Url,
 }
@@ -86,7 +87,7 @@ impl Token {
 	pub async fn new(
 		url: Url,
 		service_account_file: &PathBuf,
-		client: reqwest::Client,
+		client: ClientWithMiddleware,
 		scope: Option<Vec<String>>,
 		aud: Option<String>,
 	) -> Result<Self> {
@@ -195,6 +196,7 @@ impl Debug for InnerToken {
 mod tests {
 
 	use anyhow::Result;
+	use reqwest_middleware::ClientBuilder;
 	use tempfile::tempdir;
 	use time::OffsetDateTime;
 	use url::Url;
@@ -238,8 +240,14 @@ mod tests {
 			.await;
 
 		let url = Url::parse(&mock_server.uri())?;
-		let token =
-			Token::new(url, &service_account_file, reqwest::Client::new(), None, None).await?;
+		let token = Token::new(
+			url,
+			&service_account_file,
+			ClientBuilder::new(reqwest::Client::new()).build(),
+			None,
+			None,
+		)
+		.await?;
 
 		assert_eq!(token.token().await?, zitadel_token);
 		// A second call shouldn't trigger a renew

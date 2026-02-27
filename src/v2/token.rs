@@ -7,9 +7,14 @@ use std::sync::Arc;
 use cache_control::CacheControl;
 use josekit::{jwk::JwkSet, jws::RS256, jwt, jwt::JwtPayload};
 use reqwest::{Client, Response, header};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+#[cfg(feature = "telemetry")]
+use rust_telemetry::reqwest_middleware::OtelMiddleware;
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use url::Url;
+
+use crate::v2::DEFAULT_TIMEOUT;
 
 /// Zitadel client to verify a token's validity
 #[derive(Debug, Clone)]
@@ -17,7 +22,7 @@ pub struct ZitadelJWTVerifier {
 	/// Zitadel domain
 	domain: Url,
 	/// Client for performing the requests
-	client: Client,
+	client: ClientWithMiddleware,
 	/// Key set cache from Zitadel
 	jwks_cache: Arc<RwLock<JwkSetCache>>,
 }
@@ -36,9 +41,21 @@ impl ZitadelJWTVerifier {
 	#[must_use]
 	pub fn new(url: Url) -> Self {
 		let jwks = JwkSet::new();
+		// We expect the client to be built successfully because we are only adding a
+		// timeout to it
+		#[allow(clippy::expect_used)]
+		let client_builder = ClientBuilder::new(
+			Client::builder()
+				.timeout(DEFAULT_TIMEOUT)
+				.build()
+				.expect("Failed to build reqwest client"),
+		);
+		#[cfg(feature = "telemetry")]
+		let client_builder = client_builder.with(OtelMiddleware);
+		let client = client_builder.build();
 		Self {
 			domain: url,
-			client: Client::new(),
+			client,
 			jwks_cache: Arc::new(RwLock::new(JwkSetCache {
 				jwks,
 				expires_at: OffsetDateTime::now_utc(),
@@ -170,6 +187,9 @@ pub enum TokenValidationError {
 /// Enum for errors that can happen whilst renewing the jwks
 #[derive(Debug, thiserror::Error)]
 pub enum RenewJwksError {
+	/// General error from reqwest middleware request
+	#[error("Failed to do the reqwest middleware request: {0}")]
+	ReqwestMiddlewareError(#[from] reqwest_middleware::Error),
 	/// General error from reqwest request
 	#[error("Failed to do the reqwest: {0}")]
 	ReqwestError(#[from] reqwest::Error),

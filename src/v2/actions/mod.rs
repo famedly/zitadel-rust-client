@@ -53,7 +53,7 @@ impl Zitadel {
 		params: &'a Option<PaginationParams>,
 		sort_by: &'a Option<V2betaTargetFieldName>,
 		filters: &'a Option<Vec<V2betaTargetSearchFilter>>,
-	) -> impl Stream<Item = Result<V2betaTarget>> + Send + Sync {
+	) -> impl Stream<Item = Result<V2betaTarget>> + Send {
 		// TODO: factor out pagination. This endpoint is an exception because all others
 		// return `result` field, but this one returns `targets`. So it's a quick fix.
 		use crate::v2::pagination::PaginationRequest;
@@ -97,7 +97,7 @@ impl Zitadel {
 		params: &'a Option<PaginationParams>,
 		sort_by: &'a Option<V2betaExecutionFieldName>,
 		filters: &'a Option<Vec<V2betaExecutionSearchFilter>>,
-	) -> impl Stream<Item = Result<V2betaExecution>> + Send + Sync + use<'a> {
+	) -> impl Stream<Item = Result<V2betaExecution>> + Send + use<'a> {
 		// TODO: factor out pagination. This endpoint is an exception because all others
 		// accepts pagination parameters in the json body, this one as query params
 		use crate::v2::pagination::PaginationRequest;

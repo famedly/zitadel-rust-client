@@ -36,7 +36,7 @@ pub(crate) trait PaginationRequest<Item> {
 	fn page_size(&self) -> usize;
 }
 
-type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send + Sync;
+type DataFuture<T> = dyn Future<Output = Result<Vec<T>>> + Send;
 
 /// A handler for paginated requests.
 ///

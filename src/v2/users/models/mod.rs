@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::return_self_not_must_use)]
+#![allow(clippy::derivable_impls)]
 
 // SPDX-FileCopyrightText: 2025 Famedly GmbH (info@famedly.com)
 //

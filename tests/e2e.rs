@@ -23,6 +23,7 @@ use famedly_zitadel_rust_client::v2::{
 use futures::{StreamExt, TryStreamExt, future};
 use josekit::{jws::JwsHeader, jwt::JwtPayload};
 use rand::distr::{Alphanumeric, SampleString};
+use reqwest_middleware::ClientWithMiddleware;
 use test_log::{self, test};
 use time::{Duration, OffsetDateTime};
 use url::Url;
@@ -1120,7 +1121,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 async fn test_e2e_simple_token_verification() -> Result<()> {
 	let url = Url::parse("http://localhost:8080")?;
 	let service_account_file = Path::new(USER_SERVICE_PATH).to_path_buf();
-	let client = reqwest::Client::new();
+	let client: ClientWithMiddleware = reqwest::Client::new().into();
 
 	// Work around to get set the token type to JWT for the service account
 	// TODO: Remove it once we have the zitadel bootstrap in place

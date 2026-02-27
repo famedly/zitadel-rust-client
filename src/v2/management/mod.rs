@@ -84,7 +84,7 @@ impl Zitadel {
 		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<V1ActionQuery>>,
-	) -> Result<impl Stream<Item = Result<V1Action>> + Send + Sync> {
+	) -> Result<impl Stream<Item = Result<V1Action>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
