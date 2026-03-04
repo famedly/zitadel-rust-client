@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2026-03-04
+
+### Features
+
+- Send traceid in the requests
+
 ## [0.9.0] - 2025-09-04
 
 ### Bug Fixes
