@@ -15,6 +15,7 @@ pub mod events;
 pub mod management;
 pub mod organization;
 pub mod pagination;
+pub mod private_key_jwt;
 pub mod project;
 /// Helper client to authenticate tokens
 pub mod token;

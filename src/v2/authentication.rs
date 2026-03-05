@@ -8,34 +8,16 @@ use std::{fmt::Debug, path::PathBuf};
 
 use anyhow_ext::{Context, Result, bail};
 use anyhow_trace::anyhow_trace;
-use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use url::Url;
 
+use super::private_key_jwt::PrivateKeyJWT;
+use crate::v2::private_key_jwt::KeyType;
+
 const MIN_SCOPE: [&str; 2] = ["openid", "urn:zitadel:iam:org:project:id:zitadel:aud"];
-
-#[derive(Deserialize, Serialize)]
-struct ServiceAccount {
-	#[allow(dead_code)]
-	r#type: String,
-	#[serde(rename = "keyId")]
-	key_id: String,
-	key: String,
-	#[serde(rename = "userId")]
-	user_id: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-	iss: String,
-	sub: String,
-	aud: String,
-	iat: i64,
-	exp: i64,
-}
 
 #[derive(Deserialize, Serialize)]
 pub(super) struct AuthResponse {
@@ -60,9 +42,7 @@ struct InnerToken {
 	/// Time when the token will expiry
 	pub expiry: OffsetDateTime,
 
-	header: Header,
-	claims: Claims,
-	key: EncodingKey,
+	private_key_jwt: PrivateKeyJWT,
 	client: ClientWithMiddleware,
 	scope: Option<Vec<String>>,
 	url: Url,
@@ -91,29 +71,20 @@ impl Token {
 		scope: Option<Vec<String>>,
 		aud: Option<String>,
 	) -> Result<Self> {
-		let service_account: ServiceAccount =
-			serde_json::from_str(tokio::fs::read_to_string(service_account_file).await?.as_ref())?;
+		let private_key_jwt = PrivateKeyJWT::new(
+			aud.unwrap_or_else(|| url.as_str().trim_end_matches('/').to_owned()),
+			service_account_file,
+		)
+		.await?;
 
-		let mut header = Header::new(Algorithm::RS256);
-		header.kid = Some(service_account.key_id.clone());
-
-		// The renew will fix it
-		let claims = Claims {
-			iss: service_account.user_id.clone(),
-			sub: service_account.user_id.clone(),
-			aud: aud.unwrap_or_else(|| url.as_str().trim_end_matches('/').to_owned()),
-			iat: 0,
-			exp: 0,
-		};
-
-		let key = EncodingKey::from_rsa_pem(service_account.key.as_bytes())?;
+		if private_key_jwt.key_type != KeyType::ServiceAccount {
+			bail!("The provided private key jwt must be for a service account");
+		}
 
 		let mut inner = InnerToken {
 			token: "".to_owned(),
 			expiry: OffsetDateTime::now_utc(),
-			header,
-			claims,
-			key,
+			private_key_jwt,
 			client,
 			scope,
 			url,
@@ -138,11 +109,7 @@ impl Token {
 impl InnerToken {
 	/// Renew the token
 	pub async fn renew(&mut self) -> Result<()> {
-		self.claims.iat = OffsetDateTime::now_utc().unix_timestamp();
-		self.expiry = OffsetDateTime::now_utc() + time::Duration::minutes(59);
-		self.claims.exp = self.expiry.unix_timestamp();
-
-		let jwt = encode(&self.header, &self.claims, &self.key)?;
+		let jwt = self.private_key_jwt.get_token()?;
 		let mut scope = self.scope.clone().unwrap_or_default();
 		scope.append(&mut MIN_SCOPE.iter().copied().map(String::from).collect());
 
@@ -171,6 +138,7 @@ impl InnerToken {
 		let auth_resp: AuthResponse = serde_json::from_str(&body)?;
 
 		self.token = auth_resp.access_token;
+		self.expiry = OffsetDateTime::from_unix_timestamp(auth_resp.expires_in)?;
 
 		Ok(())
 	}
@@ -184,11 +152,7 @@ impl InnerToken {
 
 impl Debug for InnerToken {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(
-			f,
-			"{{expiry:{:?}, header:{:?}, claims:{:?}}}",
-			self.expiry, self.header, self.claims
-		)
+		write!(f, "{{expiry:{:?}}}", self.expiry,)
 	}
 }
 
@@ -205,7 +169,10 @@ mod tests {
 		matchers::{method, path},
 	};
 
-	use crate::v2::authentication::{self, ServiceAccount, Token};
+	use crate::v2::{
+		authentication::{self, Token},
+		private_key_jwt::{KeyType, PrivateKeyJWTFile},
+	};
 
 	#[tokio::test]
 	async fn test_token() -> Result<()> {
@@ -215,11 +182,11 @@ mod tests {
 		let key = josekit::jwk::alg::rsa::RsaKeyPair::generate(2048)?;
 		tokio::fs::write(
 			&service_account_file,
-			serde_json::to_string(&ServiceAccount {
-				r#type: "".to_owned(),
+			serde_json::to_string(&PrivateKeyJWTFile {
+				r#type: KeyType::ServiceAccount,
 				key_id: "".to_owned(),
 				key: String::from_utf8(key.to_pem_private_key())?,
-				user_id: "".to_owned(),
+				id: "".to_owned(),
 			})?,
 		)
 		.await?;
@@ -229,7 +196,7 @@ mod tests {
 		let auth_resp = authentication::AuthResponse {
 			access_token: zitadel_token.clone(),
 			token_type: "token_type".to_owned(),
-			expires_in: -1,
+			expires_in: (OffsetDateTime::now_utc() + time::Duration::minutes(10)).unix_timestamp(),
 		};
 
 		Mock::given(method("POST"))
@@ -258,7 +225,12 @@ mod tests {
 		// Now we should have a call to renew
 		assert_eq!(token.token().await?, zitadel_token);
 
-		assert!(token.inner.read().await.expiry > OffsetDateTime::now_utc());
+		assert!(
+			token.inner.read().await.expiry > OffsetDateTime::now_utc(),
+			"Expected expiry to be greater than now.\nNow: {:?}\nExpiry: {:?}",
+			OffsetDateTime::now_utc(),
+			token.inner.read().await.expiry
+		);
 
 		Ok(())
 	}
