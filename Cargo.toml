@@ -5,7 +5,7 @@
 [package]
 name = "famedly-zitadel-rust-client"
 description = "HTTP client for Zitadel IdP built by Famedly"
-version = "0.9.1"
+version = "0.9.2"
 authors = []
 edition = "2024"
 resolver = "2"
