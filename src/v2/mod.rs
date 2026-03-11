@@ -28,6 +28,7 @@ use authentication::Token;
 use headers::{Authorization, HeaderMapExt};
 use reqwest::Request;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 #[cfg(feature = "telemetry")]
 use rust_telemetry::reqwest_middleware::OtelMiddleware;
 use serde::de::DeserializeOwned;
@@ -38,6 +39,10 @@ pub const HEADER_ZITADEL_ORGANIZATION_ID: &str = "x-zitadel-orgid";
 
 /// Default timeout value to be used in various places
 const DEFAULT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Maximum number of retries for transient server errors (5xx) and network
+/// failures
+const DEFAULT_MAX_RETRIES: u32 = 3;
 
 /// Zitadel client for using the HTTP v2 api
 #[derive(Debug, Clone)]
@@ -58,8 +63,11 @@ impl Zitadel {
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
 	/// - `aud` - Custom `aud` claim to use for auth (`url` is used if unset)
 	pub async fn new(url: Url, service_account_file: PathBuf, aud: Option<String>) -> Result<Self> {
+		let retry_policy =
+			ExponentialBackoff::builder().build_with_max_retries(DEFAULT_MAX_RETRIES);
 		let client_builder =
-			ClientBuilder::new(reqwest::Client::builder().timeout(DEFAULT_TIMEOUT).build()?);
+			ClientBuilder::new(reqwest::Client::builder().timeout(DEFAULT_TIMEOUT).build()?)
+				.with(RetryTransientMiddleware::new_with_policy(retry_policy));
 		#[cfg(feature = "telemetry")]
 		let client_builder = client_builder.with(OtelMiddleware);
 		let client = client_builder.build();
