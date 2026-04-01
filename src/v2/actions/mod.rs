@@ -19,10 +19,10 @@ impl Zitadel {
 	/// [Create Target](https://zitadel.com/docs/apis/resources/action_service_v2/action-service-create-target)
 	pub async fn create_target(
 		&self,
-		req: &V2betaCreateTargetRequest,
-	) -> Result<V2betaCreateTargetResponse> {
+		req: &V2CreateTargetRequest,
+	) -> Result<V2CreateTargetResponse> {
 		let request =
-			self.client.post(self.make_url("v2beta/actions/targets")?).json(req).build()?;
+			self.client.post(self.make_url("v2/actions/targets")?).json(req).build()?;
 		Ok(self.send_request(request).await?)
 	}
 
@@ -31,19 +31,19 @@ impl Zitadel {
 		&self,
 		id: &str,
 		req: &ActionServiceUpdateTargetBody,
-	) -> Result<V2betaUpdateTargetResponse> {
+	) -> Result<V2UpdateTargetResponse> {
 		let request = self
 			.client
-			.post(self.make_url("v2beta/actions/targets/")?.join(id)?)
+			.post(self.make_url("v2/actions/targets/")?.join(id)?)
 			.json(req)
 			.build()?;
 		Ok(self.send_request(request).await?)
 	}
 
 	/// [Delete Target](https://zitadel.com/docs/apis/resources/action_service_v2/action-service-delete-target)
-	pub async fn delete_target(&self, id: &str) -> Result<V2betaDeleteTargetResponse> {
+	pub async fn delete_target(&self, id: &str) -> Result<V2DeleteTargetResponse> {
 		let request =
-			self.client.delete(self.make_url("v2beta/actions/targets/")?.join(id)?).build()?;
+			self.client.delete(self.make_url("v2/actions/targets/")?.join(id)?).build()?;
 		Ok(self.send_request(request).await?)
 	}
 
@@ -51,24 +51,24 @@ impl Zitadel {
 	pub fn list_targets<'a>(
 		&'a self,
 		params: &'a Option<PaginationParams>,
-		sort_by: &'a Option<V2betaTargetFieldName>,
-		filters: &'a Option<Vec<V2betaTargetSearchFilter>>,
-	) -> impl Stream<Item = Result<V2betaTarget>> + Send {
+		sort_by: &'a Option<V2TargetFieldName>,
+		filters: &'a Option<Vec<V2TargetSearchFilter>>,
+	) -> impl Stream<Item = Result<V2Target>> + Send {
 		// TODO: factor out pagination. This endpoint is an exception because all others
 		// return `result` field, but this one returns `targets`. So it's a quick fix.
 		use crate::v2::pagination::PaginationRequest;
 		#[derive(Debug, Clone, serde::Deserialize)]
 		struct Response {
 			#[serde(default)]
-			targets: Vec<V2betaTarget>,
+			targets: Vec<V2Target>,
 		}
 		futures::stream::try_unfold((0, VecDeque::new()), async move |(mut page, mut buffered)| {
 			if let Some(x) = buffered.pop_front() {
 				return Ok(Some((x, (page, buffered))));
 			}
 
-			let url = self.make_url("v2beta/actions/targets/search")?;
-			let body: V2betaListTargetsRequest =
+			let url = self.make_url("v2/actions/targets/search")?;
+			let body: V2ListTargetsRequest =
 				(params.clone(), sort_by.clone(), filters.clone()).to_paginated_request(page);
 			let req = self.client.post(url.clone()).json(&body).build()?;
 			buffered = self.send_request::<Response>(req).await?.targets.into();
@@ -84,10 +84,10 @@ impl Zitadel {
 	/// [Set Execution | ZITADEL Docs](https://zitadel.com/docs/apis/resources/action_service_v2/action-service-set-execution)
 	pub async fn set_execution(
 		&self,
-		req: &V2betaSetExecutionRequest,
-	) -> Result<V2betaSetExecutionResponse> {
+		req: &V2SetExecutionRequest,
+	) -> Result<V2SetExecutionResponse> {
 		let request =
-			self.client.put(self.make_url("v2beta/actions/executions")?).json(req).build()?;
+			self.client.put(self.make_url("v2/actions/executions")?).json(req).build()?;
 		Ok(self.send_request(request).await?)
 	}
 
@@ -95,9 +95,9 @@ impl Zitadel {
 	pub fn list_executions<'a>(
 		&'a self,
 		params: &'a Option<PaginationParams>,
-		sort_by: &'a Option<V2betaExecutionFieldName>,
-		filters: &'a Option<Vec<V2betaExecutionSearchFilter>>,
-	) -> impl Stream<Item = Result<V2betaExecution>> + Send + use<'a> {
+		sort_by: &'a Option<V2ExecutionFieldName>,
+		filters: &'a Option<Vec<V2ExecutionSearchFilter>>,
+	) -> impl Stream<Item = Result<V2Execution>> + Send + use<'a> {
 		// TODO: factor out pagination. This endpoint is an exception because all others
 		// accepts pagination parameters in the json body, this one as query params
 		use crate::v2::pagination::PaginationRequest;
@@ -107,12 +107,12 @@ impl Zitadel {
 				return Ok(Some((x, (page, buffered))));
 			}
 
-			let url = self.make_url("v2beta/actions/executions/search")?;
-			let body: V2betaListExecutionsRequest =
+			let url = self.make_url("v2/actions/executions/search")?;
+			let body: V2ListExecutionsRequest =
 				(params.clone(), sort_by.clone(), filters.clone()).to_paginated_request(page);
 			let req = self.client.post(url.clone()).json(&body).build()?;
 			buffered = self
-				.send_request::<V2betaListExecutionsResponse>(req)
+				.send_request::<V2ListExecutionsResponse>(req)
 				.await?
 				.executions
 				.unwrap_or_default()
