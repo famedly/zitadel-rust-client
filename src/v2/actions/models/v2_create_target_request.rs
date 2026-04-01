@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ActionServiceUpdateTargetBody {
+pub struct V2CreateTargetRequest {
 	#[serde(rename = "name")]
 	name: Option<String>,
 	/// Wait for response but response body is ignored, status is checked, call
@@ -44,14 +44,6 @@ pub struct ActionServiceUpdateTargetBody {
 	timeout: Option<String>,
 	#[serde(rename = "endpoint")]
 	endpoint: Option<String>,
-	/// Regenerate the key used for signing and checking the payload sent to the
-	/// target. Set the graceful period for the existing key. During that time,
-	/// the previous signing key and the new one will be used to sign the
-	/// request to allow you a smooth transition onf your API.  Note that we
-	/// currently only allow an immediate rotation (\"0s\") and will support
-	/// longer expirations in the future.
-	#[serde(rename = "expirationSigningKey")]
-	expiration_signing_key: Option<String>,
 	/// How the payload is formatted and secured when sent to the target.
 	/// Defaults to `PAYLOAD_TYPE_JSON` (plain JSON with a signature header).
 	/// Use `PAYLOAD_TYPE_JWT` for a signed JWT body.
@@ -59,16 +51,15 @@ pub struct ActionServiceUpdateTargetBody {
 	payload_type: Option<super::V2PayloadType>,
 }
 
-impl ActionServiceUpdateTargetBody {
-	pub fn new() -> ActionServiceUpdateTargetBody {
-		ActionServiceUpdateTargetBody {
+impl V2CreateTargetRequest {
+	pub fn new() -> V2CreateTargetRequest {
+		V2CreateTargetRequest {
 			name: None,
 			rest_webhook: None,
 			rest_call: None,
 			rest_async: None,
 			timeout: None,
 			endpoint: None,
-			expiration_signing_key: None,
 			payload_type: None,
 		}
 	}
@@ -80,7 +71,7 @@ impl ActionServiceUpdateTargetBody {
 	pub fn with_payload_type(
 		mut self,
 		payload_type: super::V2PayloadType,
-	) -> ActionServiceUpdateTargetBody {
+	) -> V2CreateTargetRequest {
 		self.payload_type = Some(payload_type);
 		self
 	}
@@ -97,7 +88,7 @@ impl ActionServiceUpdateTargetBody {
 		self.name = Some(name);
 	}
 
-	pub fn with_name(mut self, name: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_name(mut self, name: String) -> V2CreateTargetRequest {
 		self.name = Some(name);
 		self
 	}
@@ -117,7 +108,7 @@ impl ActionServiceUpdateTargetBody {
 	pub fn with_rest_webhook(
 		mut self,
 		rest_webhook: super::V2RestWebhook,
-	) -> ActionServiceUpdateTargetBody {
+	) -> V2CreateTargetRequest {
 		self.rest_webhook = Some(rest_webhook);
 		self
 	}
@@ -134,7 +125,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_call = Some(rest_call);
 	}
 
-	pub fn with_rest_call(mut self, rest_call: super::V2RestCall) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_call(mut self, rest_call: super::V2RestCall) -> V2CreateTargetRequest {
 		self.rest_call = Some(rest_call);
 		self
 	}
@@ -151,10 +142,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_async = Some(rest_async);
 	}
 
-	pub fn with_rest_async(
-		mut self,
-		rest_async: super::V2RestAsync,
-	) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_async(mut self, rest_async: super::V2RestAsync) -> V2CreateTargetRequest {
 		self.rest_async = Some(rest_async);
 		self
 	}
@@ -171,7 +159,7 @@ impl ActionServiceUpdateTargetBody {
 		self.timeout = Some(timeout);
 	}
 
-	pub fn with_timeout(mut self, timeout: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_timeout(mut self, timeout: String) -> V2CreateTargetRequest {
 		self.timeout = Some(timeout);
 		self
 	}
@@ -188,7 +176,7 @@ impl ActionServiceUpdateTargetBody {
 		self.endpoint = Some(endpoint);
 	}
 
-	pub fn with_endpoint(mut self, endpoint: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_endpoint(mut self, endpoint: String) -> V2CreateTargetRequest {
 		self.endpoint = Some(endpoint);
 		self
 	}
@@ -199,25 +187,5 @@ impl ActionServiceUpdateTargetBody {
 
 	pub fn reset_endpoint(&mut self) {
 		self.endpoint = None;
-	}
-
-	pub fn set_expiration_signing_key(&mut self, expiration_signing_key: String) {
-		self.expiration_signing_key = Some(expiration_signing_key);
-	}
-
-	pub fn with_expiration_signing_key(
-		mut self,
-		expiration_signing_key: String,
-	) -> ActionServiceUpdateTargetBody {
-		self.expiration_signing_key = Some(expiration_signing_key);
-		self
-	}
-
-	pub fn expiration_signing_key(&self) -> Option<&String> {
-		self.expiration_signing_key.as_ref()
-	}
-
-	pub fn reset_expiration_signing_key(&mut self) {
-		self.expiration_signing_key = None;
 	}
 }
