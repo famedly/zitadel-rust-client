@@ -37,10 +37,7 @@ impl V2SetExecutionRequest {
 		self.condition = Some(condition);
 	}
 
-	pub fn with_condition(
-		mut self,
-		condition: super::V2Condition,
-	) -> V2SetExecutionRequest {
+	pub fn with_condition(mut self, condition: super::V2Condition) -> V2SetExecutionRequest {
 		self.condition = Some(condition);
 		self
 	}

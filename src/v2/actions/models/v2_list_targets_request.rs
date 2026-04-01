@@ -121,11 +121,7 @@ impl PaginationRequest<V2ListTargetsRequest>
 				.with_asc(params.asc),
 		);
 
-		V2ListTargetsRequest {
-			pagination,
-			sorting_column: self.1.clone(),
-			filters: self.2.clone(),
-		}
+		V2ListTargetsRequest { pagination, sorting_column: self.1.clone(), filters: self.2.clone() }
 	}
 
 	fn page_size(&self) -> usize {

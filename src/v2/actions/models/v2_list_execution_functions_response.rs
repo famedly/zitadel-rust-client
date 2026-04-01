@@ -33,10 +33,7 @@ impl V2ListExecutionFunctionsResponse {
 		self.functions = Some(functions);
 	}
 
-	pub fn with_functions(
-		mut self,
-		functions: Vec<String>,
-	) -> V2ListExecutionFunctionsResponse {
+	pub fn with_functions(mut self, functions: Vec<String>) -> V2ListExecutionFunctionsResponse {
 		self.functions = Some(functions);
 		self
 	}

@@ -68,7 +68,10 @@ impl V2CreateTargetRequest {
 		self.payload_type = Some(payload_type);
 	}
 
-	pub fn with_payload_type(mut self, payload_type: super::V2PayloadType) -> V2CreateTargetRequest {
+	pub fn with_payload_type(
+		mut self,
+		payload_type: super::V2PayloadType,
+	) -> V2CreateTargetRequest {
 		self.payload_type = Some(payload_type);
 		self
 	}
@@ -139,10 +142,7 @@ impl V2CreateTargetRequest {
 		self.rest_async = Some(rest_async);
 	}
 
-	pub fn with_rest_async(
-		mut self,
-		rest_async: super::V2RestAsync,
-	) -> V2CreateTargetRequest {
+	pub fn with_rest_async(mut self, rest_async: super::V2RestAsync) -> V2CreateTargetRequest {
 		self.rest_async = Some(rest_async);
 		self
 	}

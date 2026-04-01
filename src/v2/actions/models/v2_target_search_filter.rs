@@ -51,10 +51,7 @@ impl V2TargetSearchFilter {
 		self.target_name_filter = None;
 	}
 
-	pub fn set_in_target_ids_filter(
-		&mut self,
-		in_target_ids_filter: super::V2InTargetIdsFilter,
-	) {
+	pub fn set_in_target_ids_filter(&mut self, in_target_ids_filter: super::V2InTargetIdsFilter) {
 		self.in_target_ids_filter = Some(in_target_ids_filter);
 	}
 

@@ -21,8 +21,7 @@ impl Zitadel {
 		&self,
 		req: &V2CreateTargetRequest,
 	) -> Result<V2CreateTargetResponse> {
-		let request =
-			self.client.post(self.make_url("v2/actions/targets")?).json(req).build()?;
+		let request = self.client.post(self.make_url("v2/actions/targets")?).json(req).build()?;
 		Ok(self.send_request(request).await?)
 	}
 
@@ -32,11 +31,8 @@ impl Zitadel {
 		id: &str,
 		req: &ActionServiceUpdateTargetBody,
 	) -> Result<V2UpdateTargetResponse> {
-		let request = self
-			.client
-			.post(self.make_url("v2/actions/targets/")?.join(id)?)
-			.json(req)
-			.build()?;
+		let request =
+			self.client.post(self.make_url("v2/actions/targets/")?.join(id)?).json(req).build()?;
 		Ok(self.send_request(request).await?)
 	}
 
@@ -86,8 +82,7 @@ impl Zitadel {
 		&self,
 		req: &V2SetExecutionRequest,
 	) -> Result<V2SetExecutionResponse> {
-		let request =
-			self.client.put(self.make_url("v2/actions/executions")?).json(req).build()?;
+		let request = self.client.put(self.make_url("v2/actions/executions")?).json(req).build()?;
 		Ok(self.send_request(request).await?)
 	}
 

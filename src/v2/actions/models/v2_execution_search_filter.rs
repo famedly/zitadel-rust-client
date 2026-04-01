@@ -37,10 +37,7 @@ impl V2ExecutionSearchFilter {
 		}
 	}
 
-	pub fn set_in_conditions_filter(
-		&mut self,
-		in_conditions_filter: super::V2InConditionsFilter,
-	) {
+	pub fn set_in_conditions_filter(&mut self, in_conditions_filter: super::V2InConditionsFilter) {
 		self.in_conditions_filter = Some(in_conditions_filter);
 	}
 

@@ -134,10 +134,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_call = Some(rest_call);
 	}
 
-	pub fn with_rest_call(
-		mut self,
-		rest_call: super::V2RestCall,
-	) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_call(mut self, rest_call: super::V2RestCall) -> ActionServiceUpdateTargetBody {
 		self.rest_call = Some(rest_call);
 		self
 	}

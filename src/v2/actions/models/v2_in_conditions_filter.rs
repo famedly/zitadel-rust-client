@@ -34,10 +34,7 @@ impl V2InConditionsFilter {
 		self.conditions = Some(conditions);
 	}
 
-	pub fn with_conditions(
-		mut self,
-		conditions: Vec<super::V2Condition>,
-	) -> V2InConditionsFilter {
+	pub fn with_conditions(mut self, conditions: Vec<super::V2Condition>) -> V2InConditionsFilter {
 		self.conditions = Some(conditions);
 		self
 	}
