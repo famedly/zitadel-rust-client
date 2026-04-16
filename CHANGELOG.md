@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - 2026-04-16
+
+### Miscellaneous Tasks
+
+- Bump rust-telemetry
+
 ## [0.10.0] - 2026-04-16
 
 ### Miscellaneous Tasks
