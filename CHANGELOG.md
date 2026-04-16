@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - 2026-04-16
+
+### Miscellaneous Tasks
+
+- Bump reqwest
+
 ## [0.9.3] - 2026-03-11
 
 ### Features
