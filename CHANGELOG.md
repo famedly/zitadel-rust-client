@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.1] - 2026-04-20
+
+### Bug Fixes
+
+- Fix UpdateHumanUserPassword
+
 ## [0.11.0] - 2026-04-16
 
 ### Miscellaneous Tasks
