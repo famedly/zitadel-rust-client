@@ -16,27 +16,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::v2::users::models;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct UpdateHumanUserPassword {
 	#[serde(rename = "password")]
 	password: Option<models::Password>,
 	#[serde(rename = "hashedPassword")]
 	hashed_password: Option<models::HashedPassword>,
 	#[serde(rename = "currentPassword")]
-	current_password: String,
-	/// \"the verification code generated during password reset request\"
+	current_password: Option<String>,
+	/// The verification code generated during password reset request
 	#[serde(rename = "verificationCode")]
-	verification_code: String,
+	verification_code: Option<String>,
 }
 
 impl UpdateHumanUserPassword {
-	pub fn new(current_password: String, verification_code: String) -> UpdateHumanUserPassword {
-		UpdateHumanUserPassword {
-			password: None,
-			hashed_password: None,
-			current_password,
-			verification_code,
-		}
+	pub fn new() -> UpdateHumanUserPassword {
+		Self::default()
 	}
 
 	pub fn set_password(&mut self, password: models::Password) {
@@ -77,28 +72,36 @@ impl UpdateHumanUserPassword {
 	}
 
 	pub fn set_current_password(&mut self, current_password: String) {
-		self.current_password = current_password;
+		self.current_password = Some(current_password);
 	}
 
 	pub fn with_current_password(mut self, current_password: String) -> UpdateHumanUserPassword {
-		self.current_password = current_password;
+		self.current_password = Some(current_password);
 		self
 	}
 
-	pub fn current_password(&self) -> &String {
-		&self.current_password
+	pub fn current_password(&self) -> Option<&String> {
+		self.current_password.as_ref()
+	}
+
+	pub fn reset_current_password(&mut self) {
+		self.current_password = None;
 	}
 
 	pub fn set_verification_code(&mut self, verification_code: String) {
-		self.verification_code = verification_code;
+		self.verification_code = Some(verification_code);
 	}
 
 	pub fn with_verification_code(mut self, verification_code: String) -> UpdateHumanUserPassword {
-		self.verification_code = verification_code;
+		self.verification_code = Some(verification_code);
 		self
 	}
 
-	pub fn verification_code(&self) -> &String {
-		&self.verification_code
+	pub fn verification_code(&self) -> Option<&String> {
+		self.verification_code.as_ref()
+	}
+
+	pub fn reset_verification_code(&mut self) {
+		self.verification_code = None;
 	}
 }
