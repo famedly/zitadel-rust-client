@@ -575,10 +575,16 @@ impl Zitadel {
 		Ok(self.send_request(request).await?)
 	}
 	/// Remove a metadata object from a user with a specific key
-	pub async fn delete_user_metadata(&self, user_id: &str, key: &str) -> Result<Details> {
+	pub async fn delete_user_metadata(
+		&self,
+		user_id: &str,
+		key: &str,
+		org_id: Option<String>,
+	) -> Result<Details> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.build()?;
 
 		Ok(self.send_request(request).await?)
@@ -590,10 +596,12 @@ impl Zitadel {
 		user_id: &str,
 		key: &str,
 		value: &str,
+		org_id: Option<String>,
 	) -> Result<SetUserMetadataResponse> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/{key}"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&serde_json::json!({"value": BASE64_STANDARD.encode(value)}))
 			.build()?;
 
@@ -605,10 +613,12 @@ impl Zitadel {
 		&self,
 		user_id: &str,
 		body: Vec<SetMetadataEntry>,
+		org_id: Option<String>,
 	) -> Result<Details> {
 		let request = self
 			.client
 			.post(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&serde_json::json!({"metadata": body}))
 			.build()?;
 
@@ -619,10 +629,12 @@ impl Zitadel {
 		&self,
 		user_id: &str,
 		body: Vec<String>,
+		org_id: Option<String>,
 	) -> Result<Details> {
 		let request = self
 			.client
 			.delete(self.make_url(&format!("/management/v1/users/{user_id}/metadata/_bulk"))?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.json(&serde_json::json!({"keys": body}))
 			.build()?;
 

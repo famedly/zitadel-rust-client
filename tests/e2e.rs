@@ -1011,7 +1011,7 @@ async fn test_e2e_user_metadata() -> Result<()> {
 		.cloned()
 		.expect("Couldn't get the user id from response");
 
-	zitadel.set_user_metadata(&id, metadata[1].0, metadata[1].1).await?;
+	zitadel.set_user_metadata(&id, metadata[1].0, metadata[1].1, None).await?;
 
 	for (query_key, expected_value) in &metadata {
 		let ret = zitadel.get_user_metadata(&id, query_key, None).await?;
@@ -1023,11 +1023,11 @@ async fn test_e2e_user_metadata() -> Result<()> {
 		assert_eq!(*expected_value, value);
 	}
 
-	zitadel.delete_user_metadata(&id, metadata[1].0).await?;
+	zitadel.delete_user_metadata(&id, metadata[1].0, None).await?;
 	assert!(zitadel.get_user_metadata(&id, metadata[1].0, None).await.is_err());
 
 	let updated_value = "new_value";
-	zitadel.set_user_metadata(&id, metadata[0].0, updated_value).await?;
+	zitadel.set_user_metadata(&id, metadata[0].0, updated_value, None).await?;
 
 	let ret = zitadel.get_user_metadata(&id, metadata[0].0, None).await?;
 	let value = ret
@@ -1066,7 +1066,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 		.cloned()
 		.expect("Couldn't get the user id from response");
 
-	zitadel.set_user_metadata_bulk(&id, metadata.clone()).await?;
+	zitadel.set_user_metadata_bulk(&id, metadata.clone(), None).await?;
 
 	let stream = zitadel.list_user_metadata(
 		&id,
@@ -1100,6 +1100,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 		.delete_user_metadata_bulk(
 			&id,
 			metadata.iter().map(|metadata| metadata.key().clone()).collect(),
+			None,
 		)
 		.await?;
 
