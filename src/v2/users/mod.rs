@@ -170,12 +170,13 @@ impl Zitadel {
 		params: Option<PaginationParams>,
 		sorting: Option<UserFieldName>,
 		queries: Option<Vec<SearchQuery>>,
+		org_id: Option<String>,
 	) -> Result<impl Stream<Item = Result<User>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, sorting, queries),
 			self.make_url("v2/users")?,
-			None,
+			org_id,
 		))
 	}
 
