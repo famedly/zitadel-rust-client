@@ -1071,6 +1071,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 		&id,
 		None,
 		Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
+		None,
 	)?;
 
 	let res_metadata: Vec<_> = stream
@@ -1107,6 +1108,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 				&id,
 				None,
 				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
+				None,
 			)?
 			.count()
 			.await == 0

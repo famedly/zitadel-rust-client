@@ -634,12 +634,13 @@ impl Zitadel {
 		user_id: &str,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<KeyQuery>>,
+		org_id: Option<String>,
 	) -> Result<impl Stream<Item = Result<UserMetadataResponse>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			(params, queries),
 			self.make_url(&format!("/management/v1/users/{user_id}/metadata/_search"))?,
-			None, // TODO: Breaking change -> possibility to add org_id to function args
+			org_id,
 		))
 	}
 }
