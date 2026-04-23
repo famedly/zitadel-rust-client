@@ -8,6 +8,18 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - 2026-04-23
+
+### Features
+
+- [**breaking**] Add org_id to list_user_metadata
+- [**breaking**] Add org_id to list_users
+- [**breaking**] Add org_id to user metadata functions
+
+### Refactor
+
+- [**breaking**] Change org_id param order
+
 ## [0.11.1] - 2026-04-20
 
 ### Bug Fixes
