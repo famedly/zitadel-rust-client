@@ -73,7 +73,7 @@ async fn tear_down(zitadel: &Zitadel) {
 	let queries = Some(vec![SearchQuery::new().with_type_query(TypeQuery::new(Userv2Type::Human))]);
 
 	zitadel
-		.list_users(None, None, queries, None)
+		.list_users(None, None, None, queries)
 		.expect("Error getting the list of users for tear down")
 		.try_for_each(|user| async move {
 			tracing::info!("user: {user:?}");
@@ -496,11 +496,11 @@ async fn test_e2e_create_organization() -> Result<()> {
 			.list_users(
 				None,
 				None,
+				None,
 				Some(vec![
 					SearchQuery::new()
 						.with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))
 				]),
-				None,
 			)?
 			.count()
 			.await,
@@ -817,7 +817,7 @@ async fn test_e2e_list_human_users() -> Result<()> {
 		Some(vec![SearchQuery::new().with_last_name_query(LastNameQuery::new("Doe".to_owned()))]);
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true).with_page_size(5));
 
-	let stream = zitadel.list_users(pagination_params, None, queries, None)?;
+	let stream = zitadel.list_users(None, pagination_params, None, queries)?;
 
 	let res_user_emails: Vec<_> = stream
 		.and_then(|user| {
@@ -855,7 +855,7 @@ async fn test_e2e_list_idp_links() -> Result<()> {
 	let id = ret.user_id().expect("Couldn't get the user id from response");
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
-	let stream = zitadel.list_idp_links(id, pagination_params)?;
+	let stream = zitadel.list_idp_links(id, None, pagination_params)?;
 
 	assert_eq!(stream.count().await, idp_links.len());
 
@@ -963,14 +963,14 @@ async fn test_e2e_delete_user() -> Result<()> {
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
 	assert_eq!(
-		zitadel.list_users(pagination_params.clone(), None, queries.clone(), None)?.count().await,
+		zitadel.list_users(None, pagination_params.clone(), None, queries.clone())?.count().await,
 		2
 	);
 
 	zitadel.delete_user(&id).await?;
 
 	let user_count = zitadel
-		.list_users(pagination_params, None, queries, None)?
+		.list_users(None, pagination_params, None, queries)?
 		.inspect_ok(|user| {
 			let user_name = user
 				.human()
@@ -1071,8 +1071,8 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 	let stream = zitadel.list_user_metadata(
 		&id,
 		None,
-		Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 		None,
+		Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 	)?;
 
 	let res_metadata: Vec<_> = stream
@@ -1109,8 +1109,8 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 			.list_user_metadata(
 				&id,
 				None,
-				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 				None,
+				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 			)?
 			.count()
 			.await == 0

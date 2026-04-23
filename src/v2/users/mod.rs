@@ -137,13 +137,14 @@ impl Zitadel {
 	pub fn list_idp_links(
 		&self,
 		user_id: &str,
+		org_id: Option<String>,
 		params: Option<PaginationParams>,
 	) -> Result<impl Stream<Item = Result<IdpLink>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
 			params,
 			self.make_url(&format!("v2/users/{user_id}/links/_search"))?,
-			None, // Endpoint does not support org_id
+			org_id,
 		))
 	}
 	/// List passkeys of an user
@@ -167,10 +168,10 @@ impl Zitadel {
 	/// [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-list-users)
 	pub fn list_users(
 		&self,
+		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		sorting: Option<UserFieldName>,
 		queries: Option<Vec<SearchQuery>>,
-		org_id: Option<String>,
 	) -> Result<impl Stream<Item = Result<User>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
@@ -645,9 +646,9 @@ impl Zitadel {
 	pub fn list_user_metadata(
 		&self,
 		user_id: &str,
+		org_id: Option<String>,
 		params: Option<PaginationParams>,
 		queries: Option<Vec<KeyQuery>>,
-		org_id: Option<String>,
 	) -> Result<impl Stream<Item = Result<UserMetadataResponse>> + Send> {
 		Ok(PaginationHandler::new(
 			self.clone(),
