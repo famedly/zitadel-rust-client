@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.1] - 2026-05-05
+
+### Features
+
+- Add `get_password_complexity_policy`
+
 ## [0.12.0] - 2026-04-23
 
 ### Features
