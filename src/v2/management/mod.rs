@@ -562,4 +562,17 @@ impl Zitadel {
 			org_id,
 		))
 	}
+
+	/// [Get Password Complexity Policy](https://zitadel.com/docs/reference/api/management/zitadel.management.v1.ManagementService.GetPasswordComplexityPolicy)
+	pub async fn get_password_complexity_policy(
+		&self,
+		org_id: Option<String>,
+	) -> Result<V1GetDefaultPasswordComplexityPolicyResponse> {
+		let request = self
+			.client
+			.get(self.make_url("/policies/password/complexity")?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.build()?;
+		Ok(self.send_request(request).await?)
+	}
 }
