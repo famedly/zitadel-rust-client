@@ -570,7 +570,7 @@ impl Zitadel {
 	) -> Result<V1GetDefaultPasswordComplexityPolicyResponse> {
 		let request = self
 			.client
-			.get(self.make_url("/policies/password/complexity")?)
+			.get(self.make_url("management/v1/policies/password/complexity")?)
 			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
 			.build()?;
 		Ok(self.send_request(request).await?)

@@ -1469,3 +1469,20 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 
 	Ok(())
 }
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
+async fn test_e2e_get_password_complexity_policy() -> Result<()> {
+	let zitadel = mk_zitadel_client().await?;
+
+	let response = zitadel.get_password_complexity_policy(None).await?;
+	let policy = response.policy().expect("password complexity policy should be present");
+
+	assert!(policy.min_length().is_some());
+	assert!(policy.has_uppercase().is_some());
+	assert!(policy.has_lowercase().is_some());
+	assert!(policy.has_number().is_some());
+	assert!(policy.has_symbol().is_some());
+
+	Ok(())
+}
