@@ -8,6 +8,20 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.2] - 2026-05-22
+
+### Features
+
+- Add `create_machine_user`
+
+### Bug Fixes
+
+- Correct the url for get_password_complexity_policy
+
+### Release
+
+- V0.12.2
+
 ## [0.12.1] - 2026-05-05
 
 ### Features
