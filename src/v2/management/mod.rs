@@ -29,6 +29,23 @@ impl Zitadel {
 		Ok(self.send_request(request).await?)
 	}
 
+	/// Create a new user with the type machine for your API, service or device.
+	/// [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-add-machine-user)
+	pub async fn create_machine_user(
+		&self,
+		org_id: Option<String>,
+		body: V1AddMachineUserRequest,
+	) -> Result<V1AddMachineUserResponse> {
+		let request = self
+			.client
+			.post(self.make_url("management/v1/users/machine")?)
+			.chain_opt(org_id, |req, org_id| req.header(HEADER_ZITADEL_ORGANIZATION_ID, org_id))
+			.json(&body)
+			.build()?;
+
+		Ok(self.send_request(request).await?)
+	}
+
 	/// Create actions. [Docs](https://zitadel.com/docs/apis/resources/mgmt/management-service-create-action)
 	pub async fn create_action(
 		&self,

@@ -797,6 +797,52 @@ async fn test_e2e_create_human_user() -> Result<()> {
 
 #[test(tokio::test)]
 #[test_log(default_log_filter = "debug")]
+async fn test_e2e_create_user_human_and_machine() -> Result<()> {
+	let zitadel = mk_zitadel_client().await?;
+
+	let suffix = Alphanumeric.sample_string(&mut rand::rng(), 12);
+
+	let human_id = create_user(&zitadel, &format!("Jane{suffix}"), "Doe").await?;
+	let fetched_human = zitadel
+		.get_user_by_id(&human_id)
+		.await?
+		.user()
+		.cloned()
+		.expect("fetched human user missing from response");
+	assert!(fetched_human.human().is_some(), "expected human payload on created human user");
+	assert!(fetched_human.machine().is_none(), "did not expect machine payload on human user");
+
+	let machine_username = format!("bot-{suffix}");
+	let machine_req = V1AddMachineUserRequest::new(machine_username.clone(), "CI Bot".to_owned())
+		.with_description("Created by e2e test".to_owned());
+	let machine_resp = zitadel.create_machine_user(None, machine_req).await?;
+	let machine_id = machine_resp.user_id().expect("machine user id missing from response").clone();
+
+	let fetched_machine = zitadel
+		.get_user_by_id(&machine_id)
+		.await?
+		.user()
+		.cloned()
+		.expect("fetched machine user missing from response");
+	assert_eq!(fetched_machine.username().map(String::as_str), Some(machine_username.as_str()));
+	assert!(
+		fetched_machine.machine().is_some(),
+		"expected machine payload on created machine user"
+	);
+	assert!(fetched_machine.human().is_none(), "did not expect human payload on machine user");
+	let machine = fetched_machine.machine().unwrap();
+	assert_eq!(machine.name().map(String::as_str), Some("CI Bot"));
+	assert_eq!(machine.description().map(String::as_str), Some("Created by e2e test"));
+
+	// tear_down only cleans up human users; remove the machine one explicitly.
+	zitadel.delete_user(&machine_id).await?;
+	tear_down(&zitadel).await;
+
+	Ok(())
+}
+
+#[test(tokio::test)]
+#[test_log(default_log_filter = "debug")]
 async fn test_e2e_list_human_users() -> Result<()> {
 	let service_account_file = Path::new(USER_SERVICE_PATH);
 	let url = Url::parse("http://localhost:8080")?;
