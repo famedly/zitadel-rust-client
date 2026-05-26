@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231
       with:
         path: head
 
@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout current repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@900f2210b1d28bbbd0bd22d17926b9e224e8f231
       with:
         path: head
 
@@ -123,7 +123,7 @@ jobs:
 
   publish:
     needs: [simple-checks, tests]
-    uses: famedly/backend-build-workflows/.github/workflows/publish-crate.yml@v2
+    uses: famedly/backend-build-workflows/.github/workflows/publish-crate.yml@fcc2ec82a725d5c4c9c6a8f19e8df101c178dcb6
     with:
       registry-name: "crates-io"
       registry-index: "https://github.com/rust-lang/crates.io-index"
