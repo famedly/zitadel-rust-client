@@ -62,12 +62,16 @@ impl Zitadel {
 	/// - `service_account_file` should be the Zitadel-generated
 	///   private key file as documented at [zitadel docs](https://zitadel.com/docs/guides/integrate/service-users/private-key-jwt#2-generate-a-private-key-file)
 	/// - `aud` - Custom `aud` claim to use for auth (`url` is used if unset)
-	pub async fn new(url: Url, service_account_file: PathBuf, aud: Option<String>) -> Result<Self> {
+	pub async fn new(
+		client: ClientWithMiddleware,
+		url: Url,
+		service_account_file: PathBuf,
+		aud: Option<String>,
+	) -> Result<Self> {
 		let retry_policy =
 			ExponentialBackoff::builder().build_with_max_retries(DEFAULT_MAX_RETRIES);
-		let client_builder =
-			ClientBuilder::new(reqwest::Client::builder().timeout(DEFAULT_TIMEOUT).build()?)
-				.with(RetryTransientMiddleware::new_with_policy(retry_policy));
+		let client_builder = ClientBuilder::from_client(client)
+			.with(RetryTransientMiddleware::new_with_policy(retry_policy));
 		#[cfg(feature = "telemetry")]
 		let client_builder = client_builder.with(OtelMiddleware);
 		let client = client_builder.build();
