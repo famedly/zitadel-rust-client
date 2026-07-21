@@ -8,6 +8,18 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0] - 2026-07-22
+
+### Features
+
+- Add new user update method
+- [**breaking**] Make zitadel client receive a reqwest_middleware client
+
+### Miscellaneous Tasks
+
+- Update GitHub Action pins
+- Update GitHub Action pins
+
 ## [0.12.2] - 2026-05-22
 
 ### Features

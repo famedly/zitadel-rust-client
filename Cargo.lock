@@ -734,7 +734,7 @@ dependencies = [
 
 [[package]]
 name = "famedly-zitadel-rust-client"
-version = "0.12.2"
+version = "0.13.0"
 dependencies = [
  "anyhow",
  "anyhow_ext",
