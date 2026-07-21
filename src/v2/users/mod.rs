@@ -483,6 +483,22 @@ impl Zitadel {
 		Ok(self.send_request(request).await?)
 	}
 
+	/// Update a User
+	/// Update all information from a user.
+	pub async fn update_user(
+		&self,
+		user_id: &str,
+		body: UserServiceUpdateUserBody,
+	) -> Result<V2UpdateUserResponse> {
+		let request = self
+			.client
+			.patch(self.make_url(&format!("v2/users/{user_id}"))?)
+			.json(&body)
+			.build()?;
+
+		Ok(self.send_request(request).await?)
+	}
+
 	/// Verify the email
 	/// Verify the email with the generated code.
 	pub async fn verify_email(
