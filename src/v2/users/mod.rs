@@ -210,6 +210,23 @@ impl Zitadel {
 
 		Ok(self.send_request(request).await?)
 	}
+	/// Create an invite code for a user
+	/// Create an invite code for a user to initialize their first
+	/// authentication method (password, passkeys, IdP). When `sendCode` is
+	/// set, ZITADEL sends an invitation email. [Docs](https://zitadel.com/docs/apis/resources/user_service_v2/user-service-create-invite-code)
+	pub async fn create_invite_code(
+		&self,
+		user_id: &str,
+		body: UserServiceCreateInviteCodeBody,
+	) -> Result<CreateInviteCodeResponse> {
+		let request = self
+			.client
+			.post(self.make_url(&format!("v2/users/{user_id}/invite_code"))?)
+			.json(&body)
+			.build()?;
+
+		Ok(self.send_request(request).await?)
+	}
 	/// Reactivate user
 	/// Reactivate a user with the state 'deactivated'. The user will be able to
 	/// log in again afterward. The endpoint returns an error if the user is not

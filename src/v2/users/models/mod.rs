@@ -17,6 +17,8 @@ mod user_service_list_passkeys_body;
 pub use self::user_service_list_passkeys_body::UserServiceListPasskeysBody;
 mod user_service_password_reset_body;
 pub use self::user_service_password_reset_body::UserServicePasswordResetBody;
+mod user_service_create_invite_code_body;
+pub use self::user_service_create_invite_code_body::UserServiceCreateInviteCodeBody;
 mod user_service_register_passkey_body;
 pub use self::user_service_register_passkey_body::UserServiceRegisterPasskeyBody;
 mod user_service_register_u2_f_body;
@@ -159,6 +161,8 @@ mod password;
 pub use self::password::Password;
 mod password_reset_response;
 pub use self::password_reset_response::PasswordResetResponse;
+mod create_invite_code_response;
+pub use self::create_invite_code_response::CreateInviteCodeResponse;
 mod reactivate_user_response;
 pub use self::reactivate_user_response::ReactivateUserResponse;
 mod redirect_urls;
@@ -197,6 +201,8 @@ mod return_passkey_registration_code;
 pub use self::return_passkey_registration_code::ReturnPasskeyRegistrationCode;
 mod return_password_reset_code;
 pub use self::return_password_reset_code::ReturnPasswordResetCode;
+mod return_invite_code;
+pub use self::return_invite_code::ReturnInviteCode;
 // TODO: This types are declared empty on the proto definition. Should we keep
 // it?
 mod return_phone_verification_code;
@@ -209,6 +215,8 @@ mod send_passkey_registration_link;
 pub use self::send_passkey_registration_link::SendPasskeyRegistrationLink;
 mod send_password_reset_link;
 pub use self::send_password_reset_link::SendPasswordResetLink;
+mod send_invite_code;
+pub use self::send_invite_code::SendInviteCode;
 // TODO: This types are declared empty on the proto definition. Should we keep
 // it?
 mod send_phone_verification_code;
