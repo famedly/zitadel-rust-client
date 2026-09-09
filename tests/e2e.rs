@@ -21,9 +21,10 @@ use famedly_zitadel_rust_client::v2::{
 	token, users::*,
 };
 use futures::{StreamExt, TryStreamExt, future};
-use josekit::{jws::JwsHeader, jwt::JwtPayload};
+use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use rand::distr::{Alphanumeric, SampleString};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
+use serde::Deserialize;
 use test_log::{self, test};
 use time::{Duration, OffsetDateTime};
 use url::Url;
@@ -33,6 +34,30 @@ use wiremock::{
 };
 
 const USER_SERVICE_PATH: &str = "tests/environment/zitadel/service-user.json";
+
+const TEST_RSA_KID: &str = "test-key-1";
+const TEST_RSA_PEM: &str = include_str!("fixtures/test-rsa.key");
+const TEST_RSA_PEM_OTHER: &str = include_str!("fixtures/test-rsa-other.key");
+
+fn test_public_jwk(kid: &str) -> serde_json::Value {
+	let mut jwk: serde_json::Value =
+		serde_json::from_str(include_str!("fixtures/test-rsa.jwk.key")).expect("valid test JWK");
+	jwk["kid"] = kid.into();
+	jwk
+}
+
+#[derive(Debug, Deserialize)]
+struct TestClaims {
+	test_claim: String,
+}
+
+fn encode_rs256(claims: &serde_json::Value, kid: &str, pem: &str) -> Result<String> {
+	let mut header = Header::new(Algorithm::RS256);
+	header.kid = Some(kid.to_owned());
+	header.typ = Some("JWT".to_owned());
+	let key = EncodingKey::from_rsa_pem(pem.as_bytes())?;
+	Ok(jsonwebtoken::encode(&header, claims, &key)?)
+}
 
 /// Created an user and returns the user ID
 async fn create_user(zitadel: &Zitadel, first_name: &str, last_name: &str) -> Result<String> {
@@ -299,8 +324,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		)
 		.await?;
 
-	// A user who is member but not "member" of the org and is granted project12 via
-	// user grant
+	// A user who is member but not "member" of the org and is granted project12
+	// via user grant
 	let user24 = create_random_user(&zitadel, Some(org2.clone())).await?;
 
 	let _user24_project12_grant = zitadel
@@ -1166,7 +1191,7 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 		Token::new(url.clone(), &service_account_file, client, None, None).await?.token().await?;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
 
-	let verified_token = token_verifier.verify(token.clone()).await;
+	let verified_token = token_verifier.verify::<token::JwtPayload>(token.clone()).await;
 
 	assert!(
 		verified_token.is_ok(),
@@ -1179,25 +1204,13 @@ async fn test_e2e_simple_token_verification() -> Result<()> {
 #[tokio::test]
 async fn test_e2e_token_verification_negative() -> Result<()> {
 	let mock = MockServer::start().await;
-	let mut jwks = josekit::jwk::JwkSet::from_bytes(r#"{"keys":[]}"#)?;
-	let private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
-	let key_id = "123456";
-	let mut public_key = private_key.to_public_key()?;
-	public_key.set_key_id(key_id);
-	jwks.push_key(public_key);
-
-	let signer = josekit::jws::RS256.signer_from_jwk(&private_key)?;
-
-	let mut header = JwsHeader::new();
-	header.set_key_id(key_id);
-	header.set_token_type("JWT");
-	header.set_algorithm("RS256");
+	let jwks = serde_json::json!({ "keys": [test_public_jwk(TEST_RSA_KID)] }).to_string();
 
 	Mock::given(method("GET"))
 		.and(path("/oauth/v2/keys"))
 		.respond_with(
 			ResponseTemplate::new(200)
-				.set_body_string(jwks.to_string())
+				.set_body_string(jwks)
 				.insert_header("Cache-control", "max-age=60"),
 		)
 		.mount(&mock)
@@ -1207,40 +1220,34 @@ async fn test_e2e_token_verification_negative() -> Result<()> {
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
 
 	let now = OffsetDateTime::now_utc();
+	let base_payload = serde_json::json!({
+		"iss": mock.uri(),
+		"exp": (now + Duration::minutes(10)).unix_timestamp(),
+		"nbf": (now - Duration::minutes(10)).unix_timestamp(),
+		"iat": (now - Duration::minutes(10)).unix_timestamp(),
+		"test_claim": "test_value",
+	});
 
-	let mut base_payload = JwtPayload::new();
-	base_payload.set_issuer(mock.uri());
-	base_payload.set_expires_at(&(now + Duration::minutes(10)).into());
-	base_payload.set_not_before(&(now - Duration::minutes(10)).into());
-	base_payload.set_claim("test_claim", Some("test_value".into()))?;
+	let mut expired = base_payload.clone();
+	expired["exp"] = serde_json::json!((now - Duration::minutes(5)).unix_timestamp());
 
-	let mut jwts: Vec<(&JwtPayload, &JwsHeader)> = Vec::new();
+	let mut future = base_payload.clone();
+	future["iat"] = serde_json::json!((now + Duration::minutes(1)).unix_timestamp());
 
-	let mut header_wrong_kid = header.clone();
-	header_wrong_kid.set_key_id("987654");
-	jwts.push((&base_payload, &header_wrong_kid));
+	let mut wrong_issuer = base_payload.clone();
+	wrong_issuer["iss"] = serde_json::json!("Wrong_issuer");
 
-	let mut payload_expired = base_payload.clone();
-	payload_expired.set_expires_at(&(now - Duration::minutes(5)).into());
-	jwts.push((&payload_expired, &header));
+	let invalid_tokens = [
+		encode_rs256(&base_payload, "987654", TEST_RSA_PEM)?,
+		encode_rs256(&expired, TEST_RSA_KID, TEST_RSA_PEM)?,
+		encode_rs256(&future, TEST_RSA_KID, TEST_RSA_PEM)?,
+		encode_rs256(&wrong_issuer, TEST_RSA_KID, TEST_RSA_PEM)?,
+		encode_rs256(&base_payload, TEST_RSA_KID, TEST_RSA_PEM_OTHER)?,
+	];
 
-	let mut payload_future = base_payload.clone();
-	payload_future.set_issued_at(&(now + Duration::minutes(1)).into());
-	jwts.push((&payload_future, &header));
-
-	let mut payload_wrong_issuer = base_payload.clone();
-	payload_wrong_issuer.set_issuer("Wrong_issuer");
-	jwts.push((&payload_wrong_issuer, &header));
-
-	for (payload, header) in jwts {
-		let jwt = josekit::jwt::encode_with_signer(payload, header, &signer)?;
-		assert!(token_verifier.verify(jwt).await.is_err());
+	for jwt in invalid_tokens {
+		assert!(token_verifier.verify::<token::JwtPayload>(jwt).await.is_err());
 	}
-
-	let wrong_private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
-	let wrong_signer = josekit::jws::RS256.signer_from_jwk(&wrong_private_key)?;
-	let jwt = josekit::jwt::encode_with_signer(&base_payload, &header, &wrong_signer)?;
-	assert!(token_verifier.verify(jwt).await.is_err());
 
 	Ok(())
 }
@@ -1248,44 +1255,32 @@ async fn test_e2e_token_verification_negative() -> Result<()> {
 #[tokio::test]
 async fn test_e2e_token_verification_positive() -> Result<()> {
 	let mock = MockServer::start().await;
-	let mut jwks = josekit::jwk::JwkSet::from_bytes(r#"{"keys":[]}"#)?;
-	let private_key = josekit::jwk::Jwk::generate_rsa_key(2048)?;
-	let key_id = "123456";
-	let mut public_key = private_key.to_public_key()?;
-	public_key.set_key_id(key_id);
-	jwks.push_key(public_key);
+	let jwks = serde_json::json!({ "keys": [test_public_jwk(TEST_RSA_KID)] }).to_string();
 
 	Mock::given(method("GET"))
 		.and(path("/oauth/v2/keys"))
 		.respond_with(
 			ResponseTemplate::new(200)
-				.set_body_string(jwks.to_string())
+				.set_body_string(jwks)
 				.insert_header("Cache-control", "max-age=60"),
 		)
 		.mount(&mock)
 		.await;
 
 	let now = OffsetDateTime::now_utc();
-
-	let mut base_payload = JwtPayload::new();
-	base_payload.set_issuer(mock.uri());
-	base_payload.set_expires_at(&(now + Duration::minutes(10)).into());
-	base_payload.set_issued_at(&(now - Duration::minutes(10)).into());
-	base_payload.set_claim("test_claim", Some("test_value".into()))?;
-
-	let mut header = JwsHeader::new();
-	header.set_key_id(key_id);
-	header.set_token_type("JWT");
-	header.set_algorithm("RS256");
-
-	let signer = josekit::jws::RS256.signer_from_jwk(&private_key)?;
-	let jwt = josekit::jwt::encode_with_signer(&base_payload, &header, &signer)?;
+	let payload = serde_json::json!({
+		"iss": mock.uri(),
+		"exp": (now + Duration::minutes(10)).unix_timestamp(),
+		"iat": (now - Duration::minutes(10)).unix_timestamp(),
+		"test_claim": "test_value",
+	});
+	let jwt = encode_rs256(&payload, TEST_RSA_KID, TEST_RSA_PEM)?;
 
 	let url = Url::parse(&mock.uri())?;
 	let token_verifier = token::ZitadelJWTVerifier::new(url);
-	let verification_result = token_verifier.verify(jwt).await;
+	let verification_result = token_verifier.verify::<TestClaims>(jwt).await;
 	println!("verification_result: {verification_result:?}");
-	assert!(verification_result.is_ok());
+	assert_eq!(verification_result?.test_claim, "test_value");
 
 	Ok(())
 }
