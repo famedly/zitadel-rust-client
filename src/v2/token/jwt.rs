@@ -8,15 +8,21 @@ use std::sync::Arc;
 
 use anyhow_ext::Result;
 use cache_control::CacheControl;
-use josekit::{jwk::JwkSet, jws::RS256, jwt, jwt::JwtPayload};
+use jsonwebtoken::{
+	Algorithm, DecodingKey, Validation, decode, decode_header, errors::Error as JwtError,
+	jwk::JwkSet,
+};
 use reqwest::{Client, Response, header};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 #[cfg(feature = "telemetry")]
 use rust_telemetry::reqwest_middleware::OtelMiddleware;
+use serde::de::DeserializeOwned;
+use serde_json::{Map, Value};
 use time::OffsetDateTime;
 use tokio::sync::RwLock;
 use url::Url;
 
+use super::payload::JwtPayload;
 use crate::v2::DEFAULT_TIMEOUT;
 
 /// Zitadel client to verify a token's validity
@@ -43,9 +49,8 @@ impl ZitadelJWTVerifier {
 	/// Creates a new verifier to verify with a specific server
 	#[must_use]
 	pub fn new(url: Url) -> Self {
-		let jwks = JwkSet::new();
-		// We expect the client to be built successfully because we are only adding a
-		// timeout to it
+		// We expect the client to be built successfully because we are only
+		// adding a timeout to it
 		#[allow(clippy::expect_used)]
 		let client_builder = ClientBuilder::new(
 			Client::builder()
@@ -60,46 +65,46 @@ impl ZitadelJWTVerifier {
 			domain: url,
 			client,
 			jwks_cache: Arc::new(RwLock::new(JwkSetCache {
-				jwks,
+				jwks: JwkSet { keys: Vec::new() },
 				expires_at: OffsetDateTime::now_utc(),
 			})),
 		}
 	}
 
-	/// Verifies if a token is valid and returns the token payload
+	/// Verifies if a token is valid and deserializes the claims
 	/// The performed verifications are:
 	///     - Token signature
 	///     - Token not expired
-	///     - Token not used before 'not before'
+	///     - Token not issued in the future
 	///     - Token issuer is the expected server
-	pub async fn verify(&self, token: String) -> Result<JwtPayload, TokenValidationError> {
+	pub async fn verify<Claims: DeserializeOwned>(
+		&self,
+		token: String,
+	) -> Result<Claims, TokenValidationError> {
 		use TokenValidationError::*;
 
-		let header = jwt::decode_header(&token)?;
-		let kid = header
-			.claim("kid")
-			.ok_or(BadToken("No kid"))?
-			.as_str()
-			.ok_or(BadToken("kid is not a string"))?;
+		let header = decode_header(&token)?;
+		let kid = header.kid.ok_or(BadToken("No kid"))?;
 
 		let (mut jwk, expires_at) = {
 			let jwks_cache = self.jwks_cache.read().await;
-			(jwks_cache.jwks.get(kid).first().copied().cloned(), jwks_cache.expires_at)
+			(jwks_cache.jwks.find(&kid).cloned(), jwks_cache.expires_at)
 		};
 		if expires_at < OffsetDateTime::now_utc() || jwk.is_none() {
 			let mut jwks_cache = self.jwks_cache.write().await;
 			*jwks_cache = self.get_jwks().await?;
-			jwk = jwks_cache.jwks.get(kid).first().map(|&jwk| jwk.clone());
+			jwk = jwks_cache.jwks.find(&kid).cloned();
 			tracing::debug!("Updated JWKs");
 		}
 
-		let jwk = jwk.ok_or(KidNotFoundError(kid.to_owned()))?;
+		let jwk = jwk.ok_or(KidNotFoundError(kid))?;
+		let decoding_key = DecodingKey::from_jwk(&jwk).map_err(TokenDecodeError)?;
+		let raw = decode::<Map<String, Value>>(&token, &decoding_key, &signature_validation())
+			.map_err(TokenDecodeError)?;
+		let payload = JwtPayload::from_map(raw.claims);
 
-		let verifier = RS256.verifier_from_jwk(&jwk).map_err(TokenDecodeError)?;
-		let (payload, _) = jwt::decode_with_verifier(token, &verifier).map_err(TokenDecodeError)?;
-
-		// Url always comes with an '/' at the end. We need to remove it before for
-		// checking
+		// Url always comes with an '/' at the end. We need to remove it before
+		// for checking
 		if !payload.issuer().is_some_and(|issuer| {
 			issuer == self.domain.as_str().strip_suffix("/").unwrap_or(self.domain.as_str())
 		}) {
@@ -115,7 +120,7 @@ impl ZitadelJWTVerifier {
 			.then_some(())
 			.ok_or(TokenIssuedInFutureError)?;
 
-		Ok(payload)
+		serde_json::from_value(Value::Object(payload.into_map())).map_err(ClaimsDeserializeError)
 	}
 
 	/// Gets the jwks and the expiration date for it
@@ -132,7 +137,7 @@ impl ZitadelJWTVerifier {
 		let expires_at = Self::get_cache_control(&response);
 
 		let body = response.bytes().await?;
-		let jwks = JwkSet::from_bytes(body).map_err(RenewJwksError::ParsingTokenError)?;
+		let jwks = serde_json::from_slice(&body).map_err(RenewJwksError::ParsingTokenError)?;
 
 		Ok(JwkSetCache { jwks, expires_at })
 	}
@@ -158,6 +163,18 @@ impl ZitadelJWTVerifier {
 	}
 }
 
+/// Signature-only validation; `iss`, `exp`, and `iat` are checked manually
+/// so we keep the previous zero-leeway behaviour.
+fn signature_validation() -> Validation {
+	let mut validation = Validation::new(Algorithm::RS256);
+	validation.leeway = 0;
+	validation.validate_exp = false;
+	validation.validate_aud = false;
+	validation.validate_nbf = false;
+	validation.required_spec_claims.clear();
+	validation
+}
+
 /// Enum for errors that can happen whilst verifying the token
 #[derive(Debug, thiserror::Error)]
 pub enum TokenValidationError {
@@ -172,7 +189,7 @@ pub enum TokenValidationError {
 	KidNotFoundError(String),
 	/// Error decoding and verifying the token
 	#[error("Failed to decode the token with the verifier: {0}")]
-	TokenDecodeError(#[from] josekit::JoseError),
+	TokenDecodeError(#[from] JwtError),
 	/// Wrong issuer error
 	#[error("The token came from a different issuer than the expected. Token issuer: '{0}'")]
 	TokenIssuerError(String),
@@ -185,6 +202,9 @@ pub enum TokenValidationError {
 	/// Missing token claim error
 	#[error("Token missing the claim '{0}'")]
 	MissingClaim(&'static str),
+	/// Failed to deserialize the verified claims into the requested type
+	#[error("Failed to deserialize the token claims: {0}")]
+	ClaimsDeserializeError(#[source] serde_json::Error),
 }
 
 /// Enum for errors that can happen whilst renewing the jwks
@@ -201,5 +221,5 @@ pub enum RenewJwksError {
 	BadStatusCodeError(reqwest::StatusCode),
 	/// Parsing the body as jwks error
 	#[error("Failed to parse the token: {0}")]
-	ParsingTokenError(#[from] josekit::JoseError),
+	ParsingTokenError(#[from] serde_json::Error),
 }

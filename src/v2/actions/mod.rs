@@ -54,8 +54,9 @@ impl Zitadel {
 		sort_by: &'a Option<V2betaTargetFieldName>,
 		filters: &'a Option<Vec<V2betaTargetSearchFilter>>,
 	) -> impl Stream<Item = Result<V2betaTarget>> + Send {
-		// TODO: factor out pagination. This endpoint is an exception because all others
-		// return `result` field, but this one returns `targets`. So it's a quick fix.
+		// TODO: factor out pagination. This endpoint is an exception because
+		// all others return `result` field, but this one returns `targets`.
+		// So it's a quick fix.
 		use crate::v2::pagination::PaginationRequest;
 		#[derive(Debug, Clone, serde::Deserialize)]
 		struct Response {
@@ -98,8 +99,9 @@ impl Zitadel {
 		sort_by: &'a Option<V2betaExecutionFieldName>,
 		filters: &'a Option<Vec<V2betaExecutionSearchFilter>>,
 	) -> impl Stream<Item = Result<V2betaExecution>> + Send + use<'a> {
-		// TODO: factor out pagination. This endpoint is an exception because all others
-		// accepts pagination parameters in the json body, this one as query params
+		// TODO: factor out pagination. This endpoint is an exception because
+		// all others accepts pagination parameters in the json body, this one
+		// as query params
 		use crate::v2::pagination::PaginationRequest;
 
 		futures::stream::try_unfold((0, VecDeque::new()), async move |(mut page, mut buffered)| {

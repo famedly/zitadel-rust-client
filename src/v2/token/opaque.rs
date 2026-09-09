@@ -7,9 +7,8 @@
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow_ext::{Result, bail};
-use josekit::jwt::JwtPayload;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use tokio::sync::RwLock;
 use url::Url;
 
@@ -41,8 +40,11 @@ impl ZitadelOpaqueTokenVerifier {
 		Ok(Self { domain, client, private_key_jwt: Arc::new(RwLock::new(private_key_jwt)) })
 	}
 
-	/// Verify the opaque token
-	pub async fn verify(&self, token: String) -> Result<JwtPayload, OpaqueTokenValidationError> {
+	/// Verify the opaque token and deserialize the introspection claims
+	pub async fn verify<Claims: DeserializeOwned>(
+		&self,
+		token: String,
+	) -> Result<Claims, OpaqueTokenValidationError> {
 		if self.private_key_jwt.read().await.is_expired() {
 			self.private_key_jwt.write().await.renew()?;
 		}
@@ -71,7 +73,8 @@ impl ZitadelOpaqueTokenVerifier {
 			return Err(OpaqueTokenValidationError::TokenInactiveError);
 		}
 
-		Ok(JwtPayload::from_map(auth_resp.claims)?)
+		serde_json::from_value(serde_json::Value::Object(auth_resp.claims))
+			.map_err(OpaqueTokenValidationError::ClaimsDeserializeError)
 	}
 }
 
@@ -100,9 +103,9 @@ pub enum OpaqueTokenValidationError {
 	/// Parsing the body as auth response error
 	#[error("Failed to parse the body as auth response: {0}")]
 	ParsingAuthResponseError(#[from] serde_json::Error),
-	/// Building the jwt payload error
-	#[error("Failed to build the jwt payload: {0}")]
-	BuildJwtPayloadError(#[from] josekit::JoseError),
+	/// Failed to deserialize the introspection claims into the requested type
+	#[error("Failed to deserialize the token claims: {0}")]
+	ClaimsDeserializeError(#[source] serde_json::Error),
 	/// Building the jwt payload error
 	#[error("Failed to build the private key jwt: {0}")]
 	BuildPrivateKeyJwtError(#[from] anyhow::Error),
