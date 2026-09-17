@@ -174,18 +174,19 @@ mod tests {
 		private_key_jwt::{KeyType, PrivateKeyJWTFile},
 	};
 
+	const TEST_RSA_PEM: &str = include_str!("../../tests/fixtures/test-rsa.key");
+
 	#[tokio::test]
 	async fn test_token() -> Result<()> {
 		let mock_server = MockServer::start().await;
 		let temp_dir = tempdir()?;
 		let service_account_file = temp_dir.path().join("service-user.json");
-		let key = josekit::jwk::alg::rsa::RsaKeyPair::generate(2048)?;
 		tokio::fs::write(
 			&service_account_file,
 			serde_json::to_string(&PrivateKeyJWTFile {
 				r#type: KeyType::ServiceAccount,
 				key_id: "".to_owned(),
-				key: String::from_utf8(key.to_pem_private_key())?,
+				key: TEST_RSA_PEM.to_owned(),
 				id: "".to_owned(),
 			})?,
 		)

@@ -7,12 +7,13 @@
 use std::{path::PathBuf, sync::Arc};
 
 use anyhow_ext::{Result, bail};
-use josekit::jwt::JwtPayload;
 use reqwest_middleware::ClientWithMiddleware;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde_json::{Map, Value};
 use tokio::sync::RwLock;
 use url::Url;
 
+use super::payload::JwtPayload;
 use crate::v2::private_key_jwt::{KeyType, PrivateKeyJWT};
 
 /// Verifier for opaque tokens
@@ -41,8 +42,11 @@ impl ZitadelOpaqueTokenVerifier {
 		Ok(Self { domain, client, private_key_jwt: Arc::new(RwLock::new(private_key_jwt)) })
 	}
 
-	/// Verify the opaque token
-	pub async fn verify(&self, token: String) -> Result<JwtPayload, OpaqueTokenValidationError> {
+	/// Verify the opaque token and deserialize registered plus extra claims
+	pub async fn verify<T: DeserializeOwned>(
+		&self,
+		token: String,
+	) -> Result<JwtPayload<T>, OpaqueTokenValidationError> {
 		if self.private_key_jwt.read().await.is_expired() {
 			self.private_key_jwt.write().await.renew()?;
 		}
@@ -71,7 +75,7 @@ impl ZitadelOpaqueTokenVerifier {
 			return Err(OpaqueTokenValidationError::TokenInactiveError);
 		}
 
-		Ok(JwtPayload::from_map(auth_resp.claims)?)
+		Ok(serde_json::from_value(Value::Object(auth_resp.claims))?)
 	}
 }
 
@@ -79,7 +83,7 @@ impl ZitadelOpaqueTokenVerifier {
 pub(super) struct AuthResponse {
 	pub active: bool,
 	#[serde(flatten)]
-	pub claims: serde_json::Map<String, serde_json::Value>,
+	pub claims: Map<String, Value>,
 }
 
 /// Enum for errors that can happen whilst verifying the token
@@ -100,9 +104,9 @@ pub enum OpaqueTokenValidationError {
 	/// Parsing the body as auth response error
 	#[error("Failed to parse the body as auth response: {0}")]
 	ParsingAuthResponseError(#[from] serde_json::Error),
-	/// Building the jwt payload error
-	#[error("Failed to build the jwt payload: {0}")]
-	BuildJwtPayloadError(#[from] josekit::JoseError),
+	/// Introspection claims are missing, the wrong type, or do not match `T`
+	#[error("Malformed token claims: {0}")]
+	MalformedToken(serde_json::Error),
 	/// Building the jwt payload error
 	#[error("Failed to build the private key jwt: {0}")]
 	BuildPrivateKeyJwtError(#[from] anyhow::Error),

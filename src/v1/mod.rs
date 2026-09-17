@@ -484,8 +484,8 @@ impl Zitadel {
 			.await;
 		tracing::trace!("Got organization metadata response: {response:#?}");
 
-		// `QUERY-Rph32` is the grpc message returned by Zitadel when no metadata was
-		// found for the given key
+		// `QUERY-Rph32` is the grpc message returned by Zitadel when no
+		// metadata was found for the given key
 		if let Err(status) = &response {
 			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rph32") {
 				tracing::debug!(
@@ -554,8 +554,8 @@ impl Zitadel {
 			.get_user_metadata(self.request_with_auth(request).await?)
 			.await;
 
-		// `QUERY-Rgh32` is the grpc message returned by Zitadel when no metadata was
-		// found for the given key
+		// `QUERY-Rgh32` is the grpc message returned by Zitadel when no
+		// metadata was found for the given key
 		if let Err(status) = &response {
 			if status.code() == tonic::Code::NotFound && status.message().contains("QUERY-Rgh32") {
 				tracing::debug!(
