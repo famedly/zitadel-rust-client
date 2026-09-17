@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2026-09-17
+
+### Refactor
+
+- [**breaking**] FC-703 replace josekit with jsonwebtoken (#105)
+
 ## [0.13.1] - 2026-08-11
 
 ### Features
