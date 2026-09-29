@@ -18,31 +18,31 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProtobufAny {
-	#[serde(rename = "@type")]
+pub struct V2GetTargetResponse {
+	#[serde(rename = "target")]
 	#[serde(skip_serializing_if = "Option::is_none")]
-	_type: Option<String>,
+	target: Option<super::V2Target>,
 }
 
-impl ProtobufAny {
-	pub fn new() -> ProtobufAny {
-		ProtobufAny { _type: None }
+impl V2GetTargetResponse {
+	pub fn new() -> V2GetTargetResponse {
+		V2GetTargetResponse { target: None }
 	}
 
-	pub fn set__type(&mut self, _type: String) {
-		self._type = Some(_type);
+	pub fn set_target(&mut self, target: super::V2Target) {
+		self.target = Some(target);
 	}
 
-	pub fn with__type(mut self, _type: String) -> ProtobufAny {
-		self._type = Some(_type);
+	pub fn with_target(mut self, target: super::V2Target) -> V2GetTargetResponse {
+		self.target = Some(target);
 		self
 	}
 
-	pub fn _type(&self) -> Option<&String> {
-		self._type.as_ref()
+	pub fn target(&self) -> Option<&super::V2Target> {
+		self.target.as_ref()
 	}
 
-	pub fn reset__type(&mut self) {
-		self._type = None;
+	pub fn reset_target(&mut self) {
+		self.target = None;
 	}
 }

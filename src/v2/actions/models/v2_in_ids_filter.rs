@@ -18,31 +18,32 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProtobufAny {
-	#[serde(rename = "@type")]
+pub struct V2InIdsFilter {
+	/// Defines the ids to query for.
+	#[serde(rename = "ids")]
 	#[serde(skip_serializing_if = "Option::is_none")]
-	_type: Option<String>,
+	ids: Option<Vec<String>>,
 }
 
-impl ProtobufAny {
-	pub fn new() -> ProtobufAny {
-		ProtobufAny { _type: None }
+impl V2InIdsFilter {
+	pub fn new() -> V2InIdsFilter {
+		V2InIdsFilter { ids: None }
 	}
 
-	pub fn set__type(&mut self, _type: String) {
-		self._type = Some(_type);
+	pub fn set_ids(&mut self, ids: Vec<String>) {
+		self.ids = Some(ids);
 	}
 
-	pub fn with__type(mut self, _type: String) -> ProtobufAny {
-		self._type = Some(_type);
+	pub fn with_ids(mut self, ids: Vec<String>) -> V2InIdsFilter {
+		self.ids = Some(ids);
 		self
 	}
 
-	pub fn _type(&self) -> Option<&String> {
-		self._type.as_ref()
+	pub fn ids(&self) -> Option<&Vec<String>> {
+		self.ids.as_ref()
 	}
 
-	pub fn reset__type(&mut self) {
-		self._type = None;
+	pub fn reset_ids(&mut self) {
+		self.ids = None;
 	}
 }

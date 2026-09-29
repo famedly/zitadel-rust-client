@@ -18,31 +18,32 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProtobufAny {
-	#[serde(rename = "@type")]
+pub struct V2SetExecutionResponse {
+	/// The timestamp of the execution set.
+	#[serde(rename = "setDate")]
 	#[serde(skip_serializing_if = "Option::is_none")]
-	_type: Option<String>,
+	set_date: Option<String>,
 }
 
-impl ProtobufAny {
-	pub fn new() -> ProtobufAny {
-		ProtobufAny { _type: None }
+impl V2SetExecutionResponse {
+	pub fn new() -> V2SetExecutionResponse {
+		V2SetExecutionResponse { set_date: None }
 	}
 
-	pub fn set__type(&mut self, _type: String) {
-		self._type = Some(_type);
+	pub fn set_set_date(&mut self, set_date: String) {
+		self.set_date = Some(set_date);
 	}
 
-	pub fn with__type(mut self, _type: String) -> ProtobufAny {
-		self._type = Some(_type);
+	pub fn with_set_date(mut self, set_date: String) -> V2SetExecutionResponse {
+		self.set_date = Some(set_date);
 		self
 	}
 
-	pub fn _type(&self) -> Option<&String> {
-		self._type.as_ref()
+	pub fn set_date(&self) -> Option<&String> {
+		self.set_date.as_ref()
 	}
 
-	pub fn reset__type(&mut self) {
-		self._type = None;
+	pub fn reset_set_date(&mut self) {
+		self.set_date = None;
 	}
 }

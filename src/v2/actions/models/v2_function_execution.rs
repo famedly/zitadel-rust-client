@@ -18,31 +18,31 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProtobufAny {
-	#[serde(rename = "@type")]
+pub struct V2FunctionExecution {
+	#[serde(rename = "name")]
 	#[serde(skip_serializing_if = "Option::is_none")]
-	_type: Option<String>,
+	name: Option<String>,
 }
 
-impl ProtobufAny {
-	pub fn new() -> ProtobufAny {
-		ProtobufAny { _type: None }
+impl V2FunctionExecution {
+	pub fn new() -> V2FunctionExecution {
+		V2FunctionExecution { name: None }
 	}
 
-	pub fn set__type(&mut self, _type: String) {
-		self._type = Some(_type);
+	pub fn set_name(&mut self, name: String) {
+		self.name = Some(name);
 	}
 
-	pub fn with__type(mut self, _type: String) -> ProtobufAny {
-		self._type = Some(_type);
+	pub fn with_name(mut self, name: String) -> V2FunctionExecution {
+		self.name = Some(name);
 		self
 	}
 
-	pub fn _type(&self) -> Option<&String> {
-		self._type.as_ref()
+	pub fn name(&self) -> Option<&String> {
+		self.name.as_ref()
 	}
 
-	pub fn reset__type(&mut self) {
-		self._type = None;
+	pub fn reset_name(&mut self) {
+		self.name = None;
 	}
 }

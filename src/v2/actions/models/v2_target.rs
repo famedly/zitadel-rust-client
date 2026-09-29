@@ -18,61 +18,54 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ActionServiceUpdateTargetBody {
-	/// Optionally, update the name of the target. If not set, the name will not
-	/// be changed.
+pub struct V2Target {
+	/// The unique identifier of the target.
+	#[serde(rename = "id")]
+	#[serde(skip_serializing_if = "Option::is_none")]
+	id: Option<String>,
+	/// The timestamp of the target creation.
+	#[serde(rename = "creationDate")]
+	#[serde(skip_serializing_if = "Option::is_none")]
+	creation_date: Option<String>,
+	/// The timestamp of the last change to the target.
+	#[serde(rename = "changeDate")]
+	#[serde(skip_serializing_if = "Option::is_none")]
+	change_date: Option<String>,
+	/// Display name of the target.
 	#[serde(rename = "name")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	name: Option<String>,
-	/// The HTTP call to this target will be a POST request. The response of the
-	/// target will only be checked for the status code. The returned body will
-	/// be ignored. In case of an error status code (non 2xx) and
-	/// interrupt_on_error is set to true, the execution will be aborted and no
-	/// further targets will be called.
 	#[serde(rename = "restWebhook")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	rest_webhook: Option<super::V2RestWebhook>,
-	/// The HTTP call to this target will be a POST request. The response of the
-	/// target will be checked for the status code and the body. In case of an
-	/// error status code (non 2xx) and interrupt_on_error is set to true, the
-	/// execution will be aborted and no further targets will be called. In case
-	/// of a successful status code (2xx) the body will be parsed and mapped.
-	/// This allows to modify the payload of request and response executions.
 	#[serde(rename = "restCall")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	rest_call: Option<super::V2RestCall>,
-	/// The HTTP call to this target will be a POST request. The call is sent
-	/// asynchronously and Zitadel does not wait for the response. The response
-	/// of the target is ignored, no status or body is checked. This is
-	/// typically used for executions of type \"events\".
 	#[serde(rename = "restAsync")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	rest_async: Option<super::V2RestAsync>,
 	/// Timeout defines the duration until Zitadel cancels the execution. If the
-	/// target doesn't respond before this timeout expires, then the connection
+	/// target doesn't respond before this timeout expires, the the connection
 	/// is closed and the action fails. Depending on the target type and
 	/// possible setting on `interrupt_on_error` following targets will not be
 	/// called. In case of a `rest_async` target only this specific target will
-	/// fail, without any influence on other targets of the same execution. The
-	/// maximum timeout is 270 seconds or 4.5 minutes. If not set, the timeout
-	/// will not be changed.
+	/// fail, without any influence on other targets of the same execution.
 	#[serde(rename = "timeout")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	timeout: Option<String>,
-	/// The new URL of the endpoint to call. If not set, the endpoint will not
-	/// be changed.
+	/// The URL that will be called in case of an execution.
 	#[serde(rename = "endpoint")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	endpoint: Option<String>,
-	/// Regenerate the key used for signing and checking the payload sent to the
-	/// target. Set the graceful period for the existing key. During that time,
-	/// the previous signing key and the new one will be used to sign the
-	/// request to allow you a smooth transition onf your API.  Note that we
-	/// currently only allow an immediate rotation (\"0s\") and will support
-	/// longer expirations in the future.
-	#[serde(rename = "expirationSigningKey")]
+	/// The current signing key used to sign the request sent to the target. The
+	/// key can be used to verify the integrity and authenticity of the request
+	/// on the receiver side. The key should be treated as a secret and only
+	/// known to Zitadel and the receiver. The signature is included in the
+	/// request header `X-ZITADEL-Signature` and calculated over the raw body of
+	/// the request using HMAC with SHA256.
+	#[serde(rename = "signingKey")]
 	#[serde(skip_serializing_if = "Option::is_none")]
-	expiration_signing_key: Option<String>,
+	signing_key: Option<String>,
 	/// Payload type defines how the payload is formatted and secured. The
 	/// default is `PAYLOAD_TYPE_JSON`, which sends the payload as JSON in the
 	/// body of the request. For integrity and authenticity a signature is
@@ -80,34 +73,88 @@ pub struct ActionServiceUpdateTargetBody {
 	/// send the payload as a JWT (`PAYLOAD_TYPE_JWT`), which sends the payload
 	/// as a signed JWT in the body of the request. This allows the receiver to
 	/// verify the authenticity and integrity of the payload using the signing
-	/// key. If you need encryption as well, you can choose `PAYLOAD_TYPE_JWE`,
-	/// which sends the payload as an encrypted JWT in the body of the request.
-	/// You can provide your own public key for encryption. If unspecified, the
-	/// payload type will not be changed.
+	/// key (published on the JWKS URL). If you need encryption as well, you can
+	/// choose `PAYLOAD_TYPE_JWE`, which sends the payload as an encrypted JWT
+	/// in the body of the request. You can provide your own public key for
+	/// encryption.
 	#[serde(rename = "payloadType")]
 	#[serde(skip_serializing_if = "Option::is_none")]
 	payload_type: Option<super::V2PayloadType>,
 }
 
-impl ActionServiceUpdateTargetBody {
-	pub fn new() -> ActionServiceUpdateTargetBody {
-		ActionServiceUpdateTargetBody {
+impl V2Target {
+	pub fn new() -> V2Target {
+		V2Target {
+			id: None,
+			creation_date: None,
+			change_date: None,
 			name: None,
 			rest_webhook: None,
 			rest_call: None,
 			rest_async: None,
 			timeout: None,
 			endpoint: None,
-			expiration_signing_key: None,
+			signing_key: None,
 			payload_type: None,
 		}
+	}
+
+	pub fn set_id(&mut self, id: String) {
+		self.id = Some(id);
+	}
+
+	pub fn with_id(mut self, id: String) -> V2Target {
+		self.id = Some(id);
+		self
+	}
+
+	pub fn id(&self) -> Option<&String> {
+		self.id.as_ref()
+	}
+
+	pub fn reset_id(&mut self) {
+		self.id = None;
+	}
+
+	pub fn set_creation_date(&mut self, creation_date: String) {
+		self.creation_date = Some(creation_date);
+	}
+
+	pub fn with_creation_date(mut self, creation_date: String) -> V2Target {
+		self.creation_date = Some(creation_date);
+		self
+	}
+
+	pub fn creation_date(&self) -> Option<&String> {
+		self.creation_date.as_ref()
+	}
+
+	pub fn reset_creation_date(&mut self) {
+		self.creation_date = None;
+	}
+
+	pub fn set_change_date(&mut self, change_date: String) {
+		self.change_date = Some(change_date);
+	}
+
+	pub fn with_change_date(mut self, change_date: String) -> V2Target {
+		self.change_date = Some(change_date);
+		self
+	}
+
+	pub fn change_date(&self) -> Option<&String> {
+		self.change_date.as_ref()
+	}
+
+	pub fn reset_change_date(&mut self) {
+		self.change_date = None;
 	}
 
 	pub fn set_name(&mut self, name: String) {
 		self.name = Some(name);
 	}
 
-	pub fn with_name(mut self, name: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_name(mut self, name: String) -> V2Target {
 		self.name = Some(name);
 		self
 	}
@@ -124,10 +171,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_webhook = Some(rest_webhook);
 	}
 
-	pub fn with_rest_webhook(
-		mut self,
-		rest_webhook: super::V2RestWebhook,
-	) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_webhook(mut self, rest_webhook: super::V2RestWebhook) -> V2Target {
 		self.rest_webhook = Some(rest_webhook);
 		self
 	}
@@ -144,7 +188,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_call = Some(rest_call);
 	}
 
-	pub fn with_rest_call(mut self, rest_call: super::V2RestCall) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_call(mut self, rest_call: super::V2RestCall) -> V2Target {
 		self.rest_call = Some(rest_call);
 		self
 	}
@@ -161,10 +205,7 @@ impl ActionServiceUpdateTargetBody {
 		self.rest_async = Some(rest_async);
 	}
 
-	pub fn with_rest_async(
-		mut self,
-		rest_async: super::V2RestAsync,
-	) -> ActionServiceUpdateTargetBody {
+	pub fn with_rest_async(mut self, rest_async: super::V2RestAsync) -> V2Target {
 		self.rest_async = Some(rest_async);
 		self
 	}
@@ -181,7 +222,7 @@ impl ActionServiceUpdateTargetBody {
 		self.timeout = Some(timeout);
 	}
 
-	pub fn with_timeout(mut self, timeout: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_timeout(mut self, timeout: String) -> V2Target {
 		self.timeout = Some(timeout);
 		self
 	}
@@ -198,7 +239,7 @@ impl ActionServiceUpdateTargetBody {
 		self.endpoint = Some(endpoint);
 	}
 
-	pub fn with_endpoint(mut self, endpoint: String) -> ActionServiceUpdateTargetBody {
+	pub fn with_endpoint(mut self, endpoint: String) -> V2Target {
 		self.endpoint = Some(endpoint);
 		self
 	}
@@ -211,34 +252,28 @@ impl ActionServiceUpdateTargetBody {
 		self.endpoint = None;
 	}
 
-	pub fn set_expiration_signing_key(&mut self, expiration_signing_key: String) {
-		self.expiration_signing_key = Some(expiration_signing_key);
+	pub fn set_signing_key(&mut self, signing_key: String) {
+		self.signing_key = Some(signing_key);
 	}
 
-	pub fn with_expiration_signing_key(
-		mut self,
-		expiration_signing_key: String,
-	) -> ActionServiceUpdateTargetBody {
-		self.expiration_signing_key = Some(expiration_signing_key);
+	pub fn with_signing_key(mut self, signing_key: String) -> V2Target {
+		self.signing_key = Some(signing_key);
 		self
 	}
 
-	pub fn expiration_signing_key(&self) -> Option<&String> {
-		self.expiration_signing_key.as_ref()
+	pub fn signing_key(&self) -> Option<&String> {
+		self.signing_key.as_ref()
 	}
 
-	pub fn reset_expiration_signing_key(&mut self) {
-		self.expiration_signing_key = None;
+	pub fn reset_signing_key(&mut self) {
+		self.signing_key = None;
 	}
 
 	pub fn set_payload_type(&mut self, payload_type: super::V2PayloadType) {
 		self.payload_type = Some(payload_type);
 	}
 
-	pub fn with_payload_type(
-		mut self,
-		payload_type: super::V2PayloadType,
-	) -> ActionServiceUpdateTargetBody {
+	pub fn with_payload_type(mut self, payload_type: super::V2PayloadType) -> V2Target {
 		self.payload_type = Some(payload_type);
 		self
 	}

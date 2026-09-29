@@ -139,8 +139,7 @@ impl ZitadelJWTVerifier {
 		let cache_control = response
 			.headers()
 			.get(header::CACHE_CONTROL)
-			.map(|c| c.to_str().unwrap_or_default())
-			.unwrap_or_default();
+			.map_or_default(|c| c.to_str().unwrap_or_default());
 		let Some(cache_control) = CacheControl::from_value(cache_control) else {
 			return OffsetDateTime::now_utc();
 		};
