@@ -8,6 +8,12 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.15.0] - 2026-09-29
+
+### Features
+
+- Change from actions v2 beta to GA
+
 ## [0.14.0] - 2026-09-17
 
 ### Refactor
