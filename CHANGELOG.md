@@ -8,6 +8,16 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.0] - 2026-10-23
+
+### Bug Fixes
+
+- [**breaking**] Remove v1 module due to VUL-29
+
+### Miscellaneous Tasks
+
+- Fix new clippy lints
+
 ## [0.15.0] - 2026-09-29
 
 ### Features
