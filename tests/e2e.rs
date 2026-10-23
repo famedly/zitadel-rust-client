@@ -223,7 +223,7 @@ async fn test_e2e_create_token() -> Result<()> {
 
 #[test(tokio::test)]
 #[test_log(default_log_filter = "debug")]
-#[allow(trivial_casts)]
+#[allow(trivial_casts, clippy::too_many_lines)]
 async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	let zitadel = mk_zitadel_client().await?;
 	let admin = create_random_user(&zitadel, None).await?;
@@ -1287,6 +1287,7 @@ async fn test_e2e_token_verification_positive() -> Result<()> {
 
 #[test(tokio::test)]
 #[test_log(default_log_filter = "debug")]
+#[allow(clippy::too_many_lines)]
 async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let zitadel = mk_zitadel_client().await?;
 
