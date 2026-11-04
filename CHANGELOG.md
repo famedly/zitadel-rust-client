@@ -8,6 +8,16 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.1] - 2026-11-04
+
+### Bug Fixes
+
+- Read the token's expires_in as a lifetime
+
+### Miscellaneous Tasks
+
+- Align CODEOWNERS with current team structure
+
 ## [0.16.0] - 2026-10-23
 
 ### Bug Fixes
