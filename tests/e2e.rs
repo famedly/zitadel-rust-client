@@ -187,7 +187,11 @@ macro_rules! assert_list {
 		let items_must_be = $items_must_be;
 		let items = eventually(
 			|| async { $items },
-			|items| items_must_be.iter().all(|item| items.iter().any(|u| *item == u)),
+			|items| {
+				$all_items.iter().all(|item| {
+					items.iter().any(|u| u == *item) == items_must_be.iter().any(|u| u == item)
+				})
+			},
 		)
 		.await;
 		items_must_be.iter().for_each(|item| {
@@ -200,7 +204,7 @@ macro_rules! assert_list {
 		});
 		let items_must_not_be = $all_items
 			.iter()
-			.filter(|item| items.iter().find(|u| &u == item).is_none())
+			.filter(|item| items_must_be.iter().find(|u| u == item).is_none())
 			.collect::<Vec<_>>();
 		items_must_not_be.iter().for_each(|item| {
 			assert!(
@@ -403,6 +407,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 		&[&user23]
 	);
 
+	// The granting org sees the grant's members too
 	assert_list!(
 		all_users,
 		zitadel
@@ -418,7 +423,7 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 			.try_collect::<Vec<_>>()
 			.await
 			.unwrap(),
-		&[] as &[&str]
+		&[&user23]
 	);
 
 	assert_list!(
