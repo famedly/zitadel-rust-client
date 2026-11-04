@@ -1352,11 +1352,21 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 		V1AppQuery::new()
 			.with_name_query(V1AppNameQuery::new().with_name("OrgScopedApp".to_owned())),
 	];
-	let apps = zitadel
-		.list_applications(project_id.clone(), Some(org_id.clone()), None, Some(app_request))
-		.expect("Failed to list applications")
-		.collect::<Vec<_>>()
-		.await;
+	let apps = eventually(
+		|| {
+			zitadel
+				.list_applications(
+					project_id.clone(),
+					Some(org_id.clone()),
+					None,
+					Some(app_request.clone()),
+				)
+				.expect("Failed to list applications")
+				.collect::<Vec<_>>()
+		},
+		|apps| apps.len() == 1,
+	)
+	.await;
 	assert_eq!(apps.len(), 1);
 
 	// Create an action in this organization
@@ -1386,11 +1396,16 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	assert!(actions_default_org.is_empty());
 
 	// Should find one action in specified org
-	let actions_specified_org = zitadel
-		.list_actions(Some(org_id.clone()), None, Some(actions_request))
-		.expect("Failed to list actions in specified organization")
-		.collect::<Vec<_>>()
-		.await;
+	let actions_specified_org = eventually(
+		|| {
+			zitadel
+				.list_actions(Some(org_id.clone()), None, Some(actions_request.clone()))
+				.expect("Failed to list actions in specified organization")
+				.collect::<Vec<_>>()
+		},
+		|actions| actions.len() == 1,
+	)
+	.await;
 	assert_eq!(actions_specified_org.len(), 1);
 
 	// Try to update the action with wrong organization ID - should fail
@@ -1423,12 +1438,19 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	let actions_request = vec![V1ActionQuery::new().with_action_name_query(
 		V1ActionNameQuery::new().with_name("org-scoped-action".to_owned()),
 	)];
-	let updated_actions = zitadel
-		.list_actions(Some(org_id.clone()), None, Some(actions_request))
-		.expect("Failed to list actions")
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
+	let updated = Some("console.log('updated-org-scoped')".to_owned());
+	let updated_actions = eventually(
+		|| async {
+			zitadel
+				.list_actions(Some(org_id.clone()), None, Some(actions_request.clone()))
+				.expect("Failed to list actions")
+				.try_collect::<Vec<_>>()
+				.await
+				.unwrap()
+		},
+		|actions| actions.len() == 1 && actions[0].script().cloned() == updated,
+	)
+	.await;
 	assert_eq!(updated_actions.len(), 1);
 	assert_eq!(updated_actions[0].script(), Some(&"console.log('updated-org-scoped')".to_owned()));
 
@@ -1490,4 +1512,21 @@ async fn test_e2e_get_password_complexity_policy() -> Result<()> {
 	assert!(policy.has_symbol().is_some());
 
 	Ok(())
+}
+
+/// Zitadel's read side catches up shortly after a write: calls `list` until
+/// `done` holds, for up to five seconds, and returns the last result.
+async fn eventually<T, Fut>(mut list: impl FnMut() -> Fut, done: impl Fn(&[T]) -> bool) -> Vec<T>
+where
+	Fut: Future<Output = Vec<T>>,
+{
+	let mut items = list().await;
+	for _ in 0..50 {
+		if done(&items) {
+			break;
+		}
+		tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+		items = list().await;
+	}
+	items
 }
