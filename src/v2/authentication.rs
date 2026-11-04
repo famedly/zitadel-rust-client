@@ -138,7 +138,7 @@ impl InnerToken {
 		let auth_resp: AuthResponse = serde_json::from_str(&body)?;
 
 		self.token = auth_resp.access_token;
-		self.expiry = OffsetDateTime::from_unix_timestamp(auth_resp.expires_in)?;
+		self.expiry = expiry_after(auth_resp.expires_in);
 
 		Ok(())
 	}
@@ -148,6 +148,16 @@ impl InnerToken {
 	pub fn is_expired(&self) -> bool {
 		OffsetDateTime::now_utc() > self.expiry
 	}
+}
+
+/// When a token that expires in `expires_in` seconds (a lifetime, as in
+/// RFC 6749 section 5.1, not a timestamp) should be renewed: a minute early,
+/// or halfway for short-lived tokens, so it never expires in flight. Capped at
+/// a year, so a bogus lifetime cannot overflow the date.
+fn expiry_after(expires_in: i64) -> OffsetDateTime {
+	const MAX_RENEW_IN: i64 = 365 * 24 * 60 * 60;
+	let renew_in = expires_in.saturating_sub(60).max(expires_in / 2).min(MAX_RENEW_IN);
+	OffsetDateTime::now_utc() + time::Duration::seconds(renew_in)
 }
 
 impl Debug for InnerToken {
@@ -197,7 +207,7 @@ mod tests {
 		let auth_resp = authentication::AuthResponse {
 			access_token: zitadel_token.clone(),
 			token_type: "token_type".to_owned(),
-			expires_in: (OffsetDateTime::now_utc() + time::Duration::minutes(10)).unix_timestamp(),
+			expires_in: 600,
 		};
 
 		Mock::given(method("POST"))
@@ -221,6 +231,14 @@ mod tests {
 		// A second call shouldn't trigger a renew
 		assert_eq!(token.token().await?, zitadel_token);
 
+		// Renewed a minute before the 10 minutes run out
+		let expiry = token.inner.read().await.expiry;
+		let now = OffsetDateTime::now_utc();
+		assert!(
+			expiry > now + time::Duration::minutes(8) && expiry <= now + time::Duration::minutes(9),
+			"Expected expiry in about 9 minutes.\nNow: {now:?}\nExpiry: {expiry:?}"
+		);
+
 		token.inner.write().await.expiry = OffsetDateTime::now_utc() - time::Duration::minutes(10);
 
 		// Now we should have a call to renew
@@ -234,5 +252,18 @@ mod tests {
 		);
 
 		Ok(())
+	}
+
+	#[test]
+	fn expires_in_is_a_lifetime() {
+		let now = OffsetDateTime::now_utc();
+		let in_secs = |expires_in| (authentication::expiry_after(expires_in) - now).whole_seconds();
+		// Zitadel's default lifetime of 12 hours
+		assert!((43_138..=43_140).contains(&in_secs(43_199)));
+		// Short-lived tokens are renewed halfway
+		assert!((29..=30).contains(&in_secs(60)));
+		assert!(in_secs(0) <= 0);
+		// A bogus lifetime is capped instead of overflowing the date
+		assert!((31_535_999..=31_536_000).contains(&in_secs(i64::MAX)));
 	}
 }
