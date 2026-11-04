@@ -165,7 +165,8 @@ async fn tear_down(zitadel: &Zitadel) {
 		.unwrap();
 }
 
-/// Helper macro to check the results of paginated requests.
+/// Helper macro to check the results of paginated requests. Re-runs `items`
+/// until it matches, see `eventually`.
 /// ```
 /// let all_users = ["u1", "u2", "u3"];
 /// // Asserts that result has expected u1 and nothing else from all_users
@@ -183,8 +184,12 @@ async fn tear_down(zitadel: &Zitadel) {
 /// ```
 macro_rules! assert_list {
 	($all_items:expr, $items:expr, $items_must_be:expr) => {
-		let items = $items;
 		let items_must_be = $items_must_be;
+		let items = eventually(
+			|| async { $items },
+			|items| items_must_be.iter().all(|item| items.iter().any(|u| *item == u)),
+		)
+		.await;
 		items_must_be.iter().for_each(|item| {
 			assert!(
 				items.iter().find(|u| item == u).is_some(),
@@ -347,7 +352,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_organization_members(Some(org1.clone()), None, Some(Vec::new()))?
+			.list_organization_members(Some(org1.clone()), None, Some(Vec::new()))
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -358,7 +364,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_organization_members(Some(org2.clone()), None, Some(Vec::new()))?
+			.list_organization_members(Some(org2.clone()), None, Some(Vec::new()))
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -369,7 +376,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 	assert_list!(
 		all_users,
 		zitadel
-			.list_project_members(Some(org1.clone()), &project11, None, Some(Vec::new()))?
+			.list_project_members(Some(org1.clone()), &project11, None, Some(Vec::new()))
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -386,7 +394,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				&project_grant_id,
 				None,
 				Some(Vec::new())
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -403,7 +412,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 				&project_grant_id,
 				None,
 				Some(Vec::new())
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -427,7 +437,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 							.with__type(Userv1Type::Human)
 					}
 				])
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -445,7 +456,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 					project_id_query: (V1UserGrantProjectIdQuery::new()
 						.with_project_id(project12.clone()))
 				}])
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -463,7 +475,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 					project_grant_id_query: (V1UserGrantProjectGrantIdQuery::new()
 						.with_project_grant_id(project_grant_id.clone()))
 				}])
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -481,7 +494,8 @@ async fn test_e2e_role_and_membership_methods() -> Result<()> {
 					project_id_query: (V1UserGrantProjectIdQuery::new()
 						.with_project_id(project12.clone()))
 				}])
-			)?
+			)
+			.unwrap()
 			.and_then(|x| future::ok(x.user_id().unwrap().clone()))
 			.try_collect::<Vec<_>>()
 			.await
@@ -512,21 +526,25 @@ async fn test_e2e_create_organization() -> Result<()> {
 	assert!(res.is_ok());
 
 	// Ensure the admin user was actually created
-	assert_eq!(
-		zitadel
-			.list_users(
-				None,
-				None,
-				None,
-				Some(vec![
-					SearchQuery::new()
-						.with_last_name_query(LastNameQuery::new("Adminmann".to_owned()))
-				]),
-			)?
-			.count()
-			.await,
-		1
-	);
+	let admins = eventually(
+		|| {
+			zitadel
+				.list_users(
+					None,
+					None,
+					None,
+					Some(vec![
+						SearchQuery::new()
+							.with_last_name_query(LastNameQuery::new("Adminmann".to_owned())),
+					]),
+				)
+				.unwrap()
+				.collect::<Vec<_>>()
+		},
+		|admins| admins.len() == 1,
+	)
+	.await;
+	assert_eq!(admins.len(), 1);
 
 	tear_down(&zitadel).await;
 
@@ -551,13 +569,19 @@ async fn test_e2e_create_application() -> Result<()> {
 		)
 		.await?;
 
-	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
-
-	let apps: Vec<String> = stream
-		.and_then(|app| future::ok(app.name().expect("App name must be set").clone()))
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
+	let apps: Vec<String> = eventually(
+		|| async {
+			zitadel
+				.list_applications(project_id.to_owned(), None, None, Some(vec![]))
+				.unwrap()
+				.and_then(|app| future::ok(app.name().expect("App name must be set").clone()))
+				.try_collect::<Vec<_>>()
+				.await
+				.unwrap()
+		},
+		|apps| apps == ["TestApp"],
+	)
+	.await;
 	assert_eq!(apps, ["TestApp"]);
 
 	tear_down(&zitadel).await;
@@ -585,13 +609,19 @@ async fn test_e2e_list_applications() -> Result<()> {
 		assert!(zitadel.create_application(project_id.to_owned(), application, None).await.is_ok());
 	}
 
-	let stream = zitadel.list_applications(project_id.to_owned(), None, None, Some(vec![]))?;
-
-	let found_application_names: Vec<String> = stream
-		.and_then(|app| future::ok(app.name().expect("No name found for action").clone()))
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
+	let found_application_names: Vec<String> = eventually(
+		|| async {
+			zitadel
+				.list_applications(project_id.to_owned(), None, None, Some(vec![]))
+				.unwrap()
+				.and_then(|app| future::ok(app.name().expect("No name found for action").clone()))
+				.try_collect::<Vec<_>>()
+				.await
+				.unwrap()
+		},
+		|names| names == application_names,
+	)
+	.await;
 	assert_eq!(found_application_names, application_names);
 
 	tear_down(&zitadel).await;
@@ -616,20 +646,27 @@ async fn test_e2e_create_action() -> Result<()> {
 
 	assert!(res.is_ok());
 
-	let stream =
-		zitadel.list_actions(
-			None,
-			None,
-			Some(vec![V1ActionQuery::new().with_action_name_query(
-				V1ActionNameQuery::new().with_name("test-action".to_owned()),
-			)]),
-		)?;
-
-	let actions = stream
-		.and_then(|action| future::ok(action.name().expect("No name found for action").clone()))
-		.try_collect::<Vec<String>>()
-		.await
-		.unwrap();
+	let actions = eventually(
+		|| async {
+			zitadel
+				.list_actions(
+					None,
+					None,
+					Some(vec![V1ActionQuery::new().with_action_name_query(
+						V1ActionNameQuery::new().with_name("test-action".to_owned()),
+					)]),
+				)
+				.unwrap()
+				.and_then(|action| {
+					future::ok(action.name().expect("No name found for action").clone())
+				})
+				.try_collect::<Vec<String>>()
+				.await
+				.unwrap()
+		},
+		|actions| actions == ["test-action"],
+	)
+	.await;
 	assert_eq!(actions, vec!["test-action"]);
 
 	tear_down(&zitadel).await;
@@ -654,13 +691,21 @@ async fn test_e2e_list_actions() -> Result<()> {
 		assert!(zitadel.create_action(action, None).await.is_ok());
 	}
 
-	let stream = zitadel.list_actions(None, None, None)?;
-
-	let found_action_names = stream
-		.and_then(|action| future::ok(action.name().expect("No name found for action").clone()))
-		.try_collect::<Vec<String>>()
-		.await
-		.unwrap();
+	let found_action_names = eventually(
+		|| async {
+			zitadel
+				.list_actions(None, None, None)
+				.unwrap()
+				.and_then(|action| {
+					future::ok(action.name().expect("No name found for action").clone())
+				})
+				.try_collect::<Vec<String>>()
+				.await
+				.unwrap()
+		},
+		|names| names == action_names,
+	)
+	.await;
 	assert_eq!(found_action_names, action_names);
 
 	tear_down(&zitadel).await;
@@ -696,16 +741,26 @@ async fn test_e2e_update_action() -> Result<()> {
 		)
 		.await?;
 
-	let mut stream =
-		zitadel.list_actions(
-			None,
-			None,
-			Some(vec![V1ActionQuery::new().with_action_name_query(
-				V1ActionNameQuery::new().with_name("test-action".to_owned()),
-			)]),
-		)?;
-
-	let action = stream.next().await.expect("Action must exist").unwrap();
+	let updated = Some("console.log('test-action-update')".to_owned());
+	let actions = eventually(
+		|| async {
+			zitadel
+				.list_actions(
+					None,
+					None,
+					Some(vec![V1ActionQuery::new().with_action_name_query(
+						V1ActionNameQuery::new().with_name("test-action".to_owned()),
+					)]),
+				)
+				.unwrap()
+				.try_collect::<Vec<_>>()
+				.await
+				.unwrap()
+		},
+		|actions| actions.first().and_then(|a| a.script().cloned()) == updated,
+	)
+	.await;
+	let action = actions.first().expect("Action must exist");
 
 	assert_eq!(action.name(), Some(&"test-action".to_owned()));
 	assert_eq!(action.script(), Some(&"console.log('test-action-update')".to_owned()));
@@ -731,16 +786,23 @@ async fn test_e2e_delete_action() -> Result<()> {
 
 	zitadel.delete_action(action_id.to_owned(), None).await?;
 
-	let stream =
-		zitadel.list_actions(
-			None,
-			None,
-			Some(vec![V1ActionQuery::new().with_action_name_query(
-				V1ActionNameQuery::new().with_name("test-action".to_owned()),
-			)]),
-		)?;
-
-	assert_eq!(stream.count().await, 0);
+	let actions = eventually(
+		|| {
+			zitadel
+				.list_actions(
+					None,
+					None,
+					Some(vec![V1ActionQuery::new().with_action_name_query(
+						V1ActionNameQuery::new().with_name("test-action".to_owned()),
+					)]),
+				)
+				.unwrap()
+				.collect::<Vec<_>>()
+		},
+		<[_]>::is_empty,
+	)
+	.await;
+	assert_eq!(actions.len(), 0);
 
 	tear_down(&zitadel).await;
 
@@ -866,18 +928,26 @@ async fn test_e2e_list_human_users() -> Result<()> {
 		Some(vec![SearchQuery::new().with_last_name_query(LastNameQuery::new("Doe".to_owned()))]);
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true).with_page_size(5));
 
-	let stream = zitadel.list_users(None, pagination_params, None, queries)?;
-
-	let res_user_emails: Vec<_> = stream
-		.and_then(|user| {
-			future::ok(
-				user.preferred_login_name().expect("Login of queried user not found").clone(),
-			)
-		})
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
 	let user_emails: Vec<_> = users.into_iter().map(|user| user.email().email().clone()).collect();
+	let res_user_emails: Vec<_> = eventually(
+		|| async {
+			zitadel
+				.list_users(None, pagination_params.clone(), None, queries.clone())
+				.unwrap()
+				.and_then(|user| {
+					future::ok(
+						user.preferred_login_name()
+							.expect("Login of queried user not found")
+							.clone(),
+					)
+				})
+				.try_collect::<Vec<_>>()
+				.await
+				.unwrap()
+		},
+		|emails| emails == user_emails,
+	)
+	.await;
 	assert_eq!(res_user_emails, user_emails);
 
 	tear_down(&zitadel).await;
@@ -1003,27 +1073,29 @@ async fn test_e2e_delete_user() -> Result<()> {
 	]);
 	let pagination_params = Some(PaginationParams::DEFAULT.with_asc(true));
 
-	assert_eq!(
-		zitadel.list_users(None, pagination_params.clone(), None, queries.clone())?.count().await,
-		2
-	);
+	let list_names = || async {
+		zitadel
+			.list_users(None, pagination_params.clone(), None, queries.clone())
+			.unwrap()
+			.map_ok(|user| {
+				user.human()
+					.and_then(|u| u.profile())
+					.and_then(|u| u.given_name())
+					.expect("Couldn't get user's given name")
+					.clone()
+			})
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap()
+	};
+
+	assert_eq!(eventually(list_names, |names| names.len() == 2).await.len(), 2);
 
 	zitadel.delete_user(&id).await?;
 
-	let user_count = zitadel
-		.list_users(None, pagination_params, None, queries)?
-		.inspect_ok(|user| {
-			let user_name = user
-				.human()
-				.and_then(|u| u.profile())
-				.and_then(|u| u.given_name())
-				.expect("Couldn't get user's given name");
-			assert_ne!(user_name, deleted_user_name);
-		})
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
-	assert_eq!(user_count.len(), 1);
+	let names = eventually(list_names, |names| names == ["John_2"]).await;
+	assert!(!names.iter().any(|name| name == deleted_user_name));
+	assert_eq!(names.len(), 1);
 
 	tear_down(&zitadel).await;
 
@@ -1105,23 +1177,26 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 
 	zitadel.set_user_metadata_bulk(&id, metadata.clone(), None).await?;
 
-	let stream = zitadel.list_user_metadata(
-		&id,
-		None,
-		None,
-		Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
-	)?;
-
-	let res_metadata: Vec<_> = stream
-		.map_ok(|metadata| {
-			(
-				metadata.key().cloned().expect("Unable to get key from list_user_metadata"),
-				metadata.value().expect("Unable to get value from list_user_metadata"),
+	let list_metadata = || async {
+		zitadel
+			.list_user_metadata(
+				&id,
+				None,
+				None,
+				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
 			)
-		})
-		.try_collect::<Vec<_>>()
-		.await
-		.unwrap();
+			.unwrap()
+			.map_ok(|metadata| {
+				(
+					metadata.key().cloned().expect("Unable to get key from list_user_metadata"),
+					metadata.value().expect("Unable to get value from list_user_metadata"),
+				)
+			})
+			.try_collect::<Vec<_>>()
+			.await
+			.unwrap()
+	};
+
 	let expected_metadata: Vec<_> = metadata
 		.iter()
 		.map(|metadata| {
@@ -1131,6 +1206,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 			)
 		})
 		.collect();
+	let res_metadata = eventually(list_metadata, |res| res == expected_metadata).await;
 	assert_eq!(expected_metadata, res_metadata);
 
 	zitadel
@@ -1141,17 +1217,7 @@ async fn test_e2e_user_metadata_bulk() -> Result<()> {
 		)
 		.await?;
 
-	assert!(
-		zitadel
-			.list_user_metadata(
-				&id,
-				None,
-				None,
-				Some(vec![KeyQuery::new("key".to_owned()).with_method(TextQueryMethod::Contains)]),
-			)?
-			.count()
-			.await == 0
-	);
+	assert!(eventually(list_metadata, <[_]>::is_empty).await.is_empty());
 
 	tear_down(&zitadel).await;
 
@@ -1327,11 +1393,16 @@ async fn test_e2e_organization_scoped_operations() -> Result<()> {
 	assert!(projects_default_org.is_empty());
 
 	// Should find one project in specified org
-	let projects_specified_org = zitadel
-		.list_projects(Some(org_id.clone()), None, Some(project_request))
-		.expect("Failed to list projects in specified organization")
-		.collect::<Vec<_>>()
-		.await;
+	let projects_specified_org = eventually(
+		|| {
+			zitadel
+				.list_projects(Some(org_id.clone()), None, Some(project_request.clone()))
+				.expect("Failed to list projects in specified organization")
+				.collect::<Vec<_>>()
+		},
+		|projects| projects.len() == 1,
+	)
+	.await;
 	assert_eq!(projects_specified_org.len(), 1);
 
 	// Create an application in this organization's project
