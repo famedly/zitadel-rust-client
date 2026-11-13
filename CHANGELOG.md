@@ -8,6 +8,16 @@ SPDX-License-Identifier: Apache-2.0
 
 All notable changes to this project will be documented in this file.
 
+## [0.16.2] - 2026-11-13
+
+### Testing
+
+- Wait for Zitadel's read side in all e2e tests
+
+### Miscellaneous Tasks
+
+- Bump jsonwetoken 9.3.1 -> 12.0
+
 ## [0.16.1] - 2026-11-04
 
 ### Bug Fixes
